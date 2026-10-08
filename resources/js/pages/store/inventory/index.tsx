@@ -5,10 +5,9 @@ import {
     PaginationLinks,
     type PaginationLink,
 } from '@/components/common/pagination-links';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-type Store = { id: number; code: string; name: string };
+type StoreType = { id: number; code: string; name: string };
 type Item = {
     id: number;
     sku: string;
@@ -18,9 +17,14 @@ type Item = {
     stock_standards: { standard_quantity: string }[];
 };
 type Props = {
-    stores: Store[];
+    stores: StoreType[];
     selectedStoreId: number;
-    items: { data: Item[]; links: PaginationLink[] };
+    items: {
+        data: Item[];
+        links: PaginationLink[];
+        current_page?: number;
+        per_page?: number;
+    };
 };
 
 export default function StoreInventory({
@@ -29,6 +33,8 @@ export default function StoreInventory({
     items,
 }: Props) {
     const currentStore = stores.find((s) => s.id === selectedStoreId);
+    const currentPage = items.current_page || 1;
+    const perPage = items.per_page || 20;
 
     return (
         <>
@@ -36,19 +42,18 @@ export default function StoreInventory({
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
                     badge="Inventaris & Butik"
-                    title="Monitoring Stok Toko"
-                    description={`Pantau saldo persediaan resmi dan batas standar minimum butik ${currentStore ? `${currentStore.code} — ${currentStore.name}` : ''}. Penyesuaian stok resmi diatur oleh Kantor Pusat.`}
+                    title={`Monitoring Stok Toko — ${currentStore ? `${currentStore.code} (${currentStore.name})` : ''}`}
                 />
 
                 {stores.length > 1 && (
                     <Card className="border-border/70 shadow-xs">
-                        <CardContent className="p-4">
-                            <label className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3 text-xs font-semibold text-foreground">
+                        <CardContent className="p-3.5">
+                            <label className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 text-xs font-semibold text-foreground">
                                 <span className="flex items-center gap-1.5 text-muted-foreground">
-                                    <Store className="size-4" /> Pilih Butik:
+                                    <Store className="size-3.5" /> Pilih Butik:
                                 </span>
                                 <select
-                                    className="form-select-custom h-9 max-w-sm"
+                                    className="form-select-custom h-9 max-w-xs text-xs"
                                     value={selectedStoreId}
                                     onChange={(event) =>
                                         router.get('/store/inventory', {
@@ -68,103 +73,104 @@ export default function StoreInventory({
                 )}
 
                 <Card className="border-border/70 shadow-xs">
-                    <CardHeader className="border-b border-border/50 pb-4">
-                        <div className="flex items-center gap-2.5">
-                            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                <Warehouse className="size-4" />
+                    <CardHeader className="border-b border-border/50 py-3.5">
+                        <div className="flex items-center gap-2">
+                            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <Warehouse className="size-3.5" />
                             </div>
-                            <div>
-                                <CardTitle className="text-base font-semibold">
-                                    Daftar Posisi Saldo Fisik & Kebutuhan
-                                </CardTitle>
-                                <p className="text-xs text-muted-foreground">
-                                    Perhitungan saran permintaan otomatis dihitung dari selisih standar minimum terhadap saldo stok saat ini
-                                </p>
-                            </div>
+                            <CardTitle className="text-sm font-semibold">
+                                Daftar Posisi Saldo Fisik & Kebutuhan
+                            </CardTitle>
                         </div>
                     </CardHeader>
 
-                    <CardContent className="p-5">
-                        <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
-                            {items.data.map((item) => {
-                                const stock =
-                                    item.stocks[0]?.quantity ?? '0.000';
-                                const standard =
-                                    item.stock_standards[0]?.standard_quantity ?? '0.000';
-                                const suggested = Math.max(
-                                    Number(standard) - Number(stock),
-                                    0,
-                                );
-                                const isLow = Number(stock) < Number(standard);
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                                <thead className="border-b border-border/60 bg-muted/40 font-semibold text-muted-foreground uppercase tracking-wider">
+                                    <tr>
+                                        <th className="w-12 px-3 py-3 text-center">#</th>
+                                        <th className="px-4 py-3">Barang & SKU</th>
+                                        <th className="px-3 py-3 text-center">Satuan</th>
+                                        <th className="px-4 py-3 text-right">Saldo Saat Ini</th>
+                                        <th className="px-4 py-3 text-right">Standar Min</th>
+                                        <th className="px-4 py-3 text-right">Saran Permintaan</th>
+                                        <th className="px-3 py-3 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/50">
+                                    {items.data.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                                                Belum ada data barang tercatat.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        items.data.map((item, index) => {
+                                            const stock = item.stocks[0]?.quantity ?? '0.000';
+                                            const standard = item.stock_standards[0]?.standard_quantity ?? '0.000';
+                                            const suggested = Math.max(
+                                                Number(standard) - Number(stock),
+                                                0,
+                                            );
+                                            const isLow = Number(stock) < Number(standard);
+                                            const rowNumber = (currentPage - 1) * perPage + index + 1;
 
-                                return (
-                                    <article
-                                        key={item.id}
-                                        className="flex flex-col justify-between rounded-xl border border-border/70 bg-card p-4 transition-colors hover:border-border"
-                                    >
-                                        <div className="flex items-start justify-between gap-2 border-b border-border/40 pb-3">
-                                            <div className="min-w-0">
-                                                <p className="font-semibold text-foreground truncate">
-                                                    {item.name}
-                                                </p>
-                                                <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                                                    {item.sku} · {item.unit.symbol}
-                                                </p>
-                                            </div>
-                                            {isLow && (
-                                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
-                                                    <AlertCircle className="size-3" />
-                                                    Kritis
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
-                                            <div
-                                                className={`rounded-lg p-2 ${
-                                                    isLow
-                                                        ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                                                        : 'bg-muted/40 text-foreground'
-                                                }`}
-                                            >
-                                                <dt className="text-[11px] font-medium text-muted-foreground">
-                                                    Stok Saat Ini
-                                                </dt>
-                                                <dd className="mt-0.5 font-mono text-sm font-bold tabular-nums">
-                                                    {stock}
-                                                </dd>
-                                            </div>
-
-                                            <div className="rounded-lg bg-muted/40 p-2 text-foreground">
-                                                <dt className="text-[11px] font-medium text-muted-foreground">
-                                                    Standar Butik
-                                                </dt>
-                                                <dd className="mt-0.5 font-mono text-sm font-semibold tabular-nums">
-                                                    {standard}
-                                                </dd>
-                                            </div>
-
-                                            <div
-                                                className={`rounded-lg p-2 ${
-                                                    suggested > 0
-                                                        ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20'
-                                                        : 'bg-muted/40 text-muted-foreground'
-                                                }`}
-                                            >
-                                                <dt className="text-[11px] font-medium text-muted-foreground">
-                                                    Saran Minta
-                                                </dt>
-                                                <dd className="mt-0.5 font-mono text-sm font-bold tabular-nums">
-                                                    {suggested.toFixed(3)}
-                                                </dd>
-                                            </div>
-                                        </dl>
-                                    </article>
-                                );
-                            })}
+                                            return (
+                                                <tr
+                                                    key={item.id}
+                                                    className="transition-colors hover:bg-muted/20"
+                                                >
+                                                    <td className="px-3 py-3 text-center font-mono text-muted-foreground">
+                                                        {rowNumber}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        <p className="font-semibold text-foreground">
+                                                            {item.name}
+                                                        </p>
+                                                        <p className="font-mono text-[11px] text-muted-foreground">
+                                                            {item.sku}
+                                                        </p>
+                                                    </td>
+                                                    <td className="px-3 py-3 text-center font-mono text-muted-foreground">
+                                                        {item.unit.symbol}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-foreground">
+                                                        {stock}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-mono tabular-nums text-muted-foreground">
+                                                        {standard}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right font-mono tabular-nums">
+                                                        {suggested > 0 ? (
+                                                            <span className="font-bold text-amber-600 dark:text-amber-400">
+                                                                {suggested.toFixed(3)}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">-</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-3 py-3 text-center">
+                                                        {isLow ? (
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                                                                <AlertCircle className="size-3" />
+                                                                Kritis
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                                Aman
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
 
-                        <div className="mt-6">
+                        <div className="border-t border-border/50 p-3">
                             <PaginationLinks links={items.links} />
                         </div>
                     </CardContent>

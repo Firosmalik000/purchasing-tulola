@@ -1,79 +1,119 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { Calendar, ClipboardList, Plus, Store } from 'lucide-react';
+import {
+    ClipboardList,
+    Eye,
+    MoreHorizontal,
+    Pencil,
+    Plus,
+    Store,
+} from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { PageHeader } from '@/components/common/page-header';
-import { RequestStatusBadge } from '@/components/common/request-status-badge';
 import {
     PaginationLinks,
     type PaginationLink,
 } from '@/components/common/pagination-links';
+import { RequestStatusBadge } from '@/components/common/request-status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-type RequestRow = {
+type RequestItem = {
     id: number;
     number: string;
-    status: string;
-    required_date: string | null;
     created_at: string;
+    required_date?: string | null;
+    status: string;
     items_count: number;
-    store: { code: string; name: string };
+    store: { id: number; code: string; name: string };
 };
+type Store = { id: number; code: string; name: string };
 type Props = {
-    requests: { data: RequestRow[]; links: PaginationLink[] };
+    requests: { data: RequestItem[]; links: PaginationLink[]; current_page?: number; per_page?: number };
+    stores: Store[];
+    selectedStoreId: number;
     statuses: { value: string; label: string }[];
-    filters: { status: string };
+    filters: { status: string; store_id?: string };
 };
-const selectClass =
-    'h-9 rounded-md border border-input bg-card px-3 text-xs text-foreground shadow-xs transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20';
 
-export default function RequestIndex({ requests, statuses, filters }: Props) {
+export default function StoreRequestIndex({
+    requests,
+    stores,
+    selectedStoreId,
+    statuses,
+    filters,
+}: Props) {
+    const selectClass =
+        'h-8.5 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
+    const currentPage = requests.current_page || 1;
+    const perPage = requests.per_page || 15;
+
     return (
         <>
-            <Head title="Permintaan Butik — Tulola Purchasing" />
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <Head title="Permintaan Toko — Tulola Purchasing" />
+            <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Pengajuan Butik"
-                    title="Permintaan Pengadaan (PR)"
-                    description="Ajukan kebutuhan restock rutin dan pesanan khusus display perhiasan ke kantor pusat."
+                    badge="Operasional Butik"
+                    title="Permintaan Pembelian Toko"
                     actions={
-                        <Button asChild className="h-9 shadow-xs">
+                        <Button size="sm" asChild className="h-8 text-xs shadow-xs">
                             <Link href="/store/requests/create">
-                                <Plus className="mr-1.5 size-4" /> Permintaan Baru
+                                <Plus className="mr-1.5 size-3.5" />
+                                Buat Permintaan Baru
                             </Link>
                         </Button>
                     }
                 />
 
                 {/* Filter Toolbar */}
-                <Card className="border border-border/70 shadow-xs">
-                    <CardContent className="p-4">
+                <Card className="border border-border/70 shadow-2xs">
+                    <CardContent className="p-3">
                         <Form
                             action="/store/requests"
                             method="get"
-                            className="flex flex-wrap items-center gap-3"
+                            className="flex flex-wrap items-center gap-2.5"
                         >
+                            {stores.length > 1 && (
+                                <select
+                                    name="store_id"
+                                    defaultValue={selectedStoreId}
+                                    className={selectClass}
+                                    aria-label="Pilih cabang butik"
+                                >
+                                    {stores.map((s) => (
+                                        <option key={s.id} value={s.id}>
+                                            {s.name} ({s.code})
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+
                             <select
                                 name="status"
                                 defaultValue={filters.status}
                                 className={selectClass}
-                                aria-label="Filter status pengajuan"
+                                aria-label="Filter status"
                             >
                                 <option value="">Semua status pengajuan</option>
                                 {statuses.map((status) => (
-                                    <option
-                                        key={status.value}
-                                        value={status.value}
-                                    >
+                                    <option key={status.value} value={status.value}>
                                         {status.label}
                                     </option>
                                 ))}
                             </select>
-                            <Button size="sm" className="h-9 px-4 font-medium shadow-xs">
+
+                            <Button size="sm" className="h-8.5 px-3 text-xs font-medium shadow-xs">
                                 Filter
                             </Button>
                             {filters.status && (
-                                <Button variant="ghost" size="sm" className="h-9 text-xs" asChild>
+                                <Button variant="ghost" size="sm" className="h-8.5 text-xs" asChild>
                                     <Link href="/store/requests">Reset</Link>
                                 </Button>
                             )}
@@ -91,118 +131,131 @@ export default function RequestIndex({ requests, statuses, filters }: Props) {
                                 : 'Mulai buat draft permintaan pertama untuk kebutuhan butik Anda.'
                         }
                         action={
-                            <Button asChild size="sm">
+                            <Button asChild size="sm" className="h-8 text-xs">
                                 <Link href="/store/requests/create">
-                                    <Plus className="mr-1.5 size-4" />
+                                    <Plus className="mr-1.5 size-3.5" />
                                     Buat Permintaan Baru
                                 </Link>
                             </Button>
                         }
                     />
                 ) : (
-                    <div className="space-y-4">
-                        <div className="grid gap-3">
-                            {requests.data.map((request) => (
-                                <Card
-                                    key={request.id}
-                                    className="border border-border/70 shadow-2xs transition-all hover:border-amber-500/40 hover:shadow-xs"
-                                >
-                                    <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
-                                        <Link
-                                            href={`/store/requests/${request.id}`}
-                                            className="min-w-0 flex-1 space-y-1.5"
-                                        >
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 font-mono text-xs font-bold text-foreground">
+                    <Card className="overflow-hidden border border-border/70 shadow-2xs">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
+                                        <th className="py-2.5 px-3 w-12 text-center">#</th>
+                                        <th className="py-2.5 px-3">Nomor Pengajuan</th>
+                                        <th className="py-2.5 px-3">Butik Cabang</th>
+                                        <th className="py-2.5 px-3 text-center">Item</th>
+                                        <th className="py-2.5 px-3">Tanggal Dibuat</th>
+                                        <th className="py-2.5 px-3">Dibutuhkan</th>
+                                        <th className="py-2.5 px-3 text-center">Status</th>
+                                        <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/40">
+                                    {requests.data.map((request, idx) => (
+                                        <tr key={request.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
+                                                {(currentPage - 1) * perPage + idx + 1}
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                <Link
+                                                    href={`/store/requests/${request.id}`}
+                                                    className="font-mono font-bold text-foreground hover:text-primary hover:underline"
+                                                >
                                                     {request.number}
+                                                </Link>
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                <span className="font-semibold text-foreground">
+                                                    {request.store.name}
                                                 </span>
-                                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                                    <Store className="size-3" />
-                                                    {request.store.code} — {request.store.name}
+                                                <span className="text-[11px] text-muted-foreground ml-1.5 font-mono">
+                                                    ({request.store.code})
                                                 </span>
-                                            </div>
-                                            <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                                                <span>
-                                                    <strong className="text-foreground">{request.items_count}</strong> item diajukan
-                                                </span>
-                                                <span>·</span>
-                                                <span className="flex items-center gap-1">
-                                                    <Calendar className="size-3" />
-                                                    Dibuat:{' '}
-                                                    {new Date(
-                                                        request.created_at,
-                                                    ).toLocaleDateString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'short',
-                                                        year: 'numeric',
-                                                    })}
-                                                </span>
-                                                {request.required_date && (
-                                                    <>
-                                                        <span>·</span>
-                                                        <span>
-                                                            Dibutuhkan:{' '}
-                                                            {new Date(
-                                                                request.required_date,
-                                                            ).toLocaleDateString('id-ID', {
-                                                                day: 'numeric',
-                                                                month: 'short',
-                                                            })}
-                                                        </span>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </Link>
-
-                                        <div className="flex shrink-0 items-center gap-2.5">
-                                            <RequestStatusBadge
-                                                status={request.status}
-                                            />
-                                            {request.status === 'DRAFT' ? (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="h-8 text-xs font-medium hover:border-amber-500/40 hover:text-amber-900 dark:hover:text-amber-300"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/store/requests/${request.id}/edit`}
-                                                    >
-                                                        Edit Draft
-                                                    </Link>
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    size="sm"
-                                                    variant="ghost"
-                                                    className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                                                    asChild
-                                                >
-                                                    <Link
-                                                        href={`/store/requests/${request.id}`}
-                                                    >
-                                                        Detail
-                                                    </Link>
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center font-mono font-semibold">
+                                                {request.items_count}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-muted-foreground">
+                                                {new Date(request.created_at).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                    year: 'numeric',
+                                                })}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-muted-foreground">
+                                                {request.required_date
+                                                    ? new Date(request.required_date).toLocaleDateString('id-ID', {
+                                                          day: 'numeric',
+                                                          month: 'short',
+                                                          year: 'numeric',
+                                                      })
+                                                    : '-'}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <RequestStatusBadge status={request.status} />
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-7 text-muted-foreground hover:text-foreground"
+                                                        >
+                                                            <MoreHorizontal className="size-4" />
+                                                            <span className="sr-only">Aksi</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-36 text-xs">
+                                                        <DropdownMenuLabel className="text-[10px] text-muted-foreground">
+                                                            Tindakan
+                                                        </DropdownMenuLabel>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link
+                                                                href={`/store/requests/${request.id}`}
+                                                                className="flex items-center cursor-pointer"
+                                                            >
+                                                                <Eye className="mr-2 size-3.5" />
+                                                                Lihat Detail
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        {request.status === 'DRAFT' && (
+                                                            <DropdownMenuItem asChild>
+                                                                <Link
+                                                                    href={`/store/requests/${request.id}/edit`}
+                                                                    className="flex items-center cursor-pointer"
+                                                                >
+                                                                    <Pencil className="mr-2 size-3.5" />
+                                                                    Edit Draft
+                                                                </Link>
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-
-                        <PaginationLinks links={requests.links} />
-                    </div>
+                        <div className="border-t border-border/40 p-3">
+                            <PaginationLinks links={requests.links} />
+                        </div>
+                    </Card>
                 )}
             </main>
         </>
     );
 }
 
-RequestIndex.layout = {
+StoreRequestIndex.layout = {
     breadcrumbs: [
         { title: 'Portal Butik', href: '/store/dashboard' },
-        { title: 'Permintaan', href: '/store/requests' },
+        { title: 'Permintaan Toko', href: '/store/requests' },
     ],
 };
-

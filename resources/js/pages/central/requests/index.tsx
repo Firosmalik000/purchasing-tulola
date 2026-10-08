@@ -1,39 +1,54 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { ClipboardList, Search, SlidersHorizontal } from 'lucide-react';
-import { EmptyState } from '@/components/common/empty-state';
+import {
+    Calendar,
+    ClipboardList,
+    Eye,
+    Filter,
+    MoreHorizontal,
+    Search,
+} from 'lucide-react';
 import { PageHeader } from '@/components/common/page-header';
 import {
     PaginationLinks,
     type PaginationLink,
 } from '@/components/common/pagination-links';
 import { RequestStatusBadge } from '@/components/common/request-status-badge';
+import { EmptyState } from '@/components/common/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 
-type Option = { value: string; label: string };
-type RequestRow = {
+type RequestItem = {
     id: number;
     number: string;
-    status: string;
-    required_date: string | null;
     created_at: string;
+    required_date?: string | null;
+    status: string;
     items_count: number;
-    store: { code: string; name: string };
-    requester: { name: string };
+    store: { id: number; code: string; name: string };
+    requester: { id: number; name: string };
 };
 type Props = {
-    requests: { data: RequestRow[]; links: PaginationLink[] };
+    requests: { data: RequestItem[]; links: PaginationLink[]; current_page?: number; per_page?: number };
     stores: { id: number; code: string; name: string }[];
-    statuses: Option[];
-    types: Option[];
-    filters: Record<
-        'store_id' | 'status' | 'type' | 'date_from' | 'date_to' | 'keyword',
-        string
-    >;
+    statuses: { value: string; label: string }[];
+    types: { value: string; label: string }[];
+    filters: {
+        store_id: string;
+        status: string;
+        type: string;
+        date_from: string;
+        date_to: string;
+        keyword: string;
+    };
 };
-const selectClass =
-    'h-9 w-full rounded-md border border-input bg-card px-3 text-xs text-foreground shadow-xs transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20';
 
 export default function CentralRequestIndex({
     requests,
@@ -43,39 +58,44 @@ export default function CentralRequestIndex({
     filters,
 }: Props) {
     const hasActiveFilters = Boolean(
-        filters.keyword ||
-            filters.store_id ||
+        filters.store_id ||
             filters.status ||
             filters.type ||
             filters.date_from ||
-            filters.date_to,
+            filters.date_to ||
+            filters.keyword,
     );
+
+    const selectClass =
+        'h-8.5 w-full rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
+    const currentPage = requests.current_page || 1;
+    const perPage = requests.per_page || 15;
 
     return (
         <>
-            <Head title="Antrean Permintaan — Tulola Purchasing" />
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <Head title="Antrean Permintaan Butik — Tulola Purchasing" />
+            <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Verifikasi Pengadaan"
-                    title="Antrean Permintaan Butik"
-                    description="Tinjau daftar kebutuhan yang diajukan oleh butik cabang, sesuaikan kuantitas persetujuan, dan kirim ke perencanaan pembelian."
+                    badge="Antrean Masuk"
+                    title="Permintaan Pembelian Butik (PR)"
                 />
 
                 {/* Filter Toolbar */}
-                <Card className="border border-border/70 bg-card shadow-xs">
-                    <CardContent className="p-4">
+                <Card className="border border-border/70 bg-card shadow-2xs">
+                    <CardContent className="p-3">
                         <Form
                             action="/central/requests"
                             method="get"
-                            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-7"
+                            className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-[1.5fr_1fr_1fr_1fr_auto_auto_auto]"
                         >
-                            <div className="relative sm:col-span-2 xl:col-span-2">
-                                <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
+                            <div className="relative">
+                                <Search className="absolute top-2.5 left-2.5 size-3.5 text-muted-foreground" />
                                 <Input
                                     name="keyword"
                                     defaultValue={filters.keyword}
-                                    placeholder="Cari nomor, butik, PIC, atau item..."
-                                    className="h-9 pl-9 text-xs"
+                                    placeholder="Cari nomor, PIC, item..."
+                                    className="h-8.5 pl-8 text-xs"
                                 />
                             </div>
                             <div>
@@ -86,9 +106,9 @@ export default function CentralRequestIndex({
                                     aria-label="Filter butik"
                                 >
                                     <option value="">Semua butik</option>
-                                    {stores.map((store) => (
-                                        <option key={store.id} value={store.id}>
-                                            {store.code} — {store.name}
+                                    {stores.map((s) => (
+                                        <option key={s.id} value={s.id}>
+                                            {s.code} — {s.name}
                                         </option>
                                     ))}
                                 </select>
@@ -101,12 +121,9 @@ export default function CentralRequestIndex({
                                     aria-label="Filter status"
                                 >
                                     <option value="">Semua status</option>
-                                    {statuses.map((status) => (
-                                        <option
-                                            key={status.value}
-                                            value={status.value}
-                                        >
-                                            {status.label}
+                                    {statuses.map((s) => (
+                                        <option key={s.value} value={s.value}>
+                                            {s.label}
                                         </option>
                                     ))}
                                 </select>
@@ -118,48 +135,22 @@ export default function CentralRequestIndex({
                                     className={selectClass}
                                     aria-label="Filter tipe"
                                 >
-                                    <option value="">Semua tipe item</option>
-                                    {types.map((type) => (
-                                        <option key={type.value} value={type.value}>
-                                            {type.label}
+                                    <option value="">Semua tipe</option>
+                                    {types.map((t) => (
+                                        <option key={t.value} value={t.value}>
+                                            {t.label}
                                         </option>
                                     ))}
                                 </select>
                             </div>
-                            <div>
-                                <Input
-                                    name="date_from"
-                                    type="date"
-                                    defaultValue={filters.date_from}
-                                    aria-label="Tanggal mulai"
-                                    className="h-9 text-xs"
-                                />
-                            </div>
-                            <div>
-                                <Input
-                                    name="date_to"
-                                    type="date"
-                                    defaultValue={filters.date_to}
-                                    aria-label="Tanggal akhir"
-                                    className="h-9 text-xs"
-                                />
-                            </div>
-                            <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-7 xl:justify-end">
-                                <Button size="sm" className="h-9 px-4 font-medium shadow-xs">
-                                    <SlidersHorizontal className="mr-1.5 size-3.5" />
-                                    Terapkan Filter
+                            <Button size="sm" className="h-8.5 px-3 text-xs font-medium shadow-xs">
+                                Filter
+                            </Button>
+                            {hasActiveFilters && (
+                                <Button variant="ghost" size="sm" className="h-8.5 text-xs" asChild>
+                                    <Link href="/central/requests">Reset</Link>
                                 </Button>
-                                {hasActiveFilters && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-9 text-xs text-muted-foreground hover:text-foreground"
-                                        asChild
-                                    >
-                                        <Link href="/central/requests">Reset Filter</Link>
-                                    </Button>
-                                )}
-                            </div>
+                            )}
                         </Form>
                     </CardContent>
                 </Card>
@@ -170,93 +161,100 @@ export default function CentralRequestIndex({
                         title="Tidak ada antrean permintaan"
                         description={
                             hasActiveFilters
-                                ? 'Tidak ada data permintaan yang cocok dengan kriteria filter saat ini.'
-                                : 'Belum ada permintaan yang diajukan oleh butik.'
+                                ? 'Tidak ada data permintaan yang cocok dengan kriteria filter.'
+                                : 'Belum ada permintaan yang diajukan oleh cabang butik.'
                         }
                     />
                 ) : (
-                    <Card className="overflow-hidden border border-border/70 shadow-xs">
-                        <CardContent className="p-0">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                        <tr>
-                                            <th className="px-5 py-3.5">Nomor PR</th>
-                                            <th className="px-5 py-3.5">Butik Asal</th>
-                                            <th className="px-5 py-3.5">Diajukan Oleh</th>
-                                            <th className="px-5 py-3.5 text-center">Jumlah Item</th>
-                                            <th className="px-5 py-3.5">Tanggal Buat</th>
-                                            <th className="px-5 py-3.5">Status</th>
-                                            <th className="px-5 py-3.5 text-right">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border/60">
-                                        {requests.data.map((request) => (
-                                            <tr
-                                                key={request.id}
-                                                className="transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="px-5 py-4 font-mono text-xs font-bold text-foreground whitespace-nowrap">
-                                                    <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
-                                                        {request.number}
-                                                    </span>
-                                                </td>
-                                                <td className="px-5 py-4">
-                                                    <p className="font-semibold text-foreground">
-                                                        {request.store.name}
-                                                    </p>
-                                                    <span className="font-mono text-[11px] text-muted-foreground">
-                                                        {request.store.code}
-                                                    </span>
-                                                </td>
-                                                <td className="px-5 py-4 text-xs text-foreground font-medium">
-                                                    {request.requester.name}
-                                                </td>
-                                                <td className="px-5 py-4 text-center font-serif text-sm font-semibold tabular-nums text-foreground">
-                                                    <span className="inline-flex size-6 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                                                        {request.items_count}
-                                                    </span>
-                                                </td>
-                                                <td className="px-5 py-4 text-xs text-muted-foreground whitespace-nowrap">
-                                                    {new Date(
-                                                        request.created_at,
-                                                    ).toLocaleDateString(
-                                                        'id-ID',
-                                                        {
-                                                            day: 'numeric',
-                                                            month: 'short',
-                                                            year: 'numeric',
-                                                        },
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-4">
-                                                    <RequestStatusBadge
-                                                        status={request.status}
-                                                    />
-                                                </td>
-                                                <td className="px-5 py-4 text-right">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="h-8 text-xs font-medium hover:border-amber-500/40 hover:text-amber-900 dark:hover:text-amber-300"
-                                                        asChild
-                                                    >
-                                                        <Link
-                                                            href={`/central/requests/${request.id}`}
+                    <Card className="overflow-hidden border border-border/70 shadow-2xs">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
+                                        <th className="py-2.5 px-3 w-12 text-center">#</th>
+                                        <th className="py-2.5 px-3">Nomor PR</th>
+                                        <th className="py-2.5 px-3">Butik Asal</th>
+                                        <th className="py-2.5 px-3">Diajukan Oleh</th>
+                                        <th className="py-2.5 px-3 text-center">Item</th>
+                                        <th className="py-2.5 px-3">Tanggal Dibuat</th>
+                                        <th className="py-2.5 px-3 text-center">Status</th>
+                                        <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/40">
+                                    {requests.data.map((request, idx) => (
+                                        <tr key={request.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
+                                                {(currentPage - 1) * perPage + idx + 1}
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                <Link
+                                                    href={`/central/requests/${request.id}`}
+                                                    className="font-mono font-bold text-foreground hover:text-primary hover:underline"
+                                                >
+                                                    {request.number}
+                                                </Link>
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                <span className="font-semibold text-foreground">
+                                                    {request.store.name}
+                                                </span>
+                                                <span className="text-[11px] text-muted-foreground ml-1.5 font-mono">
+                                                    ({request.store.code})
+                                                </span>
+                                            </td>
+                                            <td className="py-2.5 px-3 text-foreground font-medium">
+                                                {request.requester.name}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center font-mono font-semibold">
+                                                {request.items_count}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-muted-foreground">
+                                                {new Date(request.created_at).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                    year: 'numeric',
+                                                })}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <RequestStatusBadge status={request.status} />
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-7 text-muted-foreground hover:text-foreground"
                                                         >
-                                                            Tinjau
-                                                        </Link>
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="border-t border-border/60 p-4">
-                                <PaginationLinks links={requests.links} />
-                            </div>
-                        </CardContent>
+                                                            <MoreHorizontal className="size-4" />
+                                                            <span className="sr-only">Aksi</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-36 text-xs">
+                                                        <DropdownMenuLabel className="text-[10px] text-muted-foreground">
+                                                            Tindakan
+                                                        </DropdownMenuLabel>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link
+                                                                href={`/central/requests/${request.id}`}
+                                                                className="flex items-center cursor-pointer"
+                                                            >
+                                                                <Eye className="mr-2 size-3.5" />
+                                                                Tinjau & Proses
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="border-t border-border/40 p-3">
+                            <PaginationLinks links={requests.links} />
+                        </div>
                     </Card>
                 )}
             </main>

@@ -1,10 +1,10 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import {
-    ArrowRight,
+    Eye,
     Filter,
+    MoreHorizontal,
     PackageCheck,
     Store as StoreIcon,
-    Truck,
 } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { OrderStatusBadge } from '@/components/common/order-status-badge';
@@ -13,102 +13,105 @@ import {
     PaginationLinks,
     type PaginationLink,
 } from '@/components/common/pagination-links';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-type Store = { id: number; code: string; name: string };
-type Order = {
+type IncomingSummary = {
     id: number;
     number: string;
     order_date: string;
-    expected_date: string | null;
+    expected_date?: string | null;
     status: string;
-    supplier: { code: string; name: string } | null;
     line_count: number;
     ordered_quantity: string;
     received_quantity: string;
     outstanding_quantity: string;
+    supplier?: { id: number; code: string; name: string };
 };
+type Store = { id: number; code: string; name: string };
 type Props = {
-    orders: { data: Order[]; links: PaginationLink[] };
-    stores: { id: number; code: string; name: string }[];
+    orders: { data: IncomingSummary[]; links: PaginationLink[]; current_page?: number; per_page?: number };
+    stores: Store[];
     selectedStoreId: number;
     statuses: { value: string; label: string }[];
     filters: { status: string };
 };
 
-export default function IncomingIndex({
+export default function IncomingOrderIndex({
     orders,
     stores,
     selectedStoreId,
     statuses,
     filters,
 }: Props) {
-    const activeStore = stores.find((s) => s.id === selectedStoreId);
+    const selectClass =
+        'h-8.5 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
+    const currentPage = orders.current_page || 1;
+    const perPage = orders.per_page || 15;
 
     return (
         <>
-            <Head title="Penerimaan Barang Masuk" />
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
+            <Head title="Penerimaan Barang Masuk — Tulola Purchasing" />
+            <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Logistik & Penerimaan Toko"
-                    title="Penerimaan Barang Masuk"
-                    description={`Pantau kiriman Purchase Order dari supplier untuk alokasi butik ${activeStore ? `${activeStore.code} — ${activeStore.name}` : ''}, dan verifikasi kuantitas fisik yang diterima.`}
+                    badge="Logistik & Kedatangan"
+                    title="Penerimaan Barang Masuk (Incoming PO)"
                 />
 
-                {/* Filter Toolbar Card */}
-                <Card className="border-border/70 shadow-xs">
-                    <CardContent className="p-4 sm:p-5">
+                {/* Filter Toolbar */}
+                <Card className="border border-border/70 shadow-2xs">
+                    <CardContent className="p-3">
                         <Form
                             action="/store/incoming"
                             method="get"
-                            className="flex flex-col gap-4 lg:flex-row lg:items-end"
+                            className="flex flex-wrap items-center gap-2.5"
                         >
-                            <div className="grid flex-1 gap-4 sm:grid-cols-2">
-                                <label className="grid gap-1.5 text-xs font-semibold text-foreground">
-                                    <span className="flex items-center gap-1.5">
-                                        <StoreIcon className="size-3.5 text-muted-foreground" />
-                                        Toko / Butik
-                                    </span>
-                                    <select
-                                        name="store_id"
-                                        defaultValue={selectedStoreId}
-                                        className="form-select-custom h-10 w-full"
-                                    >
-                                        {stores.map((store) => (
-                                            <option key={store.id} value={store.id}>
-                                                {store.code} — {store.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
+                            {stores.length > 1 && (
+                                <select
+                                    name="store_id"
+                                    defaultValue={selectedStoreId}
+                                    className={selectClass}
+                                    aria-label="Pilih toko"
+                                >
+                                    {stores.map((s) => (
+                                        <option key={s.id} value={s.id}>
+                                            {s.name} ({s.code})
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
 
-                                <label className="grid gap-1.5 text-xs font-semibold text-foreground">
-                                    <span className="flex items-center gap-1.5">
-                                        <Filter className="size-3.5 text-muted-foreground" />
-                                        Status Pesanan
-                                    </span>
-                                    <select
-                                        name="status"
-                                        defaultValue={filters.status}
-                                        className="form-select-custom h-10 w-full"
-                                    >
-                                        <option value="">Semua Status Pengiriman</option>
-                                        {statuses.map((status) => (
-                                            <option
-                                                key={status.value}
-                                                value={status.value}
-                                            >
-                                                {status.label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                            </div>
+                            <select
+                                name="status"
+                                defaultValue={filters.status}
+                                className={selectClass}
+                                aria-label="Filter status pengiriman"
+                            >
+                                <option value="">Semua Status Pengiriman</option>
+                                {statuses.map((status) => (
+                                    <option key={status.value} value={status.value}>
+                                        {status.label}
+                                    </option>
+                                ))}
+                            </select>
 
-                            <Button variant="outline" className="h-10 px-5 font-medium">
-                                Terapkan Filter
+                            <Button size="sm" className="h-8.5 px-3 text-xs font-medium shadow-xs">
+                                Filter
                             </Button>
+                            {filters.status && (
+                                <Button variant="ghost" size="sm" className="h-8.5 text-xs" asChild>
+                                    <Link href="/store/incoming">Reset</Link>
+                                </Button>
+                            )}
                         </Form>
                     </CardContent>
                 </Card>
@@ -117,129 +120,125 @@ export default function IncomingIndex({
                     <EmptyState
                         icon={PackageCheck}
                         title="Tidak ada kiriman barang untuk butik ini"
-                        description="Purchase Order pusat yang mengalokasikan barang ke toko Anda dan berstatus dikirim akan tampil di sini untuk diverifikasi."
+                        description="PO pusat yang mengalokasikan barang ke toko Anda dan berstatus dikirim akan tampil di sini untuk diverifikasi."
                     />
                 ) : (
-                    <div className="space-y-3.5">
-                        {orders.data.map((order) => {
-                            const orderedNum = Number(order.ordered_quantity) || 1;
-                            const receivedNum = Number(order.received_quantity) || 0;
-                            const percent = Math.min(Math.round((receivedNum / orderedNum) * 100), 100);
-                            const isComplete = Number(order.outstanding_quantity) <= 0;
-
-                            return (
-                                <Card
-                                    key={order.id}
-                                    className="border-border/70 shadow-xs transition-colors hover:border-border"
-                                >
-                                    <CardContent className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1.8fr)_repeat(3,minmax(6.5rem,0.8fr))_auto] lg:items-center">
-                                        <div className="min-w-0 space-y-1.5">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <Link
-                                                    href={`/store/incoming/${order.id}?store_id=${selectedStoreId}`}
-                                                    className="font-mono text-sm font-bold text-primary hover:underline"
-                                                >
-                                                    {order.number}
-                                                </Link>
-                                                <OrderStatusBadge
-                                                    status={order.status}
-                                                />
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">
-                                                Supplier:{' '}
-                                                <span className="font-medium text-foreground">
-                                                    {order.supplier?.name ?? 'Pusat / Internal'}
-                                                </span>{' '}
-                                                · {order.line_count} baris alokasi · Tgl Order: {order.order_date.slice(0, 10)}
-                                            </p>
-                                            {/* Receiving progress indicator */}
-                                            <div className="flex items-center gap-2 pt-1">
-                                                <div className="h-1.5 w-32 overflow-hidden rounded-full bg-muted">
-                                                    <div
-                                                        className={`h-full rounded-full transition-all ${
-                                                            isComplete
-                                                                ? 'bg-emerald-500'
-                                                                : 'bg-amber-500'
-                                                        }`}
-                                                        style={{ width: `${percent}%` }}
-                                                    />
-                                                </div>
-                                                <span className="text-[11px] font-medium text-muted-foreground">
-                                                    {percent}% diterima
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <QuantityBox
-                                            label="Total Dialokasi"
-                                            value={order.ordered_quantity}
-                                            tone="neutral"
-                                        />
-
-                                        <QuantityBox
-                                            label="Sudah Diterima"
-                                            value={order.received_quantity}
-                                            tone="success"
-                                        />
-
-                                        <QuantityBox
-                                            label="Outstanding Sisa"
-                                            value={order.outstanding_quantity}
-                                            tone={isComplete ? 'neutral' : 'warning'}
-                                        />
-
-                                        <div className="flex items-center justify-end">
-                                            <Button
-                                                size="sm"
-                                                className="gap-2 font-medium"
-                                                asChild
-                                            >
-                                                <Link
-                                                    href={`/store/incoming/${order.id}?store_id=${selectedStoreId}`}
-                                                >
-                                                    Buka Penerimaan
-                                                    <ArrowRight className="size-3.5" />
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })}
-                        <PaginationLinks links={orders.links} />
-                    </div>
+                    <Card className="overflow-hidden border border-border/70 shadow-2xs">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
+                                        <th className="py-2.5 px-3 w-12 text-center">#</th>
+                                        <th className="py-2.5 px-3">Nomor PO</th>
+                                        <th className="py-2.5 px-3">Supplier</th>
+                                        <th className="py-2.5 px-3">Estimasi Kedatangan</th>
+                                        <th className="py-2.5 px-3 text-center">Dialokasikan</th>
+                                        <th className="py-2.5 px-3 text-center">Diterima</th>
+                                        <th className="py-2.5 px-3 text-center">Sisa (Outstanding)</th>
+                                        <th className="py-2.5 px-3 text-center">Status</th>
+                                        <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/40">
+                                    {orders.data.map((order, idx) => {
+                                        const isComplete = Number(order.outstanding_quantity) <= 0;
+                                        return (
+                                            <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+                                                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
+                                                    {(currentPage - 1) * perPage + idx + 1}
+                                                </td>
+                                                <td className="py-2.5 px-3">
+                                                    <Link
+                                                        href={`/store/incoming/${order.id}?store_id=${selectedStoreId}`}
+                                                        className="font-mono font-bold text-foreground hover:text-primary hover:underline"
+                                                    >
+                                                        {order.number}
+                                                    </Link>
+                                                </td>
+                                                <td className="py-2.5 px-3 font-medium text-foreground">
+                                                    {order.supplier?.name ?? '-'}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-muted-foreground">
+                                                    {order.expected_date
+                                                        ? new Date(order.expected_date).toLocaleDateString('id-ID', {
+                                                              day: 'numeric',
+                                                              month: 'short',
+                                                              year: 'numeric',
+                                                          })
+                                                        : '-'}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-center font-mono font-semibold">
+                                                    {rtrim(order.ordered_quantity)}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                                    {rtrim(order.received_quantity)}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-center font-mono font-bold">
+                                                    {isComplete ? (
+                                                        <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-500/30">
+                                                            Lengkap
+                                                        </Badge>
+                                                    ) : (
+                                                        <span className="text-amber-600 dark:text-amber-400">
+                                                            {rtrim(order.outstanding_quantity)}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-center">
+                                                    <OrderStatusBadge status={order.status} />
+                                                </td>
+                                                <td className="py-2.5 px-3 text-center">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="size-7 text-muted-foreground hover:text-foreground"
+                                                            >
+                                                                <MoreHorizontal className="size-4" />
+                                                                <span className="sr-only">Aksi</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-36 text-xs">
+                                                            <DropdownMenuLabel className="text-[10px] text-muted-foreground">
+                                                                Tindakan
+                                                            </DropdownMenuLabel>
+                                                            <DropdownMenuItem asChild>
+                                                                <Link
+                                                                    href={`/store/incoming/${order.id}?store_id=${selectedStoreId}`}
+                                                                    className="flex items-center cursor-pointer"
+                                                                >
+                                                                    <Eye className="mr-2 size-3.5" />
+                                                                    Verifikasi Fisik
+                                                                </Link>
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="border-t border-border/40 p-3">
+                            <PaginationLinks links={orders.links} />
+                        </div>
+                    </Card>
                 )}
             </main>
         </>
     );
 }
 
-function QuantityBox({
-    label,
-    value,
-    tone = 'neutral',
-}: {
-    label: string;
-    value: string;
-    tone?: 'neutral' | 'success' | 'warning';
-}) {
-    const toneStyles = {
-        neutral: 'bg-muted/40 text-foreground',
-        success: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20',
-        warning: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 font-bold',
-    }[tone];
-
-    return (
-        <div className={`rounded-lg p-2.5 text-center ${toneStyles}`}>
-            <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-            <p className="mt-0.5 font-mono text-sm tabular-nums">{value}</p>
-        </div>
-    );
+function rtrim(val: string | number) {
+    const s = String(val);
+    return s.includes('.') ? s.replace(/\.?0+$/, '') : s;
 }
 
-IncomingIndex.layout = {
+IncomingOrderIndex.layout = {
     breadcrumbs: [
-        { title: 'Portal Toko', href: '/store/dashboard' },
-        { title: 'Barang Masuk', href: '#' },
+        { title: 'Portal Butik', href: '/store/dashboard' },
+        { title: 'Barang Masuk', href: '/store/incoming' },
     ],
 };

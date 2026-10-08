@@ -1,6 +1,12 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { Search, ShoppingCart } from 'lucide-react';
-import { EmptyState } from '@/components/common/empty-state';
+import {
+    Eye,
+    Filter,
+    ListChecks,
+    MoreHorizontal,
+    Search,
+    ShoppingCart,
+} from 'lucide-react';
 import { MoneyDisplay } from '@/components/common/money-display';
 import { OrderStatusBadge } from '@/components/common/order-status-badge';
 import { PageHeader } from '@/components/common/page-header';
@@ -8,28 +14,34 @@ import {
     PaginationLinks,
     type PaginationLink,
 } from '@/components/common/pagination-links';
+import { EmptyState } from '@/components/common/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 
 type Order = {
     id: number;
     number: string;
-    status: string;
     order_date: string;
+    status: string;
     items_count: number;
-    grand_total: string | null;
-    supplier: { code: string; name: string } | null;
-    creator: { name: string };
+    grand_total: string | number | null;
+    supplier?: { id: number; code: string; name: string } | null;
+    creator: { id: number; name: string };
 };
 type Props = {
-    orders: { data: Order[]; links: PaginationLink[] };
+    orders: { data: Order[]; links: PaginationLink[]; current_page?: number; per_page?: number };
     suppliers: { id: number; code: string; name: string }[];
     statuses: { value: string; label: string }[];
     filters: { status: string; supplier_id: string; keyword: string };
 };
-const selectClass =
-    'h-9 w-full rounded-md border border-input bg-card px-3 text-xs text-foreground shadow-xs transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20';
 
 export default function OrderIndex({
     orders,
@@ -38,42 +50,47 @@ export default function OrderIndex({
     filters,
 }: Props) {
     const hasActiveFilters = Boolean(
-        filters.keyword || filters.supplier_id || filters.status,
+        filters.status || filters.supplier_id || filters.keyword,
     );
+
+    const selectClass =
+        'h-8.5 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+
+    const currentPage = orders.current_page || 1;
+    const perPage = orders.per_page || 15;
 
     return (
         <>
             <Head title="Pesanan Pembelian (PO) — Tulola Purchasing" />
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
                     badge="Manajemen PO"
                     title="Pesanan Pembelian (PO)"
-                    description="Pantau seluruh Purchase Order ke rekanan supplier, penetapan harga, termin pembayaran, dan pemenuhan barang."
                     actions={
-                        <Button asChild className="h-9 shadow-xs">
+                        <Button size="sm" asChild className="h-8 shadow-xs text-xs">
                             <Link href="/central/purchase-planning">
-                                <ShoppingCart className="mr-1.5 size-4" />
-                                Buat PO Baru via Planning
+                                <ListChecks className="mr-1.5 size-3.5" />
+                                Planning & Terbitkan PO
                             </Link>
                         </Button>
                     }
                 />
 
                 {/* Filter Toolbar */}
-                <Card className="border border-border/70 shadow-xs">
-                    <CardContent className="p-4">
+                <Card className="border border-border/70 shadow-2xs">
+                    <CardContent className="p-3">
                         <Form
                             action="/central/orders"
                             method="get"
-                            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[1fr_240px_180px_auto_auto]"
+                            className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-[1fr_220px_180px_auto_auto]"
                         >
                             <div className="relative">
-                                <Search className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
+                                <Search className="absolute top-2.5 left-2.5 size-3.5 text-muted-foreground" />
                                 <Input
                                     name="keyword"
                                     defaultValue={filters.keyword}
-                                    placeholder="Cari nomor PO atau nama supplier..."
-                                    className="h-9 pl-9 text-xs"
+                                    placeholder="Cari nomor PO atau supplier..."
+                                    className="h-8.5 pl-8 text-xs"
                                 />
                             </div>
                             <div>
@@ -83,13 +100,10 @@ export default function OrderIndex({
                                     className={selectClass}
                                     aria-label="Filter supplier"
                                 >
-                                    <option value="">Semua rekanan supplier</option>
-                                    {suppliers.map((supplier) => (
-                                        <option
-                                            key={supplier.id}
-                                            value={supplier.id}
-                                        >
-                                            {supplier.code} — {supplier.name}
+                                    <option value="">Semua supplier</option>
+                                    {suppliers.map((s) => (
+                                        <option key={s.id} value={s.id}>
+                                            {s.code} — {s.name}
                                         </option>
                                     ))}
                                 </select>
@@ -102,21 +116,18 @@ export default function OrderIndex({
                                     aria-label="Filter status"
                                 >
                                     <option value="">Semua status PO</option>
-                                    {statuses.map((status) => (
-                                        <option
-                                            key={status.value}
-                                            value={status.value}
-                                        >
-                                            {status.label}
+                                    {statuses.map((s) => (
+                                        <option key={s.value} value={s.value}>
+                                            {s.label}
                                         </option>
                                     ))}
                                 </select>
                             </div>
-                            <Button size="sm" className="h-9 px-4 font-medium shadow-xs">
-                                Terapkan Filter
+                            <Button size="sm" className="h-8.5 px-3 text-xs font-medium shadow-xs">
+                                Filter
                             </Button>
                             {hasActiveFilters && (
-                                <Button variant="ghost" size="sm" className="h-9 text-xs" asChild>
+                                <Button variant="ghost" size="sm" className="h-8.5 text-xs" asChild>
                                     <Link href="/central/orders">Reset</Link>
                                 </Button>
                             )}
@@ -131,10 +142,10 @@ export default function OrderIndex({
                         description={
                             hasActiveFilters
                                 ? 'Tidak ada pesanan yang sesuai dengan kriteria filter.'
-                                : 'Pilih kebutuhan yang disetujui di Purchase Planning untuk membuat PO perdana ke supplier.'
+                                : 'Pilih kebutuhan yang disetujui di Purchase Planning untuk membuat PO perdana.'
                         }
                         action={
-                            <Button asChild size="sm">
+                            <Button asChild size="sm" className="h-8 text-xs">
                                 <Link href="/central/purchase-planning">
                                     Buka Purchase Planning
                                 </Link>
@@ -142,99 +153,106 @@ export default function OrderIndex({
                         }
                     />
                 ) : (
-                    <Card className="overflow-hidden border border-border/70 shadow-xs">
-                        <CardContent className="p-0">
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="border-b border-border/80 bg-muted/40 text-[11px] font-bold tracking-wider text-muted-foreground uppercase">
-                                        <tr>
-                                            <th className="px-5 py-3.5">Nomor PO</th>
-                                            <th className="px-5 py-3.5">Supplier Rekanan</th>
-                                            <th className="px-5 py-3.5">Tanggal Order</th>
-                                            <th className="px-5 py-3.5 text-center">Jumlah Item</th>
-                                            <th className="px-5 py-3.5 text-right">Nilai Total</th>
-                                            <th className="px-5 py-3.5">Status</th>
-                                            <th className="px-5 py-3.5 text-right">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border/60">
-                                        {orders.data.map((order) => (
-                                            <tr
-                                                key={order.id}
-                                                className="transition-colors hover:bg-muted/30"
-                                            >
-                                                <td className="px-5 py-4 font-mono text-xs font-bold whitespace-nowrap">
-                                                    <span className="rounded-md border border-border/60 bg-muted/40 px-2 py-1">
-                                                        {order.number}
-                                                    </span>
-                                                    <p className="mt-1 text-[11px] font-normal text-muted-foreground">
-                                                        Oleh: {order.creator.name}
-                                                    </p>
-                                                </td>
-                                                <td className="px-5 py-4">
-                                                    {order.supplier ? (
-                                                        <>
-                                                            <p className="font-semibold text-foreground">
-                                                                {order.supplier.name}
-                                                            </p>
-                                                            <span className="font-mono text-[11px] text-muted-foreground">
-                                                                {order.supplier.code}
-                                                            </span>
-                                                        </>
-                                                    ) : (
-                                                        <span className="text-xs italic text-muted-foreground">
-                                                            Belum ditentukan
+                    <Card className="border-border/70 shadow-2xs overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
+                                        <th className="py-2.5 px-3 w-12 text-center">#</th>
+                                        <th className="py-2.5 px-3">Nomor PO</th>
+                                        <th className="py-2.5 px-3">Supplier Rekanan</th>
+                                        <th className="py-2.5 px-3">Tanggal Order</th>
+                                        <th className="py-2.5 px-3 text-center">Item</th>
+                                        <th className="py-2.5 px-3 text-right">Nilai Total</th>
+                                        <th className="py-2.5 px-3 text-center">Status</th>
+                                        <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/40">
+                                    {orders.data.map((order, idx) => (
+                                        <tr key={order.id} className="hover:bg-muted/30 transition-colors">
+                                            <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
+                                                {(currentPage - 1) * perPage + idx + 1}
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                <Link
+                                                    href={`/central/orders/${order.id}`}
+                                                    className="font-mono font-bold text-foreground hover:text-primary hover:underline"
+                                                >
+                                                    {order.number}
+                                                </Link>
+                                                <div className="text-[11px] text-muted-foreground mt-0.5">
+                                                    Oleh: {order.creator.name}
+                                                </div>
+                                            </td>
+                                            <td className="py-2.5 px-3">
+                                                {order.supplier ? (
+                                                    <div>
+                                                        <span className="font-semibold text-foreground">
+                                                            {order.supplier.name}
                                                         </span>
-                                                    )}
-                                                </td>
-                                                <td className="px-5 py-4 text-xs text-muted-foreground whitespace-nowrap">
-                                                    {new Date(order.order_date).toLocaleDateString('id-ID', {
-                                                        day: 'numeric',
-                                                        month: 'short',
-                                                        year: 'numeric',
-                                                    })}
-                                                </td>
-                                                <td className="px-5 py-4 text-center font-serif text-sm font-semibold tabular-nums text-foreground">
-                                                    <span className="inline-flex size-6 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                                                        {order.items_count}
+                                                        <span className="text-[11px] text-muted-foreground ml-1.5 font-mono">
+                                                            ({order.supplier.code})
+                                                        </span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="italic text-muted-foreground text-[11px]">
+                                                        Belum ditentukan
                                                     </span>
-                                                </td>
-                                                <td className="px-5 py-4 text-right font-mono font-bold text-foreground">
-                                                    <MoneyDisplay
-                                                        value={
-                                                            order.grand_total ??
-                                                            0
-                                                        }
-                                                    />
-                                                </td>
-                                                <td className="px-5 py-4">
-                                                    <OrderStatusBadge
-                                                        status={order.status}
-                                                    />
-                                                </td>
-                                                <td className="px-5 py-4 text-right">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="h-8 text-xs font-medium hover:border-amber-500/40 hover:text-amber-900 dark:hover:text-amber-300"
-                                                        asChild
-                                                    >
-                                                        <Link
-                                                            href={`/central/orders/${order.id}`}
+                                                )}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-muted-foreground">
+                                                {new Date(order.order_date).toLocaleDateString('id-ID', {
+                                                    day: 'numeric',
+                                                    month: 'short',
+                                                    year: 'numeric',
+                                                })}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center font-mono font-semibold">
+                                                {order.items_count}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-right font-mono font-bold text-foreground">
+                                                <MoneyDisplay value={order.grand_total ?? 0} />
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <OrderStatusBadge status={order.status} />
+                                            </td>
+                                            <td className="py-2.5 px-3 text-center">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-7 text-muted-foreground hover:text-foreground"
                                                         >
-                                                            Detail PO
-                                                        </Link>
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="border-t border-border/60 p-4">
-                                <PaginationLinks links={orders.links} />
-                            </div>
-                        </CardContent>
+                                                            <MoreHorizontal className="size-4" />
+                                                            <span className="sr-only">Aksi</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-36 text-xs">
+                                                        <DropdownMenuLabel className="text-[10px] text-muted-foreground">
+                                                            Tindakan
+                                                        </DropdownMenuLabel>
+                                                        <DropdownMenuItem asChild>
+                                                            <Link
+                                                                href={`/central/orders/${order.id}`}
+                                                                className="flex items-center cursor-pointer"
+                                                            >
+                                                                <Eye className="mr-2 size-3.5" />
+                                                                Lihat Detail
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div className="border-t border-border/40 p-3">
+                            <PaginationLinks links={orders.links} />
+                        </div>
                     </Card>
                 )}
             </main>
@@ -245,6 +263,6 @@ export default function OrderIndex({
 OrderIndex.layout = {
     breadcrumbs: [
         { title: 'Portal Pusat', href: '/central/dashboard' },
-        { title: 'Pesanan (PO)', href: '/central/orders' },
+        { title: 'Pesanan Pembelian', href: '/central/orders' },
     ],
 };

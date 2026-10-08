@@ -25,11 +25,14 @@ Route::inertia('/', 'welcome')->name('home');
 Route::get('invitation/{token}', [InvitationController::class, 'show'])->name('invitation.accept');
 Route::post('invitation/{token}', [InvitationController::class, 'update'])->name('invitation.update');
 
+use App\Http\Controllers\Central\CentralDashboardController;
+use App\Http\Controllers\Store\StoreDashboardController;
+
 Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
     Route::middleware('central')->prefix('central')->name('central.')->group(function () {
-        Route::inertia('dashboard', 'central/dashboard')->name('dashboard');
+        Route::get('dashboard', CentralDashboardController::class)->name('dashboard');
         Route::resource('stores', StoreController::class)->only(['index', 'store', 'update']);
         Route::resource('users', UserController::class)->only(['index', 'store', 'update']);
         Route::post('stores/{store}/users', [StoreUserController::class, 'store'])->name('stores.users.store');
@@ -60,7 +63,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     });
 
     Route::middleware('store')->prefix('store')->name('store.')->group(function () {
-        Route::inertia('dashboard', 'store/dashboard')->name('dashboard');
+        Route::get('dashboard', StoreDashboardController::class)->name('dashboard');
         Route::get('inventory', [StoreInventoryController::class, 'index'])->name('inventory.index');
         Route::get('incoming', [IncomingOrderController::class, 'index'])->name('incoming.index');
         Route::get('incoming/{purchase_order}', [IncomingOrderController::class, 'show'])->name('incoming.show');

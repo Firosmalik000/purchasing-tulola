@@ -83,7 +83,6 @@ export default function ReportIndex({
                 <PageHeader
                     badge="Pusat Analisis & Audit"
                     title="Laporan & Rekapitulasi"
-                    description="Eksplorasi data transaksi purchasing, riwayat penerimaan barang, pergerakan saldo persediaan, dan kepatuhan standar toko."
                     actions={
                         <div className="flex flex-wrap items-center gap-2.5">
                             <Button variant="outline" asChild>

@@ -2,13 +2,13 @@ import { Form, Head } from '@inertiajs/react';
 import {
     Boxes,
     Layers,
+    MoreHorizontal,
+    Pencil,
     Plus,
     Ruler,
     Search,
-    Sparkles,
-    Tag,
 } from 'lucide-react';
-import { EditDetails } from '@/components/common/edit-details';
+import { useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
 import { PageHeader } from '@/components/common/page-header';
 import {
@@ -20,6 +20,21 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -39,7 +54,7 @@ type Item = {
     unit: Option;
 };
 type Props = {
-    items: { data: Item[]; links: PaginationLink[] };
+    items: { data: Item[]; links: PaginationLink[]; current_page?: number; per_page?: number };
     categories: Option[];
     units: Option[];
     filters: { search: string };
@@ -54,275 +69,324 @@ export default function ItemIndex({
     const activeCategories = categories.filter((item) => item.is_active);
     const activeUnits = units.filter((item) => item.is_active);
 
+    const [createItemOpen, setCreateItemOpen] = useState(false);
+    const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+    const [createUnitOpen, setCreateUnitOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<Item | null>(null);
+
+    const currentPage = items.current_page || 1;
+    const perPage = items.per_page || 15;
+
     return (
         <>
-            <Head title="Master Katalog Item & Material" />
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
+            <Head title="Master Katalog Item & Material — Tulola Purchasing" />
+            <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Data Master Perhiasan & Bahan"
-                    title="Master Item & Material"
-                    description="Kelola katalog produk jadi, bahan baku emas/perak, batu permata, dan kemasan butik beserta standar satuan dan kategorisasinya."
+                    badge="Data Master"
+                    title="Katalog Master Item"
+                    actions={
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs"
+                                onClick={() => setCreateUnitOpen(true)}
+                            >
+                                <Ruler className="mr-1.5 size-3.5 text-muted-foreground" />
+                                Satuan Ukur
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-xs"
+                                onClick={() => setCreateCategoryOpen(true)}
+                            >
+                                <Layers className="mr-1.5 size-3.5 text-muted-foreground" />
+                                Kategori
+                            </Button>
+                            <Button
+                                size="sm"
+                                className="h-8 text-xs shadow-xs"
+                                onClick={() => setCreateItemOpen(true)}
+                            >
+                                <Plus className="mr-1.5 size-3.5" />
+                                Tambah Item
+                            </Button>
+                        </div>
+                    }
                 />
 
-                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_26rem]">
-                    {/* Left: Items List */}
-                    <Card className="border-border/70 shadow-xs">
-                        <CardHeader className="border-b border-border/50 pb-4">
-                            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                        <Boxes className="size-4" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-base font-semibold">
-                                            Daftar Katalog Item
-                                        </CardTitle>
-                                        <p className="text-xs text-muted-foreground">
-                                            {items.data.length} item ditampilkan pada halaman ini
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <Form action="/central/items" method="get">
-                                    <div className="relative">
-                                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                        <Input
-                                            name="search"
-                                            defaultValue={filters.search}
-                                            placeholder="Cari SKU atau nama item..."
-                                            aria-label="Cari item"
-                                            className="h-9 w-full pl-9 sm:w-64"
-                                        />
-                                    </div>
-                                </Form>
+                {/* Main Full-Width Data Table Card */}
+                <Card className="border-border/70 shadow-2xs">
+                    <CardHeader className="border-b border-border/40 py-3 px-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-2">
+                                <Boxes className="size-4 text-primary" />
+                                <CardTitle className="text-sm font-semibold">
+                                    Daftar Item ({items.data.length})
+                                </CardTitle>
                             </div>
-                        </CardHeader>
 
-                        <CardContent className="p-0">
-                            {items.data.length === 0 ? (
-                                <div className="p-8">
-                                    <EmptyState
-                                        icon={Boxes}
-                                        title="Belum ada item dalam katalog"
-                                        description="Gunakan panel formulir di sisi kanan untuk mendaftarkan item atau material baru."
+                            <Form action="/central/items" method="get">
+                                <div className="relative">
+                                    <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                                    <Input
+                                        name="search"
+                                        defaultValue={filters.search}
+                                        placeholder="Cari SKU atau nama item..."
+                                        aria-label="Cari item"
+                                        className="h-8 w-full pl-8 sm:w-64 text-xs"
                                     />
                                 </div>
-                            ) : (
-                                <>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-sm">
-                                            <thead className="border-b border-border/60 bg-muted/30 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                                <tr>
-                                                    <th className="px-5 py-3.5">Kode SKU</th>
-                                                    <th className="px-5 py-3.5">Nama Item / Perhiasan</th>
-                                                    <th className="px-4 py-3.5">Kategori</th>
-                                                    <th className="px-4 py-3.5">Satuan</th>
-                                                    <th className="px-5 py-3.5 text-center">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-border/50">
-                                                {items.data.map((item) => (
-                                                    <tr
-                                                        key={item.id}
-                                                        className="transition-colors hover:bg-muted/20"
+                            </Form>
+                        </div>
+                    </CardHeader>
+
+                    <CardContent className="p-0">
+                        {items.data.length === 0 ? (
+                            <div className="p-8">
+                                <EmptyState
+                                    icon={Boxes}
+                                    title="Belum ada item dalam katalog"
+                                    description="Gunakan tombol Tambah Item untuk mendaftarkan perhiasan atau material baru."
+                                />
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
+                                            <th className="py-2.5 px-3 w-12 text-center">#</th>
+                                            <th className="py-2.5 px-3">Kode SKU</th>
+                                            <th className="py-2.5 px-3">Nama Item / Perhiasan</th>
+                                            <th className="py-2.5 px-3">Kategori</th>
+                                            <th className="py-2.5 px-3">Satuan</th>
+                                            <th className="py-2.5 px-3 text-center">Status</th>
+                                            <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border/40">
+                                        {items.data.map((item, idx) => (
+                                            <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                                                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
+                                                    {(currentPage - 1) * perPage + idx + 1}
+                                                </td>
+                                                <td className="py-2.5 px-3 font-mono text-[11px] font-semibold text-primary">
+                                                    {item.sku}
+                                                </td>
+                                                <td className="py-2.5 px-3 font-semibold text-foreground">
+                                                    {item.name}
+                                                </td>
+                                                <td className="py-2.5 px-3">
+                                                    <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
+                                                        {item.category.name}
+                                                    </span>
+                                                </td>
+                                                <td className="py-2.5 px-3 font-mono text-muted-foreground">
+                                                    {item.unit.symbol ?? item.unit.name}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-center">
+                                                    <Badge
+                                                        variant={item.is_active ? 'default' : 'secondary'}
+                                                        className="text-[10px]"
                                                     >
-                                                        <td className="px-5 py-3.5 font-mono text-xs font-semibold text-primary">
-                                                            {item.sku}
-                                                        </td>
-                                                        <td className="px-5 py-3.5">
-                                                            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                                                                <span className="font-semibold text-foreground">
-                                                                    {item.name}
-                                                                </span>
-                                                                <EditDetails label="Edit data item">
-                                                                    <Form
-                                                                        action={`/central/items/${item.id}`}
-                                                                        method="put"
-                                                                        className="grid min-w-72 gap-2.5 p-1"
-                                                                    >
-                                                                        {({
-                                                                            processing,
-                                                                            errors,
-                                                                        }) => (
-                                                                            <>
-                                                                                <div className="space-y-1">
-                                                                                    <Label className="text-xs">SKU</Label>
-                                                                                    <Input
-                                                                                        name="sku"
-                                                                                        defaultValue={item.sku}
-                                                                                        required
-                                                                                        className="h-8 text-xs font-mono"
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="space-y-1">
-                                                                                    <Label className="text-xs">Nama Item</Label>
-                                                                                    <Input
-                                                                                        name="name"
-                                                                                        defaultValue={item.name}
-                                                                                        required
-                                                                                        className="h-8 text-xs"
-                                                                                    />
-                                                                                </div>
-                                                                                <div className="space-y-1">
-                                                                                    <Label className="text-xs">Kategori</Label>
-                                                                                    <select
-                                                                                        name="item_category_id"
-                                                                                        defaultValue={item.category.id}
-                                                                                        className="form-select-custom h-8 w-full text-xs"
-                                                                                    >
-                                                                                        {activeCategories.map((option) => (
-                                                                                            <option
-                                                                                                key={option.id}
-                                                                                                value={option.id}
-                                                                                            >
-                                                                                                {option.name}
-                                                                                            </option>
-                                                                                        ))}
-                                                                                    </select>
-                                                                                </div>
-                                                                                <div className="space-y-1">
-                                                                                    <Label className="text-xs">Satuan</Label>
-                                                                                    <select
-                                                                                        name="unit_id"
-                                                                                        defaultValue={item.unit.id}
-                                                                                        className="form-select-custom h-8 w-full text-xs"
-                                                                                    >
-                                                                                        {activeUnits.map((option) => (
-                                                                                            <option
-                                                                                                key={option.id}
-                                                                                                value={option.id}
-                                                                                            >
-                                                                                                {option.name} ({option.symbol})
-                                                                                            </option>
-                                                                                        ))}
-                                                                                    </select>
-                                                                                </div>
-                                                                                <input
-                                                                                    type="hidden"
-                                                                                    name="is_active"
-                                                                                    value="0"
-                                                                                />
-                                                                                <label className="flex items-center gap-2 pt-1 text-xs font-medium">
-                                                                                    <Checkbox
-                                                                                        name="is_active"
-                                                                                        value="1"
-                                                                                        defaultChecked={item.is_active}
-                                                                                    />{' '}
-                                                                                    Item Aktif Digunakan
-                                                                                </label>
-                                                                                <InputError
-                                                                                    message={
-                                                                                        errors.sku ||
-                                                                                        errors.name ||
-                                                                                        errors.item_category_id ||
-                                                                                        errors.unit_id
-                                                                                    }
-                                                                                />
-                                                                                <Button
-                                                                                    size="sm"
-                                                                                    className="mt-2 h-8 font-medium"
-                                                                                    disabled={processing}
-                                                                                >
-                                                                                    Simpan Perubahan
-                                                                                </Button>
-                                                                            </>
-                                                                        )}
-                                                                    </Form>
-                                                                </EditDetails>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3.5 text-xs text-muted-foreground">
-                                                            <span className="rounded-md bg-muted px-2 py-0.5 font-medium text-foreground">
-                                                                {item.category.name}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3.5 font-mono text-xs text-muted-foreground">
-                                                            {item.unit.symbol}
-                                                        </td>
-                                                        <td className="px-5 py-3.5 text-center">
-                                                            <Badge
-                                                                variant={item.is_active ? 'default' : 'secondary'}
-                                                                className="text-[10px]"
+                                                        {item.is_active ? 'Aktif' : 'Nonaktif'}
+                                                    </Badge>
+                                                </td>
+                                                <td className="py-2.5 px-3 text-center">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="size-7 text-muted-foreground hover:text-foreground"
                                                             >
-                                                                {item.is_active ? 'Aktif' : 'Nonaktif'}
-                                                            </Badge>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                                <MoreHorizontal className="size-4" />
+                                                                <span className="sr-only">Aksi</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="w-36 text-xs">
+                                                            <DropdownMenuLabel className="text-[10px] text-muted-foreground">
+                                                                Pilihan
+                                                            </DropdownMenuLabel>
+                                                            <DropdownMenuItem
+                                                                onClick={() => setEditingItem(item)}
+                                                                className="cursor-pointer"
+                                                            >
+                                                                <Pencil className="mr-2 size-3.5" />
+                                                                Edit Item
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        <div className="border-t border-border/40 p-3">
+                            <PaginationLinks links={items.links} />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Dialog: Create Item */}
+                <Dialog open={createItemOpen} onOpenChange={setCreateItemOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-base font-semibold">
+                                Tambah Item Katalog Baru
+                            </DialogTitle>
+                        </DialogHeader>
+                        <Form
+                            action="/central/items"
+                            method="post"
+                            className="space-y-3 pt-2"
+                            onSuccess={() => setCreateItemOpen(false)}
+                            resetOnSuccess
+                        >
+                            {({ errors, processing }) => (
+                                <>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Kode SKU *</Label>
+                                        <Input
+                                            name="sku"
+                                            className="h-8.5 font-mono text-xs"
+                                            placeholder="JW-RNG-001"
+                                            required
+                                        />
+                                        <InputError message={errors.sku} />
                                     </div>
-                                    <div className="p-4 border-t border-border/50">
-                                        <PaginationLinks links={items.links} />
+
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">Nama Item / Material *</Label>
+                                        <Input
+                                            name="name"
+                                            className="h-8.5 text-xs"
+                                            placeholder="Cincin Subeng Perak"
+                                            required
+                                        />
+                                        <InputError message={errors.name} />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">Kategori *</Label>
+                                            <select
+                                                name="item_category_id"
+                                                className="form-select-custom h-8.5 w-full text-xs"
+                                                required
+                                            >
+                                                <option value="">Pilih Kategori</option>
+                                                {activeCategories.map((c) => (
+                                                    <option key={c.id} value={c.id}>
+                                                        {c.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <InputError message={errors.item_category_id} />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">Satuan Standar *</Label>
+                                            <select
+                                                name="unit_id"
+                                                className="form-select-custom h-8.5 w-full text-xs"
+                                                required
+                                            >
+                                                <option value="">Pilih Satuan</option>
+                                                {activeUnits.map((u) => (
+                                                    <option key={u.id} value={u.id}>
+                                                        {u.name} ({u.symbol})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <InputError message={errors.unit_id} />
+                                        </div>
+                                    </div>
+
+                                    <label className="flex items-center gap-2 pt-1 text-xs">
+                                        <input type="hidden" name="is_active" value="0" />
+                                        <Checkbox name="is_active" value="1" defaultChecked />
+                                        <span>Item Langsung Aktif</span>
+                                    </label>
+
+                                    <div className="flex justify-end gap-2 pt-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-8 text-xs"
+                                            onClick={() => setCreateItemOpen(false)}
+                                        >
+                                            Batal
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            size="sm"
+                                            className="h-8 text-xs font-medium"
+                                            disabled={processing}
+                                        >
+                                            Simpan Item
+                                        </Button>
                                     </div>
                                 </>
                             )}
-                        </CardContent>
-                    </Card>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
 
-                    {/* Right: Management & Creation Panels */}
-                    <div className="space-y-6">
-                        {/* New Item Form */}
-                        <Card className="border-border/70 shadow-xs">
-                            <CardHeader className="border-b border-border/50 pb-3.5">
-                                <div className="flex items-center gap-2">
-                                    <Plus className="size-4 text-primary" />
-                                    <CardTitle className="text-sm font-semibold">
-                                        Tambah Item Katalog Baru
-                                    </CardTitle>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-5">
-                                <Form
-                                    action="/central/items"
-                                    method="post"
-                                    className="space-y-3.5"
-                                    resetOnSuccess
-                                >
-                                    {({ errors, processing }) => (
-                                        <>
-                                            <div className="space-y-1">
-                                                <Label htmlFor="sku" className="text-xs font-semibold">
-                                                    Kode SKU *
-                                                </Label>
-                                                <Input
-                                                    id="sku"
-                                                    name="sku"
-                                                    className="h-9 font-mono"
-                                                    placeholder="Contoh: JW-RNG-001"
-                                                    required
-                                                />
-                                                <InputError message={errors.sku} />
-                                            </div>
+                {/* Dialog: Edit Item */}
+                {editingItem && (
+                    <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle className="text-base font-semibold">
+                                    Edit Item: {editingItem.sku}
+                                </DialogTitle>
+                            </DialogHeader>
+                            <Form
+                                action={`/central/items/${editingItem.id}`}
+                                method="put"
+                                className="space-y-3 pt-2"
+                                onSuccess={() => setEditingItem(null)}
+                            >
+                                {({ errors, processing }) => (
+                                    <>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">Kode SKU *</Label>
+                                            <Input
+                                                name="sku"
+                                                defaultValue={editingItem.sku}
+                                                className="h-8.5 font-mono text-xs"
+                                                required
+                                            />
+                                            <InputError message={errors.sku} />
+                                        </div>
 
-                                            <div className="space-y-1">
-                                                <Label htmlFor="name" className="text-xs font-semibold">
-                                                    Nama Item Perhiasan *
-                                                </Label>
-                                                <Input
-                                                    id="name"
-                                                    name="name"
-                                                    className="h-9"
-                                                    placeholder="Contoh: Cincin Subeng Perak"
-                                                    required
-                                                />
-                                                <InputError message={errors.name} />
-                                            </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">Nama Item *</Label>
+                                            <Input
+                                                name="name"
+                                                defaultValue={editingItem.name}
+                                                className="h-8.5 text-xs"
+                                                required
+                                            />
+                                            <InputError message={errors.name} />
+                                        </div>
 
+                                        <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1">
-                                                <Label htmlFor="item_category_id" className="text-xs font-semibold">
-                                                    Kategori *
-                                                </Label>
+                                                <Label className="text-xs font-medium">Kategori *</Label>
                                                 <select
-                                                    id="item_category_id"
                                                     name="item_category_id"
-                                                    className="form-select-custom h-9 w-full"
-                                                    required
+                                                    defaultValue={editingItem.category.id}
+                                                    className="form-select-custom h-8.5 w-full text-xs"
                                                 >
-                                                    <option value="">Pilih Kategori</option>
-                                                    {activeCategories.map((item) => (
-                                                        <option key={item.id} value={item.id}>
-                                                            {item.name}
+                                                    {categories.map((c) => (
+                                                        <option key={c.id} value={c.id}>
+                                                            {c.name}
                                                         </option>
                                                     ))}
                                                 </select>
@@ -330,233 +394,169 @@ export default function ItemIndex({
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label htmlFor="unit_id" className="text-xs font-semibold">
-                                                    Satuan Standar *
-                                                </Label>
+                                                <Label className="text-xs font-medium">Satuan *</Label>
                                                 <select
-                                                    id="unit_id"
                                                     name="unit_id"
-                                                    className="form-select-custom h-9 w-full"
-                                                    required
+                                                    defaultValue={editingItem.unit.id}
+                                                    className="form-select-custom h-8.5 w-full text-xs"
                                                 >
-                                                    <option value="">Pilih Satuan</option>
-                                                    {activeUnits.map((item) => (
-                                                        <option key={item.id} value={item.id}>
-                                                            {item.name} ({item.symbol})
+                                                    {units.map((u) => (
+                                                        <option key={u.id} value={u.id}>
+                                                            {u.name} ({u.symbol})
                                                         </option>
                                                     ))}
                                                 </select>
                                                 <InputError message={errors.unit_id} />
                                             </div>
+                                        </div>
 
-                                            <label className="flex items-center gap-2 pt-1 text-xs font-medium">
-                                                <input type="hidden" name="is_active" value="0" />
-                                                <Checkbox name="is_active" value="1" defaultChecked />{' '}
-                                                Item Langsung Aktif
-                                            </label>
+                                        <label className="flex items-center gap-2 pt-1 text-xs">
+                                            <input type="hidden" name="is_active" value="0" />
+                                            <Checkbox
+                                                name="is_active"
+                                                value="1"
+                                                defaultChecked={editingItem.is_active}
+                                            />
+                                            <span>Item Aktif Digunakan</span>
+                                        </label>
 
+                                        <div className="flex justify-end gap-2 pt-2">
                                             <Button
-                                                className="w-full font-medium"
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 text-xs"
+                                                onClick={() => setEditingItem(null)}
+                                            >
+                                                Batal
+                                            </Button>
+                                            <Button
+                                                type="submit"
+                                                size="sm"
+                                                className="h-8 text-xs font-medium"
                                                 disabled={processing}
                                             >
-                                                Simpan Item ke Katalog
+                                                Simpan Perubahan
                                             </Button>
-                                        </>
-                                    )}
-                                </Form>
-                            </CardContent>
-                        </Card>
+                                        </div>
+                                    </>
+                                )}
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
+                )}
 
-                        {/* Category & Unit Mini Editors */}
-                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                            <QuickForm
-                                icon={Layers}
-                                title="Tambah Kategori Baru"
+                {/* Dialog: Category Manager */}
+                <Dialog open={createCategoryOpen} onOpenChange={setCreateCategoryOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-base font-semibold">
+                                Kelola Kategori Item
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-2">
+                            <Form
                                 action="/central/item-categories"
-                                fields={[
-                                    ['name', 'Nama Kategori *'],
-                                    ['code', 'Kode Singkatan (Opsional)'],
-                                ]}
-                            />
-                            <MasterOptionEditor
-                                icon={Layers}
-                                title="Daftar Kategori"
-                                path="item-categories"
-                                options={categories}
-                                secondaryKey="code"
-                                secondaryLabel="Kode"
-                            />
-                            <QuickForm
-                                icon={Ruler}
-                                title="Tambah Satuan Baru"
-                                action="/central/units"
-                                fields={[
-                                    ['name', 'Nama Satuan *'],
-                                    ['symbol', 'Simbol Satuan (pcs/gr/kt) *'],
-                                ]}
-                            />
-                            <MasterOptionEditor
-                                icon={Ruler}
-                                title="Daftar Satuan Ukur"
-                                path="units"
-                                options={units}
-                                secondaryKey="symbol"
-                                secondaryLabel="Simbol"
-                            />
+                                method="post"
+                                className="space-y-2.5 rounded-lg border border-border/50 bg-muted/20 p-3"
+                                resetOnSuccess
+                            >
+                                {({ processing }) => (
+                                    <>
+                                        <p className="text-xs font-semibold">Tambah Kategori Baru</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Input
+                                                name="name"
+                                                placeholder="Nama Kategori *"
+                                                required
+                                                className="h-8 text-xs"
+                                            />
+                                            <Input
+                                                name="code"
+                                                placeholder="Kode (opsional)"
+                                                className="h-8 text-xs"
+                                            />
+                                        </div>
+                                        <Button size="sm" className="h-7.5 w-full text-xs" disabled={processing}>
+                                            Simpan Kategori
+                                        </Button>
+                                    </>
+                                )}
+                            </Form>
+
+                            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                                <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                                    Daftar Kategori Saat Ini:
+                                </Label>
+                                {categories.map((c) => (
+                                    <div key={c.id} className="flex items-center justify-between rounded-md border border-border/40 p-2 text-xs">
+                                        <span className="font-medium text-foreground">{c.name} {c.code && `(${c.code})`}</span>
+                                        <Badge variant={c.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                                            {c.is_active ? 'Aktif' : 'Nonaktif'}
+                                        </Badge>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Dialog: Unit Manager */}
+                <Dialog open={createUnitOpen} onOpenChange={setCreateUnitOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle className="text-base font-semibold">
+                                Kelola Satuan Ukur
+                            </DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-2">
+                            <Form
+                                action="/central/units"
+                                method="post"
+                                className="space-y-2.5 rounded-lg border border-border/50 bg-muted/20 p-3"
+                                resetOnSuccess
+                            >
+                                {({ processing }) => (
+                                    <>
+                                        <p className="text-xs font-semibold">Tambah Satuan Baru</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Input
+                                                name="name"
+                                                placeholder="Nama Satuan *"
+                                                required
+                                                className="h-8 text-xs"
+                                            />
+                                            <Input
+                                                name="symbol"
+                                                placeholder="Simbol (pcs/gr/kt) *"
+                                                required
+                                                className="h-8 text-xs"
+                                            />
+                                        </div>
+                                        <Button size="sm" className="h-7.5 w-full text-xs" disabled={processing}>
+                                            Simpan Satuan
+                                        </Button>
+                                    </>
+                                )}
+                            </Form>
+
+                            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                                <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                                    Daftar Satuan Saat Ini:
+                                </Label>
+                                {units.map((u) => (
+                                    <div key={u.id} className="flex items-center justify-between rounded-md border border-border/40 p-2 text-xs">
+                                        <span className="font-medium text-foreground">{u.name} ({u.symbol})</span>
+                                        <Badge variant={u.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                                            {u.is_active ? 'Aktif' : 'Nonaktif'}
+                                        </Badge>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </main>
         </>
     );
 }
-
-function QuickForm({
-    icon: Icon,
-    title,
-    action,
-    fields,
-}: {
-    icon: React.ComponentType<{ className?: string }>;
-    title: string;
-    action: string;
-    fields: [string, string][];
-}) {
-    return (
-        <Card className="border-border/70 shadow-xs">
-            <CardHeader className="border-b border-border/50 pb-3">
-                <div className="flex items-center gap-2">
-                    <Icon className="size-4 text-muted-foreground" />
-                    <CardTitle className="text-xs font-semibold uppercase tracking-wider">
-                        {title}
-                    </CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent className="p-4">
-                <Form
-                    action={action}
-                    method="post"
-                    className="space-y-2.5"
-                    resetOnSuccess
-                >
-                    {({ processing }) => (
-                        <>
-                            {fields.map(([name, label]) => (
-                                <div key={name} className="space-y-1">
-                                    <Label htmlFor={`${title}-${name}`} className="text-xs">
-                                        {label}
-                                    </Label>
-                                    <Input
-                                        id={`${title}-${name}`}
-                                        name={name}
-                                        className="h-8 text-xs"
-                                        required={name !== 'code'}
-                                    />
-                                </div>
-                            ))}
-                            <input type="hidden" name="is_active" value="1" />
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full h-8 text-xs font-medium"
-                                disabled={processing}
-                            >
-                                Simpan Data
-                            </Button>
-                        </>
-                    )}
-                </Form>
-            </CardContent>
-        </Card>
-    );
-}
-
-function MasterOptionEditor({
-    icon: Icon,
-    title,
-    path,
-    options,
-    secondaryKey,
-    secondaryLabel,
-}: {
-    icon: React.ComponentType<{ className?: string }>;
-    title: string;
-    path: string;
-    options: Option[];
-    secondaryKey: 'code' | 'symbol';
-    secondaryLabel: string;
-}) {
-    return (
-        <Card className="border-border/70 shadow-xs">
-            <CardHeader className="border-b border-border/50 pb-3">
-                <div className="flex items-center gap-2">
-                    <Icon className="size-4 text-muted-foreground" />
-                    <CardTitle className="text-xs font-semibold uppercase tracking-wider">
-                        {title} ({options.length})
-                    </CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-2 p-3">
-                {options.map((option) => (
-                    <EditDetails
-                        key={option.id}
-                        label={`${option.name} (${option[secondaryKey] ?? '-'})`}
-                    >
-                        <Form
-                            action={`/central/${path}/${option.id}`}
-                            method="put"
-                            className="space-y-2 p-1"
-                        >
-                            {({ processing }) => (
-                                <>
-                                    <div className="space-y-1">
-                                        <Label className="text-xs">Nama</Label>
-                                        <Input
-                                            name="name"
-                                            defaultValue={option.name}
-                                            required
-                                            className="h-8 text-xs"
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label className="text-xs">{secondaryLabel}</Label>
-                                        <Input
-                                            name={secondaryKey}
-                                            defaultValue={option[secondaryKey] ?? ''}
-                                            placeholder={secondaryLabel}
-                                            required={secondaryKey === 'symbol'}
-                                            className="h-8 text-xs font-mono"
-                                        />
-                                    </div>
-                                    <input
-                                        type="hidden"
-                                        name="is_active"
-                                        value="0"
-                                    />
-                                    <label className="flex items-center gap-2 text-xs font-medium">
-                                        <Checkbox
-                                            name="is_active"
-                                            value="1"
-                                            defaultChecked={option.is_active}
-                                        />{' '}
-                                        Aktif
-                                    </label>
-                                    <Button size="sm" className="h-8 w-full text-xs" disabled={processing}>
-                                        Simpan
-                                    </Button>
-                                </>
-                            )}
-                        </Form>
-                    </EditDetails>
-                ))}
-            </CardContent>
-        </Card>
-    );
-}
-
-ItemIndex.layout = {
-    breadcrumbs: [
-        { title: 'Portal Pusat', href: '/central/dashboard' },
-        { title: 'Master Item', href: '/central/items' },
-    ],
-};

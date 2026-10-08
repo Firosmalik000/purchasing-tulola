@@ -1,81 +1,94 @@
 import { Head, Link } from '@inertiajs/react';
 import {
+    AlertTriangle,
     ArrowRight,
     Boxes,
     Building2,
+    Calendar,
     ChartNoAxesCombined,
     CheckCircle2,
     ClipboardList,
+    Clock,
+    FileText,
     ListChecks,
     PackageCheck,
     Plus,
     ShoppingCart,
+    Store,
+    Truck,
     Warehouse,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/page-header';
 import { StatCard } from '@/components/common/stat-card';
+import {
+    PurchasingBarChart,
+    StatusProgressChart,
+} from '@/components/dashboard/purchasing-charts';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function CentralDashboard() {
-    const pipelineCards = [
-        {
-            title: '1. Antrean Permintaan',
-            desc: 'Review kuantitas yang diajukan oleh butik & periksa snapshot stok.',
-            href: '/central/requests',
-            icon: ClipboardList,
-            badge: 'Langkah Pertama',
-            actionText: 'Tinjau Permintaan',
-            color: 'from-amber-500/10 to-transparent border-amber-500/30 text-amber-700 dark:text-amber-400',
-        },
-        {
-            title: '2. Purchase Planning',
-            desc: 'Agregasi approved request lintas toko menjadi pesanan grosir.',
-            href: '/central/purchase-planning',
-            icon: ListChecks,
-            badge: 'Konsolidasi',
-            actionText: 'Buka Planning',
-            color: 'from-indigo-500/10 to-transparent border-indigo-500/30 text-indigo-700 dark:text-indigo-400',
-        },
-        {
-            title: '3. Pesanan ke Vendor (PO)',
-            desc: 'Terbitkan Purchase Order, tetapkan termin pembayaran & tanggal tiba.',
-            href: '/central/orders',
-            icon: ShoppingCart,
-            badge: 'Pengadaan',
-            actionText: 'Kelola Pesanan',
-            color: 'from-purple-500/10 to-transparent border-purple-500/30 text-purple-700 dark:text-purple-400',
-        },
-        {
-            title: '4. Penerimaan & Stok',
-            desc: 'Pantau konfirmasi penerimaan fisik dan pemutakhiran stok otomatis.',
-            href: '/central/inventory',
-            icon: Warehouse,
-            badge: 'Logistik',
-            actionText: 'Lihat Stok Cabang',
-            color: 'from-emerald-500/10 to-transparent border-emerald-500/30 text-emerald-700 dark:text-emerald-400',
-        },
-    ];
+type Props = {
+    metrics: {
+        pendingRequests: number;
+        processedRequests: number;
+        activeOrders: number;
+        completedOrders: number;
+        stockAlerts: number;
+    };
+    monthlyTrend: {
+        month: string;
+        requests: number;
+        orders: number;
+    }[];
+    requestStatusDist: {
+        name: string;
+        count: number;
+        color: string;
+    }[];
+    recentRequests: {
+        id: number;
+        number: string;
+        status: string;
+        store?: { id: number; name: string; code: string };
+        requester?: { id: number; name: string };
+        created_at: string;
+    }[];
+    recentOrders: {
+        id: number;
+        number: string;
+        status: string;
+        supplier?: { id: number; name: string };
+        order_date: string;
+        expected_date?: string;
+    }[];
+};
 
+export default function CentralDashboard({
+    metrics,
+    monthlyTrend,
+    requestStatusDist,
+    recentRequests,
+    recentOrders,
+}: Props) {
     return (
         <>
             <Head title="Dashboard Pusat — Tulola Purchasing" />
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+            <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
                     badge="Portal Kantor Pusat"
                     title="Dashboard Operasional Purchasing"
-                    description="Pusat kendali pengadaan Tulola: tinjau permintaan butik, rencanakan pesanan grosir, dan pantau pemenuhan stok."
                     actions={
                         <div className="flex flex-wrap gap-2">
-                            <Button asChild className="shadow-xs">
+                            <Button size="sm" asChild className="h-8 shadow-xs">
                                 <Link href="/central/requests">
-                                    <ClipboardList className="mr-2 size-4" />
+                                    <ClipboardList className="mr-1.5 size-3.5" />
                                     Tinjau Permintaan
                                 </Link>
                             </Button>
-                            <Button variant="outline" asChild>
+                            <Button size="sm" variant="outline" asChild className="h-8">
                                 <Link href="/central/purchase-planning">
-                                    <ListChecks className="mr-2 size-4" />
+                                    <ListChecks className="mr-1.5 size-3.5" />
                                     Planning PO
                                 </Link>
                             </Button>
@@ -83,168 +96,180 @@ export default function CentralDashboard() {
                     }
                 />
 
-                {/* KPI Stat Cards */}
-                <section
-                    aria-label="Ringkasan operasional"
-                    className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-                >
+                {/* KPI Metrics */}
+                <section aria-label="KPI Ringkasan" className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
                     <StatCard
-                        label="Antrean Permintaan"
-                        value="Review"
-                        helper="Kebutuhan butik menunggu verifikasi"
+                        label="Antrean Menunggu Review"
+                        value={metrics.pendingRequests}
+                        helper="Permintaan butik aktif"
                         icon={ClipboardList}
                         tone="warning"
                     />
                     <StatCard
-                        label="Perencanaan PO"
-                        value="Konsolidasi"
-                        helper="Item disetujui siap diterbitkan PO"
+                        label="Permintaan Siap Dipesan"
+                        value={metrics.processedRequests}
+                        helper="Telah disetujui untuk PO"
                         icon={ListChecks}
                         tone="info"
                     />
                     <StatCard
-                        label="Pesanan Berjalan"
-                        value="Monitoring"
-                        helper="PO aktif dalam pengiriman vendor"
+                        label="Pesanan Berjalan (PO)"
+                        value={metrics.activeOrders}
+                        helper="Dalam pengiriman vendor"
                         icon={ShoppingCart}
                         tone="neutral"
                     />
                     <StatCard
-                        label="Inventaris & Audit"
-                        value="Terkendali"
-                        helper="Stok & snapshot seluruh cabang"
-                        icon={Warehouse}
-                        tone="success"
+                        label="Stok di Bawah Standar"
+                        value={metrics.stockAlerts}
+                        helper="Perlu restock cabang"
+                        icon={AlertTriangle}
+                        tone={metrics.stockAlerts > 0 ? 'warning' : 'success'}
                     />
                 </section>
 
-                {/* Workflow Navigator Section */}
-                <section aria-labelledby="alur-pengadaan">
-                    <div className="mb-3 flex items-center justify-between">
-                        <div>
-                            <h2
-                                id="alur-pengadaan"
-                                className="font-serif text-lg font-bold tracking-tight text-foreground"
-                            >
-                                Siklus Alur Pengadaan Barang
-                            </h2>
-                            <p className="text-xs text-muted-foreground">
-                                Ikuti 4 tahap terstandar untuk memproses kebutuhan persediaan dari butik ke supplier
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                        {pipelineCards.map((card) => (
-                            <Card
-                                key={card.title}
-                                className="group relative flex flex-col justify-between overflow-hidden border border-border/70 bg-gradient-to-b from-card to-card/70 transition-all hover:-translate-y-0.5 hover:border-amber-500/40 hover:shadow-sm"
-                            >
-                                <CardHeader className="p-5 pb-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className={`flex size-10 items-center justify-center rounded-xl border bg-gradient-to-br p-2 shadow-2xs ${card.color}`}>
-                                            <card.icon className="size-5" />
-                                        </div>
-                                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-                                            {card.badge}
-                                        </span>
+                {/* Analytics Charts Section */}
+                <section className="grid gap-5 lg:grid-cols-3">
+                    <Card className="lg:col-span-2 border-border/70 shadow-2xs">
+                        <CardHeader className="border-b border-border/40 pb-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                        <ChartNoAxesCombined className="size-4" />
                                     </div>
-                                    <CardTitle className="mt-4 font-serif text-base font-bold text-foreground">
-                                        {card.title}
+                                    <CardTitle className="text-sm font-semibold">
+                                        Tren Pengadaan & Pesanan
                                     </CardTitle>
-                                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                                        {card.desc}
-                                    </p>
-                                </CardHeader>
-                                <CardContent className="p-5 pt-0">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="w-full justify-between font-medium group-hover:border-amber-500/40 group-hover:text-amber-900 dark:group-hover:text-amber-300"
-                                        asChild
-                                    >
-                                        <Link href={card.href}>
-                                            <span>{card.actionText}</span>
-                                            <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
-                                        </Link>
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                </section>
-
-                {/* Quick Shortcuts & Best Practices */}
-                <section className="grid gap-6 lg:grid-cols-3">
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 font-serif text-base font-bold">
-                                <Boxes className="size-4 text-amber-600 dark:text-amber-400" />
-                                Panduan Alur Kerja Tim Purchasing Pusat
-                            </CardTitle>
+                                </div>
+                                <span className="text-xs text-muted-foreground">Volume Bulanan</span>
+                            </div>
                         </CardHeader>
-                        <CardContent className="space-y-3 text-sm text-muted-foreground">
-                            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-3.5">
-                                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                <div>
-                                    <p className="font-semibold text-foreground text-xs">Persetujuan Kuantitas Fleksibel</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        Anda dapat menyetujui sebagian, menyesuaikan kuantitas sesuai minimum order supplier, atau menolak permintaan dengan catatan resmi.
-                                    </p>
+                        <CardContent className="pt-4">
+                            <PurchasingBarChart data={monthlyTrend} height={190} />
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-border/70 shadow-2xs">
+                        <CardHeader className="border-b border-border/40 pb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="flex size-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                                    <Boxes className="size-4" />
                                 </div>
+                                <CardTitle className="text-sm font-semibold">
+                                    Distribusi Status Pengadaan
+                                </CardTitle>
                             </div>
-                            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-3.5">
-                                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-indigo-600 dark:text-indigo-400" />
-                                <div>
-                                    <p className="font-semibold text-foreground text-xs">Konsolidasi Purchase Planning</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        Gunakan menu Perencanaan PO untuk menggabungkan item dari beberapa cabang ke supplier yang sama demi efisiensi biaya kirim dan volume diskon.
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/20 p-3.5">
-                                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                                <div>
-                                    <p className="font-semibold text-foreground text-xs">Audit Trail & Keamanan Stok</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        Setiap perubahan stok tercatat snapshot dan PIC yang bertransaksi, menjamin kepatuhan audit internal Tulola.
-                                    </p>
+                        </CardHeader>
+                        <CardContent className="pt-5">
+                            <StatusProgressChart items={requestStatusDist} />
+                            
+                            <div className="mt-5 rounded-lg border border-border/60 bg-muted/20 p-3">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">Total Selesai Diterima:</span>
+                                    <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                        {metrics.completedOrders} PO Sukses
+                                    </span>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
+                </section>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="font-serif text-base font-bold">
-                                Akses Cepat Master Data
-                            </CardTitle>
+                {/* Recent Activities Section */}
+                <section className="grid gap-5 lg:grid-cols-2">
+                    {/* Recent Requests Table */}
+                    <Card className="border-border/70 shadow-2xs">
+                        <CardHeader className="flex flex-row items-center justify-between border-b border-border/40 pb-3">
+                            <div className="flex items-center gap-2">
+                                <ClipboardList className="size-4 text-amber-600 dark:text-amber-400" />
+                                <CardTitle className="text-sm font-semibold">
+                                    Permintaan Butik Terbaru
+                                </CardTitle>
+                            </div>
+                            <Button variant="ghost" size="sm" asChild className="h-7 text-xs">
+                                <Link href="/central/requests">
+                                    Lihat Semua <ArrowRight className="ml-1 size-3" />
+                                </Link>
+                            </Button>
                         </CardHeader>
-                        <CardContent className="space-y-2">
-                            <Button variant="outline" className="w-full justify-start text-xs font-medium" asChild>
-                                <Link href="/central/items">
-                                    <Boxes className="mr-2 size-4 text-muted-foreground" />
-                                    Katalog Item & SKU
+                        <CardContent className="p-0">
+                            {recentRequests.length === 0 ? (
+                                <div className="p-6 text-center text-xs text-muted-foreground">
+                                    Belum ada permintaan pembelian diajukan.
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border/40">
+                                    {recentRequests.map((req, idx) => (
+                                        <div key={req.id} className="flex items-center justify-between p-3.5 text-xs hover:bg-muted/30">
+                                            <div className="flex items-center gap-2.5">
+                                                <span className="font-mono text-[11px] text-muted-foreground/60 w-4">
+                                                    #{idx + 1}
+                                                </span>
+                                                <div>
+                                                    <Link href={`/central/requests/${req.id}`} className="font-medium text-foreground hover:text-primary hover:underline">
+                                                        {req.number}
+                                                    </Link>
+                                                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                                                        <span>{req.store?.name}</span>
+                                                        <span>•</span>
+                                                        <span>{req.requester?.name}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Badge variant="outline" className="text-[10px] font-semibold">
+                                                {req.status}
+                                            </Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Recent POs Table */}
+                    <Card className="border-border/70 shadow-2xs">
+                        <CardHeader className="flex flex-row items-center justify-between border-b border-border/40 pb-3">
+                            <div className="flex items-center gap-2">
+                                <ShoppingCart className="size-4 text-indigo-600 dark:text-indigo-400" />
+                                <CardTitle className="text-sm font-semibold">
+                                    Pesanan Pembelian (PO) Terbaru
+                                </CardTitle>
+                            </div>
+                            <Button variant="ghost" size="sm" asChild className="h-7 text-xs">
+                                <Link href="/central/orders">
+                                    Lihat Semua <ArrowRight className="ml-1 size-3" />
                                 </Link>
                             </Button>
-                            <Button variant="outline" className="w-full justify-start text-xs font-medium" asChild>
-                                <Link href="/central/suppliers">
-                                    <ShoppingCart className="mr-2 size-4 text-muted-foreground" />
-                                    Daftar Rekanan Supplier
-                                </Link>
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start text-xs font-medium" asChild>
-                                <Link href="/central/stores">
-                                    <Building2 className="mr-2 size-4 text-muted-foreground" />
-                                    Daftar Toko & Butik
-                                </Link>
-                            </Button>
-                            <Button variant="outline" className="w-full justify-start text-xs font-medium" asChild>
-                                <Link href="/central/reports">
-                                    <ChartNoAxesCombined className="mr-2 size-4 text-muted-foreground" />
-                                    Laporan & Audit Ekspor
-                                </Link>
-                            </Button>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {recentOrders.length === 0 ? (
+                                <div className="p-6 text-center text-xs text-muted-foreground">
+                                    Belum ada pesanan pembelian dibuat.
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border/40">
+                                    {recentOrders.map((order, idx) => (
+                                        <div key={order.id} className="flex items-center justify-between p-3.5 text-xs hover:bg-muted/30">
+                                            <div className="flex items-center gap-2.5">
+                                                <span className="font-mono text-[11px] text-muted-foreground/60 w-4">
+                                                    #{idx + 1}
+                                                </span>
+                                                <div>
+                                                    <Link href={`/central/orders/${order.id}`} className="font-medium text-foreground hover:text-primary hover:underline">
+                                                        {order.number}
+                                                    </Link>
+                                                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                                                        Supplier: {order.supplier?.name ?? '-'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <Badge variant="outline" className="text-[10px] font-semibold">
+                                                {order.status}
+                                            </Badge>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </section>
@@ -259,4 +284,3 @@ CentralDashboard.layout = {
         { title: 'Dashboard', href: '/central/dashboard' },
     ],
 };
-
