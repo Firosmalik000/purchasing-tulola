@@ -14,14 +14,11 @@ class DevelopmentUserSeeder extends Seeder
             return;
         }
 
-        $password = config('app.development_admin.password');
-
-        if (! is_string($password) || $password === '') {
-            return;
-        }
+        $email = config('app.development_admin.email') ?: 'admin@tulola.test';
+        $password = config('app.development_admin.password') ?: 'password';
 
         User::query()->updateOrCreate(
-            ['email' => config('app.development_admin.email')],
+            ['email' => $email],
             [
                 'name' => 'Development Super Admin',
                 'password' => $password,
