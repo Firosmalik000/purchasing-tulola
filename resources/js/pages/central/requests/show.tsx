@@ -88,9 +88,8 @@ export default function CentralRequestShow({
             <Head title={`Tinjau PR ${purchaseRequest.number} — Tulola Purchasing`} />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
-                    badge="Review & Persetujuan Kebutuhan"
+                    badge="Review PR"
                     title={purchaseRequest.number}
-                    description={`Pengajuan dari Butik ${purchaseRequest.store.name} (${purchaseRequest.store.code})`}
                     actions={
                         <div className="flex flex-wrap items-center justify-end gap-2.5">
                             <Button variant="outline" size="sm" asChild>

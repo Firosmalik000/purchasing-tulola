@@ -77,8 +77,8 @@ export default function CentralRequestIndex({
             <Head title="Antrean Permintaan Butik — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Antrean Masuk"
-                    title="Permintaan Pembelian Butik (PR)"
+                    badge="Pengadaan"
+                    title="Permintaan (PR)"
                 />
 
                 {/* Filter Toolbar */}

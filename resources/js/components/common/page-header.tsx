@@ -7,26 +7,21 @@ type PageHeaderProps = {
     actions?: ReactNode;
 };
 
-export function PageHeader({ title, description, badge, actions }: PageHeaderProps) {
+export function PageHeader({ title, badge, actions }: PageHeaderProps) {
     return (
-        <div className="flex flex-col gap-4 border-b border-border/40 pb-5 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 space-y-1">
+        <div className="flex flex-col gap-2 border-b border-border/50 pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex items-center gap-2.5">
+                <h1 className="text-lg font-semibold tracking-tight text-foreground">
+                    {title}
+                </h1>
                 {badge && (
-                    <span className="inline-flex items-center rounded-full bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold tracking-wider text-amber-700 uppercase dark:bg-amber-500/20 dark:text-amber-300">
+                    <span className="inline-flex items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                         {badge}
                     </span>
                 )}
-                <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground md:text-3xl">
-                    {title}
-                </h1>
-                {description && (
-                    <p className="max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                        {description}
-                    </p>
-                )}
             </div>
             {actions && (
-                <div className="flex shrink-0 flex-wrap items-center gap-2.5">
+                <div className="flex shrink-0 flex-wrap items-center gap-2">
                     {actions}
                 </div>
             )}

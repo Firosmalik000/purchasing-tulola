@@ -142,13 +142,12 @@ export default function RequestForm({
             />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
-                    badge="Form Permintaan Butik"
+                    badge="Form PR"
                     title={
                         purchaseRequest
-                            ? `Edit Permintaan ${purchaseRequest.number}`
-                            : 'Buat Permintaan Barang Baru'
+                            ? `Edit ${purchaseRequest.number}`
+                            : 'Permintaan Baru'
                     }
-                    description="Pilih barang stok reguler berdasarkan kebutuhan minimum toko, atau ajukan permintaan kebutuhan khusus."
                     actions={
                         <Button variant="outline" asChild>
                             <Link href="/store/requests">

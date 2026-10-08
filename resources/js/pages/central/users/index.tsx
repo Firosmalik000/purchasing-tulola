@@ -78,8 +78,8 @@ export default function UserIndex({ users, stores, roles }: Props) {
             <Head title="Manajemen Pengguna & PIC — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Manajemen Akses"
-                    title="Pengguna & PIC Toko"
+                    badge="Akses"
+                    title="Pengguna"
                     actions={
                         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                             <DialogTrigger asChild>

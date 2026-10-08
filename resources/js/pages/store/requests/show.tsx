@@ -79,9 +79,8 @@ export default function RequestShow({
             <Head title={`Permintaan ${purchaseRequest.number}`} />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
-                    badge="Detail Permintaan Butik"
+                    badge="Detail PR"
                     title={purchaseRequest.number}
-                    description={`Diajukan untuk butik: ${purchaseRequest.store.code} — ${purchaseRequest.store.name}`}
                     actions={
                         <div className="flex flex-wrap items-center gap-2.5">
                             <RequestStatusBadge

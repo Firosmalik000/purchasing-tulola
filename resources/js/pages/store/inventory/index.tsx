@@ -41,8 +41,8 @@ export default function StoreInventory({
             <Head title="Monitoring Stok Toko" />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
-                    badge="Inventaris & Butik"
-                    title={`Monitoring Stok Toko — ${currentStore ? `${currentStore.code} (${currentStore.name})` : ''}`}
+                    badge="Inventaris"
+                    title={`Stok Butik — ${currentStore ? `${currentStore.code} (${currentStore.name})` : ''}`}
                 />
 
                 {stores.length > 1 && (

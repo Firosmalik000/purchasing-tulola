@@ -26,15 +26,10 @@ import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
-    SidebarGroup,
-    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
@@ -50,11 +45,12 @@ function CollapsibleNavGroup({
     label,
     icon: Icon,
     items,
-    defaultOpen = true,
+    defaultOpen = false,
 }: CollapsibleNavGroupProps) {
     const { isCurrentUrl } = useCurrentUrl();
     const hasActiveChild = items.some((item) => isCurrentUrl(item.href));
-    const [isOpen, setIsOpen] = useState(defaultOpen || hasActiveChild);
+    // Default collapsed (closed) unless user is currently on one of the child pages!
+    const [isOpen, setIsOpen] = useState(hasActiveChild || defaultOpen);
 
     if (items.length === 0) return null;
 
@@ -62,21 +58,21 @@ function CollapsibleNavGroup({
         <Collapsible
             open={isOpen}
             onOpenChange={setIsOpen}
-            className="group/collapsible px-2 py-1"
+            className="group/collapsible px-2 py-0.5"
         >
             <CollapsibleTrigger asChild>
                 <button
                     type="button"
-                    className="flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-semibold tracking-wide text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground group-data-[state=open]/collapsible:text-foreground"
+                    className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground group-data-[state=open]/collapsible:text-foreground"
                 >
                     <div className="flex items-center gap-2">
-                        <Icon className="size-3.5 text-primary/80" />
-                        <span className="uppercase text-[11px] font-bold tracking-wider">{label}</span>
+                        <Icon className="size-3.5 text-muted-foreground" />
+                        <span className="text-[11px] font-semibold tracking-wider uppercase">{label}</span>
                     </div>
-                    <ChevronDown className="size-3.5 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
+                    <ChevronDown className="size-3 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
                 </button>
             </CollapsibleTrigger>
-            <CollapsibleContent className="pt-1">
+            <CollapsibleContent className="pt-0.5">
                 <SidebarMenu className="gap-0.5 pl-1.5">
                     {items.map((item) => {
                         const active = isCurrentUrl(item.href);
@@ -87,13 +83,13 @@ function CollapsibleNavGroup({
                                     isActive={active}
                                     size="sm"
                                     tooltip={{ children: item.title }}
-                                    className="h-8 rounded-md transition-colors hover:bg-amber-500/10 data-[active=true]:bg-amber-500/15 data-[active=true]:font-semibold data-[active=true]:text-amber-950 dark:data-[active=true]:text-amber-300"
+                                    className="h-7.5 rounded-md text-xs transition-colors hover:bg-muted data-[active=true]:bg-primary data-[active=true]:font-medium data-[active=true]:text-primary-foreground"
                                 >
                                     <Link href={item.href} prefetch>
                                         {item.icon && (
                                             <item.icon className="size-3.5 shrink-0" />
                                         )}
-                                        <span className="truncate text-xs">{item.title}</span>
+                                        <span className="truncate">{item.title}</span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -111,19 +107,19 @@ export function AppSidebar() {
     const homeUrl = isStore ? '/store/dashboard' : '/central/dashboard';
     const { isCurrentUrl } = useCurrentUrl();
 
-    // Central Groups
+    // Central Groups with compact concise labels
     const centralOperasional: NavItem[] = [
-        { title: 'Antrean Permintaan', href: '/central/requests', icon: ClipboardList },
+        { title: 'Permintaan (PR)', href: '/central/requests', icon: ClipboardList },
     ];
     if (auth.permissions.manageOrders) {
         centralOperasional.push({
-            title: 'Purchase Planning',
+            title: 'Planning PO',
             href: '/central/purchase-planning',
             icon: ListChecks,
         });
     }
     centralOperasional.push({
-        title: 'Pesanan Pembelian (PO)',
+        title: 'Pesanan (PO)',
         href: '/central/orders',
         icon: ShoppingCart,
     });
@@ -131,7 +127,7 @@ export function AppSidebar() {
     const centralInventory: NavItem[] = [];
     if (auth.permissions.manageInventory) {
         centralInventory.push({
-            title: 'Manajemen Stok & Audit',
+            title: 'Stok & Mutasi',
             href: '/central/inventory',
             icon: Warehouse,
         });
@@ -140,24 +136,24 @@ export function AppSidebar() {
     const centralMaster: NavItem[] = [];
     if (auth.permissions.manageMasterData) {
         centralMaster.push({
-            title: 'Katalog Master Item',
+            title: 'Katalog Barang',
             href: '/central/items',
             icon: Boxes,
         });
         centralMaster.push({
-            title: 'Daftar Supplier',
+            title: 'Supplier',
             href: '/central/suppliers',
             icon: Truck,
         });
     }
     if (auth.permissions.manageStores) {
         centralMaster.push({
-            title: 'Toko & Butik Cabang',
+            title: 'Toko & Cabang',
             href: '/central/stores',
             icon: Store,
         });
         centralMaster.push({
-            title: 'Pengguna & PIC Toko',
+            title: 'Pengguna',
             href: '/central/users',
             icon: Users,
         });
@@ -166,7 +162,7 @@ export function AppSidebar() {
     const centralReports: NavItem[] = [];
     if (auth.permissions.viewManagementReports) {
         centralReports.push({
-            title: 'Laporan Manajemen',
+            title: 'Rekap & Analisis',
             href: '/central/reports',
             icon: ChartNoAxesCombined,
         });
@@ -174,16 +170,16 @@ export function AppSidebar() {
 
     // Store Groups
     const storeOperasional: NavItem[] = [
-        { title: 'Permintaan Toko (PR)', href: '/store/requests', icon: ClipboardList },
-        { title: 'Penerimaan Barang', href: '/store/incoming', icon: PackageCheck },
+        { title: 'Permintaan (PR)', href: '/store/requests', icon: ClipboardList },
+        { title: 'Barang Masuk', href: '/store/incoming', icon: PackageCheck },
     ];
     const storeInventory: NavItem[] = [
-        { title: 'Posisi Stok Butik', href: '/store/inventory', icon: Warehouse },
+        { title: 'Stok Toko', href: '/store/inventory', icon: Warehouse },
     ];
 
     return (
         <Sidebar collapsible="icon" variant="inset" className="border-r border-sidebar-border">
-            <SidebarHeader className="border-b border-sidebar-border/60 pb-3">
+            <SidebarHeader className="border-b border-sidebar-border/60 py-2.5 px-3">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild className="hover:bg-transparent">
@@ -195,17 +191,17 @@ export function AppSidebar() {
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent className="space-y-1.5 py-2">
+            <SidebarContent className="space-y-1 py-2">
                 {/* Dashboard Single Button */}
                 <div className="px-2">
                     <SidebarMenuButton
                         asChild
                         isActive={isCurrentUrl(homeUrl)}
-                        className="h-9 font-medium transition-colors hover:bg-amber-500/10 data-[active=true]:bg-amber-500/15 data-[active=true]:font-bold data-[active=true]:text-amber-950 dark:data-[active=true]:text-amber-300"
+                        className="h-8 text-xs font-medium transition-colors hover:bg-muted data-[active=true]:bg-primary data-[active=true]:font-semibold data-[active=true]:text-primary-foreground"
                     >
                         <Link href={homeUrl} prefetch>
-                            <LayoutDashboard className="size-4 shrink-0 text-primary" />
-                            <span className="truncate">Dashboard Utama</span>
+                            <LayoutDashboard className="size-3.5 shrink-0" />
+                            <span className="truncate">Dashboard</span>
                         </Link>
                     </SidebarMenuButton>
                 </div>
@@ -213,45 +209,45 @@ export function AppSidebar() {
                 {isStore ? (
                     <>
                         <CollapsibleNavGroup
-                            label="Operasional Toko"
+                            label="Operasional"
                             icon={Store}
                             items={storeOperasional}
-                            defaultOpen={true}
+                            defaultOpen={false}
                         />
                         <CollapsibleNavGroup
-                            label="Inventaris Butik"
+                            label="Inventaris"
                             icon={Warehouse}
                             items={storeInventory}
-                            defaultOpen={true}
+                            defaultOpen={false}
                         />
                     </>
                 ) : (
                     <>
                         <CollapsibleNavGroup
-                            label="Pengadaan & PO"
+                            label="Pengadaan"
                             icon={ShoppingCart}
                             items={centralOperasional}
-                            defaultOpen={true}
+                            defaultOpen={false}
                         />
                         {centralInventory.length > 0 && (
                             <CollapsibleNavGroup
                                 label="Inventaris"
                                 icon={Warehouse}
                                 items={centralInventory}
-                                defaultOpen={true}
+                                defaultOpen={false}
                             />
                         )}
                         {centralMaster.length > 0 && (
                             <CollapsibleNavGroup
-                                label="Data Master"
+                                label="Master Data"
                                 icon={Boxes}
                                 items={centralMaster}
-                                defaultOpen={true}
+                                defaultOpen={false}
                             />
                         )}
                         {centralReports.length > 0 && (
                             <CollapsibleNavGroup
-                                label="Laporan & Audit"
+                                label="Laporan"
                                 icon={ChartNoAxesCombined}
                                 items={centralReports}
                                 defaultOpen={false}
@@ -261,15 +257,15 @@ export function AppSidebar() {
                 )}
             </SidebarContent>
 
-            <SidebarFooter className="border-t border-sidebar-border/60 pt-3">
-                <div className="mx-2 mb-2 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5 text-xs font-medium text-amber-900 dark:text-amber-200">
+            <SidebarFooter className="border-t border-sidebar-border/60 p-2">
+                <div className="mb-1.5 flex items-center gap-2 rounded-md border border-border/80 bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
                     {isStore ? (
-                        <Store className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <Store className="size-3 shrink-0" />
                     ) : (
-                        <Building2 className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <Building2 className="size-3 shrink-0" />
                     )}
-                    <span className="truncate text-[11px]">
-                        {isStore ? 'Portal Butik / Toko' : 'Portal Kantor Pusat'}
+                    <span className="truncate text-[11px] font-medium">
+                        {isStore ? 'Portal Butik' : 'Pusat Operasional'}
                     </span>
                 </div>
                 <NavUser />

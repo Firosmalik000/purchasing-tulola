@@ -81,8 +81,8 @@ export default function ReportIndex({
             <Head title="Laporan & Rekapitulasi Purchasing" />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
-                    badge="Pusat Analisis & Audit"
-                    title="Laporan & Rekapitulasi"
+                    badge="Laporan"
+                    title="Rekap & Analisis"
                     actions={
                         <div className="flex flex-wrap items-center gap-2.5">
                             <Button variant="outline" asChild>

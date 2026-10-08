@@ -67,8 +67,8 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
             <Head title="Manajemen Rekanan Supplier — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Manajemen Rekanan"
-                    title="Supplier & Vendor"
+                    badge="Master"
+                    title="Supplier"
                     actions={
                         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                             <DialogTrigger asChild>

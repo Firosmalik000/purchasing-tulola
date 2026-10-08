@@ -62,8 +62,8 @@ export default function StoreIndex({ stores, filters }: Props) {
             <Head title="Manajemen Toko & Butik — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Manajemen Cabang"
-                    title="Toko & Butik Cabang"
+                    badge="Master"
+                    title="Toko & Cabang"
                     actions={
                         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                             <DialogTrigger asChild>

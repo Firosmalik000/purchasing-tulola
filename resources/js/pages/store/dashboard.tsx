@@ -66,8 +66,8 @@ export default function StoreDashboard({
             <Head title="Dashboard Butik — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Portal Butik Cabang"
-                    title="Dashboard Operasional Butik"
+                    badge="Butik"
+                    title="Dashboard Butik"
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Button size="sm" asChild className="h-8 shadow-xs">

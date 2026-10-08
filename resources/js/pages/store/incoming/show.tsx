@@ -102,9 +102,8 @@ export default function IncomingShow({
             <Head title={`Penerimaan ${purchaseOrder.number}`} />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
-                    badge="Verifikasi Barang Masuk"
+                    badge="Penerimaan"
                     title={purchaseOrder.number}
-                    description={`Alokasi pengiriman pesanan untuk butik: ${store.code} — ${store.name}`}
                     actions={
                         <div className="flex flex-wrap items-center gap-2.5">
                             <OrderStatusBadge status={purchaseOrder.status} />

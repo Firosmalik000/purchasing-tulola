@@ -90,9 +90,8 @@ export default function OrderShow({
             <Head title={`PO ${purchaseOrder.number} — Tulola Purchasing`} />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 pb-20">
                 <PageHeader
-                    badge="Purchase Order Vendor"
+                    badge="Detail PO"
                     title={purchaseOrder.number}
-                    description={`Dibuat oleh ${purchaseOrder.creator.name} · Rekanan: ${purchaseOrder.supplier?.name ?? 'Belum ditentukan'}`}
                     actions={
                         <div className="flex flex-wrap items-center gap-2.5">
                             <Button variant="outline" size="sm" asChild>

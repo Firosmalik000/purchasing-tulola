@@ -82,8 +82,8 @@ export default function ItemIndex({
             <Head title="Master Katalog Item & Material — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Data Master"
-                    title="Katalog Master Item"
+                    badge="Master"
+                    title="Katalog Barang"
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Button

@@ -76,8 +76,8 @@ export default function CentralDashboard({
             <Head title="Dashboard Pusat — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Portal Kantor Pusat"
-                    title="Dashboard Operasional Purchasing"
+                    badge="Pusat"
+                    title="Dashboard Purchasing"
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Button size="sm" asChild className="h-8 shadow-xs">

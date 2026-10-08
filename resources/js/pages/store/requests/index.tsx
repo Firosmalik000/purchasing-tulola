@@ -60,8 +60,8 @@ export default function StoreRequestIndex({
             <Head title="Permintaan Toko — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Operasional Butik"
-                    title="Permintaan Pembelian Toko"
+                    badge="Operasional"
+                    title="Permintaan (PR)"
                     actions={
                         <Button size="sm" asChild className="h-8 text-xs shadow-xs">
                             <Link href="/store/requests/create">

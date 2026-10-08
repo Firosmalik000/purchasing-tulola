@@ -64,8 +64,8 @@ export default function OrderIndex({
             <Head title="Pesanan Pembelian (PO) — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Manajemen PO"
-                    title="Pesanan Pembelian (PO)"
+                    badge="Pengadaan"
+                    title="Pesanan (PO)"
                     actions={
                         <Button size="sm" asChild className="h-8 shadow-xs text-xs">
                             <Link href="/central/purchase-planning">

@@ -63,8 +63,8 @@ export default function IncomingOrderIndex({
             <Head title="Penerimaan Barang Masuk — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Logistik & Kedatangan"
-                    title="Penerimaan Barang Masuk (Incoming PO)"
+                    badge="Logistik"
+                    title="Barang Masuk"
                 />
 
                 {/* Filter Toolbar */}

@@ -120,8 +120,8 @@ export default function InventoryIndex({
             <Head title="Manajemen Inventaris Stok" />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
-                    badge="Inventaris & Logistik Pusat"
-                    title="Manajemen Stok Butik"
+                    badge="Inventaris"
+                    title="Stok & Mutasi"
                 />
 
                 {/* Store Selector & Compact Search Filter */}

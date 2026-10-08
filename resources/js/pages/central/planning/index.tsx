@@ -84,9 +84,8 @@ export default function PlanningIndex({ plan, suppliers, filters }: Props) {
             <Head title="Purchase Planning — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 pb-24">
                 <PageHeader
-                    badge="Konsolidasi Pengadaan"
-                    title="Purchase Planning (Perencanaan PO)"
-                    description="Gabungkan approved request dari berbagai butik menjadi draft pesanan grosir (PO) yang efisien ke rekanan supplier."
+                    badge="Pengadaan"
+                    title="Planning PO"
                     actions={
                         <Button variant="outline" asChild className="h-9 shadow-xs">
                             <Link href="/central/orders">

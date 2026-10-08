@@ -21,29 +21,29 @@ export function AppSidebarHeader({
     }).format(new Date());
 
     return (
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/70 bg-card/60 px-4 backdrop-blur-xs transition-[width,height] ease-linear md:px-6">
+        <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/70 bg-card/80 px-4 backdrop-blur-xs transition-[width,height] ease-linear md:px-5">
             <div className="flex items-center gap-3">
                 <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
-                <div className="h-4 w-px bg-border/80" />
+                <div className="h-3.5 w-px bg-border/80" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
                 <ThemeToggle />
-                <div className="hidden items-center gap-3 sm:flex">
+                <div className="hidden items-center gap-2.5 sm:flex">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <Calendar className="size-3.5 text-amber-600 dark:text-amber-400" />
+                        <Calendar className="size-3.5" />
                         <span>{formattedDate}</span>
                     </div>
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold text-amber-900 dark:text-amber-200">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-0.5 text-[11px] font-medium text-foreground">
                         {isStore ? (
                             <>
-                                <Store className="size-3 text-amber-600 dark:text-amber-400" />
+                                <Store className="size-3 text-muted-foreground" />
                                 <span>Butik Toko</span>
                             </>
                         ) : (
                             <>
-                                <Building2 className="size-3 text-amber-600 dark:text-amber-400" />
+                                <Building2 className="size-3 text-muted-foreground" />
                                 <span>Purchasing Pusat</span>
                             </>
                         )}
