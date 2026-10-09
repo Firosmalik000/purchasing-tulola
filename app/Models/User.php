@@ -32,7 +32,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'role', 'is_active', 'invitation_token', 'invitation_sent_at'])]
+#[Fillable(['name', 'email', 'password', 'role', 'is_active', 'email_verified_at', 'invitation_token', 'invitation_sent_at'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'invitation_token'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
@@ -54,6 +54,13 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'two_factor_confirmed_at' => 'datetime',
             'invitation_sent_at' => 'datetime',
         ];
+    }
+
+    protected $appends = ['has_pending_invitation'];
+
+    public function getHasPendingInvitationAttribute(): bool
+    {
+        return ! empty($this->invitation_token);
     }
 
     public function isCentralUser(): bool

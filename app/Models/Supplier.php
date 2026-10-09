@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['code', 'name', 'contact_person', 'phone', 'email', 'address', 'payment_term', 'is_active'])]
+#[Fillable(['code', 'name', 'contact_person', 'phone', 'email', 'address', 'is_active'])]
 class Supplier extends Model
 {
     protected function casts(): array
@@ -14,9 +14,9 @@ class Supplier extends Model
         return ['is_active' => 'boolean'];
     }
 
-    /** @return HasMany<PurchaseOrder, $this> */
-    public function purchaseOrders(): HasMany
+    /** @return HasMany<StockMovement, $this> */
+    public function stockMovements(): HasMany
     {
-        return $this->hasMany(PurchaseOrder::class);
+        return $this->hasMany(StockMovement::class);
     }
 }

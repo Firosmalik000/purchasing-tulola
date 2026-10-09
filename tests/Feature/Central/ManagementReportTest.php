@@ -20,7 +20,6 @@ use App\Models\StockMovement;
 use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\StoreStockStandard;
-use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -48,8 +47,7 @@ class ManagementReportTest extends TestCase
             ->where('report.rows.0.standard_stock', 'PP 5.000, PIM 6.000')
             ->where('report.rows.0.remarks', 'PP 2.000, PIM 4.000')
             ->where('report.rows.1.stock', '-')
-            ->where('report.rows.1.standard_stock', '-')
-            ->where('report.summary.0.value', '850.00'));
+            ->where('report.rows.1.standard_stock', '-'));
     }
 
     public function test_every_phase_ten_report_type_renders(): void
@@ -130,15 +128,14 @@ class ManagementReportTest extends TestCase
         $first = $this->requestLine($pp, $requester, $unit, $item, 2, 3, 5);
         $second = $this->requestLine($pim, $requester, $unit, $item, 4, 4, 6);
         $special = $this->requestLine($pp, $requester, $unit, null, 1, null, null, 'Display Acrylic');
-        $supplier = Supplier::create(['code' => 'SUP', 'name' => 'Supplier Utama', 'is_active' => true]);
         $order = PurchaseOrder::factory()->create([
-            'number' => 'ORD/2026/10/0010', 'supplier_id' => $supplier->id, 'order_date' => now()->toDateString(),
-            'status' => PurchaseOrderStatus::ORDERED, 'created_by' => $user->id, 'payment_method' => 'Transfer', 'payment_term' => '30 hari',
+            'number' => 'ORD/2026/10/0010', 'order_date' => now()->toDateString(),
+            'status' => PurchaseOrderStatus::ORDERED, 'created_by' => $user->id,
         ]);
-        $stockOrderLine = $this->orderLine($order, $unit, PurchaseRequestItemType::STOCK, $item, null, 6, 100);
+        $stockOrderLine = $this->orderLine($order, $unit, PurchaseRequestItemType::STOCK, $item, null, 6);
         $stockOrderLine->allocations()->create(['purchase_request_item_id' => $first->id, 'allocated_quantity' => 2]);
         $stockOrderLine->allocations()->create(['purchase_request_item_id' => $second->id, 'allocated_quantity' => 4]);
-        $specialOrderLine = $this->orderLine($order, $unit, PurchaseRequestItemType::SPECIAL, null, 'Display Acrylic', 1, 250);
+        $specialOrderLine = $this->orderLine($order, $unit, PurchaseRequestItemType::SPECIAL, null, 'Display Acrylic', 1);
         $specialOrderLine->allocations()->create(['purchase_request_item_id' => $special->id, 'allocated_quantity' => 1]);
 
         StoreStock::create(['store_id' => $pp->id, 'item_id' => $item->id, 'quantity' => 3]);
@@ -160,16 +157,16 @@ class ManagementReportTest extends TestCase
             'type' => $item ? PurchaseRequestItemType::STOCK : PurchaseRequestItemType::SPECIAL,
             'item_id' => $item?->id, 'name' => $name, 'unit_id' => $unit->id,
             'current_stock_snapshot' => $stock, 'standard_stock_snapshot' => $standard,
-            'requested_quantity' => $quantity, 'approved_quantity' => $quantity, 'estimated_price' => 100,
+            'requested_quantity' => $quantity, 'approved_quantity' => $quantity,
             'status' => PurchaseRequestItemStatus::APPROVED,
         ]);
     }
 
-    private function orderLine(PurchaseOrder $order, Unit $unit, PurchaseRequestItemType $type, ?Item $item, ?string $name, float $quantity, float $price): PurchaseOrderItem
+    private function orderLine(PurchaseOrder $order, Unit $unit, PurchaseRequestItemType $type, ?Item $item, ?string $name, float $quantity): PurchaseOrderItem
     {
         return $order->items()->create([
             'item_type' => $type, 'item_id' => $item?->id, 'name' => $name, 'unit_id' => $unit->id,
-            'quantity' => $quantity, 'unit_price' => $price, 'total' => $quantity * $price,
+            'quantity' => $quantity,
         ]);
     }
 }

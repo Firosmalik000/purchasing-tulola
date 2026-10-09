@@ -23,7 +23,6 @@ class SupplierRequest extends FormRequest
             'phone' => ['nullable', 'string', 'max:32'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['nullable', 'string', 'max:2000'],
-            'payment_term' => ['nullable', 'string', 'max:255'],
             'is_active' => ['required', 'boolean'],
         ];
     }

@@ -1,4 +1,4 @@
-import { Check, Clock, AlertCircle, CircleDot } from 'lucide-react';
+import { Check, AlertCircle, CircleDot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export type StepItem = {
@@ -15,9 +15,16 @@ type WorkflowStepperProps = {
 
 export function WorkflowStepper({ steps, className }: WorkflowStepperProps) {
     return (
-        <div className={cn('w-full rounded-xl border border-border/70 bg-card p-4 shadow-xs md:p-5', className)}>
+        <div
+            className={cn(
+                'w-full rounded-xl border border-border/70 bg-card p-4 shadow-xs md:p-5',
+                className,
+            )}
+        >
             <div className="mb-3 flex items-center justify-between text-xs font-medium text-muted-foreground">
-                <span className="uppercase tracking-wider">Tahapan Alur Purchasing</span>
+                <span className="tracking-wider uppercase">
+                    Tahapan Alur Purchasing
+                </span>
                 <span>
                     {steps.findIndex((s) => s.status === 'current') !== -1
                         ? `Langkah ${steps.findIndex((s) => s.status === 'current') + 1} dari ${steps.length}`
@@ -38,10 +45,14 @@ export function WorkflowStepper({ steps, className }: WorkflowStepperProps) {
                                 key={step.key}
                                 className={cn(
                                     'group relative flex flex-row items-center gap-3 rounded-lg border p-3 transition-all md:flex-col md:items-start md:p-3.5',
-                                    isCurrent && 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/30 dark:bg-amber-500/10',
-                                    isComplete && 'border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10',
-                                    isDanger && 'border-rose-500/40 bg-rose-500/5 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400',
-                                    isUpcoming && 'border-border/60 bg-muted/20 opacity-70',
+                                    isCurrent &&
+                                        'border-blue-500/50 bg-blue-500/5 ring-1 ring-blue-500/30 dark:bg-blue-500/10',
+                                    isComplete &&
+                                        'border-emerald-500/30 bg-emerald-500/5 dark:bg-emerald-500/10',
+                                    isDanger &&
+                                        'border-rose-500/40 bg-rose-500/5 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400',
+                                    isUpcoming &&
+                                        'border-border/60 bg-muted/20 opacity-70',
                                 )}
                             >
                                 <div className="flex shrink-0 items-center justify-center">
@@ -51,8 +62,8 @@ export function WorkflowStepper({ steps, className }: WorkflowStepperProps) {
                                         </div>
                                     )}
                                     {isCurrent && (
-                                        <div className="relative flex size-7 items-center justify-center rounded-full bg-amber-500 text-white shadow-xs">
-                                            <span className="absolute -inset-1 animate-ping rounded-full bg-amber-400/30" />
+                                        <div className="relative flex size-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs">
+                                            <span className="absolute -inset-1 animate-ping rounded-full bg-blue-500/30" />
                                             <CircleDot className="size-4" />
                                         </div>
                                     )}
@@ -62,7 +73,7 @@ export function WorkflowStepper({ steps, className }: WorkflowStepperProps) {
                                         </div>
                                     )}
                                     {isUpcoming && (
-                                        <div className="flex size-7 items-center justify-center rounded-full border border-muted-foreground/30 bg-muted text-muted-foreground text-xs font-semibold">
+                                        <div className="flex size-7 items-center justify-center rounded-full border border-muted-foreground/30 bg-muted text-xs font-semibold text-muted-foreground">
                                             {idx + 1}
                                         </div>
                                     )}
@@ -72,18 +83,22 @@ export function WorkflowStepper({ steps, className }: WorkflowStepperProps) {
                                     <div className="flex items-center gap-1.5">
                                         <p
                                             className={cn(
-                                                'text-xs font-semibold leading-tight md:text-sm',
-                                                isCurrent && 'text-amber-950 font-bold dark:text-amber-300',
-                                                isComplete && 'text-emerald-950 dark:text-emerald-300',
-                                                isDanger && 'text-rose-700 dark:text-rose-400',
-                                                isUpcoming && 'text-muted-foreground',
+                                                'text-xs leading-tight font-semibold md:text-sm',
+                                                isCurrent &&
+                                                    'font-bold text-amber-950 dark:text-amber-300',
+                                                isComplete &&
+                                                    'text-emerald-950 dark:text-emerald-300',
+                                                isDanger &&
+                                                    'text-rose-700 dark:text-rose-400',
+                                                isUpcoming &&
+                                                    'text-muted-foreground',
                                             )}
                                         >
                                             {step.label}
                                         </p>
                                     </div>
                                     {step.description && (
-                                        <p className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground leading-normal">
+                                        <p className="mt-0.5 line-clamp-1 text-[11px] leading-normal text-muted-foreground">
                                             {step.description}
                                         </p>
                                     )}
@@ -103,12 +118,24 @@ export function getPurchaseRequestSteps(status: string): StepItem[] {
 
     if (isRejected || isCancelled) {
         return [
-            { key: 'DRAFT', label: '1. Draft Toko', description: 'Kebutuhan disusun', status: 'complete' },
-            { key: 'SUBMITTED', label: '2. Diajukan', description: 'Dikirim ke pusat', status: 'complete' },
+            {
+                key: 'DRAFT',
+                label: '1. Draft Toko',
+                description: 'Kebutuhan disusun',
+                status: 'complete',
+            },
+            {
+                key: 'SUBMITTED',
+                label: '2. Diajukan',
+                description: 'Dikirim ke pusat',
+                status: 'complete',
+            },
             {
                 key: status,
                 label: isRejected ? '3. Ditolak' : '3. Dibatalkan',
-                description: isRejected ? 'Permintaan ditolak pusat' : 'Dibatalkan',
+                description: isRejected
+                    ? 'Permintaan ditolak pusat'
+                    : 'Dibatalkan',
                 status: 'danger',
             },
         ];
@@ -122,25 +149,45 @@ export function getPurchaseRequestSteps(status: string): StepItem[] {
             key: 'DRAFT',
             label: '1. Draft Toko',
             description: 'Item & stok diverifikasi',
-            status: currentIdx > 0 ? 'complete' : currentIdx === 0 ? 'current' : 'upcoming',
+            status:
+                currentIdx > 0
+                    ? 'complete'
+                    : currentIdx === 0
+                      ? 'current'
+                      : 'upcoming',
         },
         {
             key: 'SUBMITTED',
             label: '2. Diajukan',
             description: 'Menunggu review pusat',
-            status: currentIdx > 1 ? 'complete' : currentIdx === 1 ? 'current' : 'upcoming',
+            status:
+                currentIdx > 1
+                    ? 'complete'
+                    : currentIdx === 1
+                      ? 'current'
+                      : 'upcoming',
         },
         {
             key: 'PROCESSED',
             label: '3. Disetujui',
             description: 'Kuantitas disetujui',
-            status: currentIdx > 2 ? 'complete' : currentIdx === 2 ? 'current' : 'upcoming',
+            status:
+                currentIdx > 2
+                    ? 'complete'
+                    : currentIdx === 2
+                      ? 'current'
+                      : 'upcoming',
         },
         {
             key: 'ORDERED',
-            label: '4. Dipesan (PO)',
-            description: 'Masuk planning & PO',
-            status: currentIdx > 3 ? 'complete' : currentIdx === 3 ? 'current' : 'upcoming',
+            label: '4. Order Dikirim',
+            description: 'Menunggu penerimaan toko',
+            status:
+                currentIdx > 3
+                    ? 'complete'
+                    : currentIdx === 3
+                      ? 'current'
+                      : 'upcoming',
         },
         {
             key: 'COMPLETED',
@@ -156,44 +203,66 @@ export function getPurchaseOrderSteps(status: string): StepItem[] {
 
     if (isCancelled) {
         return [
-            { key: 'DRAFT', label: '1. Draft PO', description: 'Konsolidasi item', status: 'complete' },
-            { key: 'CANCELLED', label: '2. Dibatalkan', description: 'Pesanan dibatalkan', status: 'danger' },
+            {
+                key: 'DRAFT',
+                label: '1. Proses',
+                description: 'Item request disetujui',
+                status: 'complete',
+            },
+            {
+                key: 'CANCELLED',
+                label: '2. Dibatalkan',
+                description: 'Pesanan dibatalkan',
+                status: 'danger',
+            },
         ];
     }
 
-    const order = ['DRAFT', 'ORDERED', 'WAITING_RECEIPT', 'PARTIALLY_RECEIVED', 'COMPLETED'];
+    const order = ['DRAFT', 'ORDERED', 'PARTIALLY_RECEIVED', 'COMPLETED'];
     const currentIdx = order.indexOf(status);
 
     return [
         {
             key: 'DRAFT',
-            label: '1. Draft PO',
-            description: 'Konsolidasi & supplier',
-            status: currentIdx > 0 ? 'complete' : currentIdx === 0 ? 'current' : 'upcoming',
+            label: '1. Proses',
+            description: 'Dibuat otomatis dari request',
+            status:
+                currentIdx > 0
+                    ? 'complete'
+                    : currentIdx === 0
+                      ? 'current'
+                      : 'upcoming',
         },
         {
             key: 'ORDERED',
-            label: '2. Dipesan',
-            description: 'Terkirim ke vendor',
-            status: currentIdx > 1 ? 'complete' : currentIdx === 1 ? 'current' : 'upcoming',
-        },
-        {
-            key: 'WAITING_RECEIPT',
-            label: '3. Pengiriman',
-            description: 'Menunggu penerimaan',
-            status: currentIdx > 2 ? 'complete' : currentIdx === 2 ? 'current' : 'upcoming',
+            label: '2. Dikirim',
+            description: 'Menunggu PIC toko',
+            status:
+                currentIdx > 1
+                    ? 'complete'
+                    : currentIdx === 1
+                      ? 'current'
+                      : 'upcoming',
         },
         {
             key: 'PARTIALLY_RECEIVED',
-            label: '4. Penerimaan',
-            description: status === 'PARTIALLY_RECEIVED' ? 'Diterima sebagian' : 'Verifikasi fisik',
-            status: currentIdx > 3 ? 'complete' : currentIdx === 3 ? 'current' : 'upcoming',
+            label: '3. Penerimaan',
+            description:
+                status === 'PARTIALLY_RECEIVED'
+                    ? 'Diterima sebagian'
+                    : 'Konfirmasi fisik',
+            status:
+                currentIdx > 2
+                    ? 'complete'
+                    : currentIdx === 2
+                      ? 'current'
+                      : 'upcoming',
         },
         {
             key: 'COMPLETED',
-            label: '5. Selesai',
+            label: '4. Selesai',
             description: 'Lengkap & stok terupdate',
-            status: currentIdx >= 4 ? 'complete' : 'upcoming',
+            status: currentIdx >= 3 ? 'complete' : 'upcoming',
         },
     ];
 }

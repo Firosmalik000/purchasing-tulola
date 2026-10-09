@@ -20,9 +20,9 @@ class FilterIncomingOrdersRequest extends FormRequest
         return [
             'store_id' => ['nullable', 'integer'],
             'status' => ['nullable', Rule::enum(PurchaseOrderStatus::class)->only([
-                PurchaseOrderStatus::WAITING_RECEIPT,
+                PurchaseOrderStatus::ORDERED,
                 PurchaseOrderStatus::PARTIALLY_RECEIVED,
-                PurchaseOrderStatus::RECEIVED,
+                PurchaseOrderStatus::COMPLETED,
             ])],
         ];
     }

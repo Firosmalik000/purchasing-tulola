@@ -7,10 +7,7 @@ use App\Enums\PurchaseRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
-use App\Models\Receipt;
-use App\Models\Store;
 use App\Models\StoreStock;
-use App\Models\StoreStockStandard;
 use Carbon\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,10 +21,9 @@ class CentralDashboardController extends Controller
         $processedRequests = PurchaseRequest::query()->where('status', PurchaseRequestStatus::PROCESSED)->count();
         $activeOrders = PurchaseOrder::query()->whereIn('status', [
             PurchaseOrderStatus::ORDERED,
-            PurchaseOrderStatus::WAITING_RECEIPT,
             PurchaseOrderStatus::PARTIALLY_RECEIVED,
         ])->count();
-        $completedOrders = PurchaseOrder::query()->where('status', PurchaseOrderStatus::RECEIVED)->count();
+        $completedOrders = PurchaseOrder::query()->where('status', PurchaseOrderStatus::COMPLETED)->count();
 
         // Stock alert count: stock < standard
         $stockAlerts = StoreStock::query()
@@ -72,10 +68,10 @@ class CentralDashboardController extends Controller
 
         // Recent POs (last 5)
         $recentOrders = PurchaseOrder::query()
-            ->with(['supplier:id,name'])
+            ->with(['purchaseRequest.store:id,code,name'])
             ->latest()
             ->take(5)
-            ->get(['id', 'number', 'supplier_id', 'status', 'order_date', 'expected_date']);
+            ->get(['id', 'number', 'purchase_request_id', 'status', 'order_date', 'expected_date']);
 
         return Inertia::render('central/dashboard', [
             'metrics' => [

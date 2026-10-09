@@ -42,15 +42,16 @@ export default function StoreInventory({
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
                     badge="Inventaris"
-                    title={`Stok Butik — ${currentStore ? `${currentStore.code} (${currentStore.name})` : ''}`}
+                    title={`Stok Toko Cabang — ${currentStore ? `${currentStore.code} (${currentStore.name})` : ''}`}
                 />
 
                 {stores.length > 1 && (
                     <Card className="border-border/70 shadow-xs">
                         <CardContent className="p-3.5">
-                            <label className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 text-xs font-semibold text-foreground">
+                            <label className="flex flex-col gap-2 text-xs font-semibold text-foreground sm:flex-row sm:items-center sm:gap-3">
                                 <span className="flex items-center gap-1.5 text-muted-foreground">
-                                    <Store className="size-3.5" /> Pilih Butik:
+                                    <Store className="size-3.5" /> Pilih Toko
+                                    Cabang:
                                 </span>
                                 <select
                                     className="form-select-custom h-9 max-w-xs text-xs"
@@ -87,34 +88,62 @@ export default function StoreInventory({
                     <CardContent className="p-0">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-xs">
-                                <thead className="border-b border-border/60 bg-muted/40 font-semibold text-muted-foreground uppercase tracking-wider">
+                                <thead className="border-b border-border/60 bg-muted/40 font-semibold tracking-wider text-muted-foreground uppercase">
                                     <tr>
-                                        <th className="w-12 px-3 py-3 text-center">#</th>
-                                        <th className="px-4 py-3">Barang & SKU</th>
-                                        <th className="px-3 py-3 text-center">Satuan</th>
-                                        <th className="px-4 py-3 text-right">Saldo Saat Ini</th>
-                                        <th className="px-4 py-3 text-right">Standar Min</th>
-                                        <th className="px-4 py-3 text-right">Saran Permintaan</th>
-                                        <th className="px-3 py-3 text-center">Status</th>
+                                        <th className="w-12 px-3 py-3 text-center">
+                                            #
+                                        </th>
+                                        <th className="px-4 py-3">
+                                            Barang & SKU
+                                        </th>
+                                        <th className="px-3 py-3 text-center">
+                                            Satuan
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Saldo Saat Ini
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Standar Min
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Saran Permintaan
+                                        </th>
+                                        <th className="px-3 py-3 text-center">
+                                            Status
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/50">
                                     {items.data.length === 0 ? (
                                         <tr>
-                                            <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                                            <td
+                                                colSpan={7}
+                                                className="p-8 text-center text-muted-foreground"
+                                            >
                                                 Belum ada data barang tercatat.
                                             </td>
                                         </tr>
                                     ) : (
                                         items.data.map((item, index) => {
-                                            const stock = item.stocks[0]?.quantity ?? '0.000';
-                                            const standard = item.stock_standards[0]?.standard_quantity ?? '0.000';
+                                            const stock =
+                                                item.stocks[0]?.quantity ??
+                                                '0.000';
+                                            const standard =
+                                                item.stock_standards[0]
+                                                    ?.standard_quantity ??
+                                                '0.000';
                                             const suggested = Math.max(
-                                                Number(standard) - Number(stock),
+                                                Number(standard) -
+                                                    Number(stock),
                                                 0,
                                             );
-                                            const isLow = Number(stock) < Number(standard);
-                                            const rowNumber = (currentPage - 1) * perPage + index + 1;
+                                            const isLow =
+                                                Number(stock) <
+                                                Number(standard);
+                                            const rowNumber =
+                                                (currentPage - 1) * perPage +
+                                                index +
+                                                1;
 
                                             return (
                                                 <tr
@@ -135,19 +164,23 @@ export default function StoreInventory({
                                                     <td className="px-3 py-3 text-center font-mono text-muted-foreground">
                                                         {item.unit.symbol}
                                                     </td>
-                                                    <td className="px-4 py-3 text-right font-mono font-bold tabular-nums text-foreground">
+                                                    <td className="px-4 py-3 text-right font-mono font-bold text-foreground tabular-nums">
                                                         {stock}
                                                     </td>
-                                                    <td className="px-4 py-3 text-right font-mono tabular-nums text-muted-foreground">
+                                                    <td className="px-4 py-3 text-right font-mono text-muted-foreground tabular-nums">
                                                         {standard}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                         {suggested > 0 ? (
                                                             <span className="font-bold text-amber-600 dark:text-amber-400">
-                                                                {suggested.toFixed(3)}
+                                                                {suggested.toFixed(
+                                                                    3,
+                                                                )}
                                                             </span>
                                                         ) : (
-                                                            <span className="text-muted-foreground">-</span>
+                                                            <span className="text-muted-foreground">
+                                                                -
+                                                            </span>
                                                         )}
                                                     </td>
                                                     <td className="px-3 py-3 text-center">
@@ -171,7 +204,7 @@ export default function StoreInventory({
                         </div>
 
                         <div className="border-t border-border/50 p-3">
-                            <PaginationLinks links={items.links} />
+                            <PaginationLinks pagination={items} />
                         </div>
                     </CardContent>
                 </Card>

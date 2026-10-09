@@ -11,6 +11,7 @@ use App\Models\Item;
 use App\Models\PurchaseRequest;
 use App\Models\Store;
 use App\Models\Unit;
+use App\Services\PurchasingNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -22,14 +23,19 @@ class PurchaseRequestController extends Controller
 {
     public function index(Request $request): Response
     {
-        $storeIds = $request->user()->stores()->wherePivot('is_active', true)->where('stores.is_active', true)->pluck('stores.id');
+        $stores = $this->assignedStores($request);
+        abort_if($stores->isEmpty(), 403, 'Akun belum ditugaskan ke toko aktif.');
+        $storeId = $request->integer('store_id') ?: $stores->first()->id;
+        abort_unless($stores->contains('id', $storeId), 403);
         $status = $request->string('status')->toString();
 
         return Inertia::render('store/requests/index', [
-            'requests' => PurchaseRequest::query()->whereIn('store_id', $storeIds)->with(['store:id,code,name'])->withCount('items')
-                ->when($status !== '', fn ($query) => $query->where('status', $status))->latest()->paginate(15)->withQueryString(),
+            'requests' => PurchaseRequest::query()->where('store_id', $storeId)->with(['store:id,code,name'])->withCount('items')
+                ->when($status !== '', fn ($query) => $query->where('status', $status))->latest()->paginate(\App\Support\Paging::perPage($request))->withQueryString(),
+            'stores' => $stores,
+            'selectedStoreId' => $storeId,
             'statuses' => collect(PurchaseRequestStatus::cases())->map(fn ($value) => ['value' => $value->value, 'label' => $value->label()]),
-            'filters' => ['status' => $status],
+            'filters' => ['status' => $status, 'store_id' => (string) $storeId],
         ]);
     }
 
@@ -48,7 +54,7 @@ class PurchaseRequestController extends Controller
         $store = Store::findOrFail($request->integer('store_id'));
         $purchaseRequest = $action->handle($store, $request->user(), $request->validated());
 
-        return to_route('store.requests.edit', $purchaseRequest)->with('success', 'Draft permintaan berhasil disimpan.');
+        return to_route('store.requests.index')->with('success', 'Draft permintaan berhasil disimpan.');
     }
 
     public function show(Request $request, PurchaseRequest $purchaseRequest): Response
@@ -75,10 +81,10 @@ class PurchaseRequestController extends Controller
         Gate::authorize('update', $purchaseRequest);
         $action->handle($purchaseRequest->store, $request->user(), $request->validated(), $purchaseRequest);
 
-        return back()->with('success', 'Draft permintaan berhasil diperbarui.');
+        return to_route('store.requests.index')->with('success', 'Draft permintaan berhasil diperbarui.');
     }
 
-    public function submit(Request $request, PurchaseRequest $purchaseRequest, SubmitPurchaseRequest $action, \App\Services\PurchasingNotificationService $notifications): RedirectResponse
+    public function submit(Request $request, PurchaseRequest $purchaseRequest, SubmitPurchaseRequest $action, PurchasingNotificationService $notifications): RedirectResponse
     {
         Gate::authorize('update', $purchaseRequest);
         $submitted = $action->handle($purchaseRequest, $request->user());

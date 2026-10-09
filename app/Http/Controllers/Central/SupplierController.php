@@ -20,7 +20,11 @@ class SupplierController extends Controller
         $search = trim((string) $request->string('search'));
 
         return Inertia::render('central/suppliers/index', [
-            'suppliers' => Supplier::query()->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('code', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))->orderBy('name')->paginate(15)->withQueryString(),
+            'suppliers' => Supplier::query()
+                ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('code', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
+                ->orderBy('name')
+                ->paginate(\App\Support\Paging::perPage($request))
+                ->withQueryString(),
             'filters' => ['search' => $search],
         ]);
     }

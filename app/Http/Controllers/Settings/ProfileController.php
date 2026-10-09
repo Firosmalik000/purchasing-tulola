@@ -32,9 +32,9 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
+        // Accounts are verified by the invitation/admin-provisioning flow.
+        // Updating profile details must not start a second email-verification flow.
+        $request->user()->email_verified_at ??= now();
 
         $request->user()->save();
 

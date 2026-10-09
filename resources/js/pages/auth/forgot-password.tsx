@@ -1,69 +1,82 @@
-// Components
 import { Form, Head } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, KeyRound, Mail, Send } from 'lucide-react';
 import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import AuthLayout from '@/layouts/auth-layout';
 import { login } from '@/routes';
 import { email } from '@/routes/password';
 
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
-        <>
-            <Head title="Forgot password" />
+        <AuthLayout
+            title="Lupa Kata Sandi?"
+            description="Masukkan email terdaftar untuk menerima tautan atur ulang kata sandi"
+            badge="Pemulihan Akses"
+            icon={KeyRound}
+            backLink={{ href: login(), label: 'Kembali ke Masuk' }}
+        >
+            <Head title="Lupa Kata Sandi — Portal Purchasing Tulola" />
 
             {status && (
-                <div className="mb-4 text-center text-sm font-medium text-green-600">
-                    {status}
+                <div className="mb-3 flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                    <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
+                    <span className="leading-snug text-[11px]">{status}</span>
                 </div>
             )}
 
-            <div className="space-y-6">
+            <div className="space-y-3">
                 <Form {...email.form()}>
                     {({ processing, errors }) => (
-                        <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    autoComplete="off"
-                                    autoFocus
-                                    placeholder="email@example.com"
-                                />
-
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <Label htmlFor="email" className="text-[11px] font-medium">
+                                    Alamat Email Terdaftar
+                                </Label>
+                                <div className="relative">
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        name="email"
+                                        autoComplete="email"
+                                        autoFocus
+                                        required
+                                        placeholder="nama@tulolajewelry.com"
+                                        className="h-9 text-xs pr-9"
+                                    />
+                                    <Mail className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/60" />
+                                </div>
                                 <InputError message={errors.email} />
                             </div>
 
-                            <div className="my-6 flex items-center justify-start">
-                                <Button
-                                    className="w-full"
-                                    disabled={processing}
-                                    data-test="email-password-reset-link-button"
-                                >
-                                    {processing && (
-                                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                                    )}
-                                    Email password reset link
-                                </Button>
-                            </div>
-                        </>
+                            <Button
+                                type="submit"
+                                className="w-full h-9 font-medium text-xs shadow-xs gap-1.5 mt-1"
+                                disabled={processing}
+                                data-test="email-password-reset-link-button"
+                            >
+                                {processing ? (
+                                    <>
+                                        <Spinner className="size-3.5" />
+                                        <span>Mengirim Tautan...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="size-3.5" />
+                                        <span>Kirim Tautan Atur Ulang</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     )}
                 </Form>
 
-                <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>Or, return to</span>
-                    <TextLink href={login()}>log in</TextLink>
-                </div>
+                <p className="text-[10px] text-muted-foreground text-center pt-1">
+                    Tautan berlaku sementara. Periksa folder <em>Spam</em> jika email tidak segera muncul.
+                </p>
             </div>
-        </>
+        </AuthLayout>
     );
 }
-
-ForgotPassword.layout = {
-    title: 'Forgot password',
-    description: 'Enter your email to receive a password reset link',
-};

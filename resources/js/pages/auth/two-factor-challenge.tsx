@@ -1,6 +1,7 @@
-import { Form, Head, setLayoutProps } from '@inertiajs/react';
+import { Form, Head } from '@inertiajs/react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
-import { useMemo, useState } from 'react';
+import { KeyRound, ShieldCheck, Smartphone } from 'lucide-react';
+import { useState } from 'react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,39 +10,15 @@ import {
     InputOTPGroup,
     InputOTPSlot,
 } from '@/components/ui/input-otp';
+import { Spinner } from '@/components/ui/spinner';
 import { OTP_MAX_LENGTH } from '@/hooks/use-two-factor-auth';
+import AuthLayout from '@/layouts/auth-layout';
+import { login } from '@/routes';
 import { store } from '@/routes/two-factor/login';
 
 export default function TwoFactorChallenge() {
     const [showRecoveryInput, setShowRecoveryInput] = useState<boolean>(false);
     const [code, setCode] = useState<string>('');
-
-    const authConfigContent = useMemo<{
-        title: string;
-        description: string;
-        toggleText: string;
-    }>(() => {
-        if (showRecoveryInput) {
-            return {
-                title: 'Recovery code',
-                description:
-                    'Please confirm access to your account by entering one of your emergency recovery codes.',
-                toggleText: 'login using an authentication code',
-            };
-        }
-
-        return {
-            title: 'Authentication code',
-            description:
-                'Enter the authentication code provided by your authenticator application.',
-            toggleText: 'login using a recovery code',
-        };
-    }, [showRecoveryInput]);
-
-    setLayoutProps({
-        title: authConfigContent.title,
-        description: authConfigContent.description,
-    });
 
     const toggleRecoveryMode = (clearErrors: () => void): void => {
         setShowRecoveryInput(!showRecoveryInput);
@@ -50,53 +27,60 @@ export default function TwoFactorChallenge() {
     };
 
     return (
-        <>
-            <Head title="Two-factor authentication" />
+        <AuthLayout
+            title={showRecoveryInput ? 'Kode Pemulihan Darurat' : 'Verifikasi Dua Faktor (2FA)'}
+            description={
+                showRecoveryInput
+                    ? 'Masukkan salah satu kode pemulihan darurat akun Anda'
+                    : 'Buka aplikasi authenticator dan masukkan 6-digit kode verifikasi'
+            }
+            badge="Keamanan Dua Langkah"
+            icon={showRecoveryInput ? KeyRound : Smartphone}
+            backLink={{ href: login(), label: 'Kembali ke Masuk' }}
+        >
+            <Head title="Verifikasi Dua Faktor — Portal Purchasing Tulola" />
 
-            <div className="space-y-6">
+            <div className="space-y-3">
                 <Form
                     {...store.form()}
-                    className="space-y-4"
+                    className="space-y-3"
                     resetOnError
                     resetOnSuccess={!showRecoveryInput}
                 >
                     {({ errors, processing, clearErrors }) => (
                         <>
                             {showRecoveryInput ? (
-                                <>
+                                <div className="space-y-1">
                                     <Input
                                         name="recovery_code"
                                         type="text"
-                                        placeholder="Enter recovery code"
+                                        placeholder="Contoh: abcd-efgh-ijkl"
                                         autoFocus={showRecoveryInput}
                                         required
+                                        className="h-9 text-center font-mono text-xs tracking-wider"
                                     />
-                                    <InputError
-                                        message={errors.recovery_code}
-                                    />
-                                </>
+                                    <InputError message={errors.recovery_code} />
+                                </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center space-y-3 text-center">
-                                    <div className="flex w-full items-center justify-center">
+                                <div className="flex flex-col items-center justify-center space-y-2">
+                                    <div className="flex w-full items-center justify-center py-1">
                                         <InputOTP
                                             name="code"
                                             maxLength={OTP_MAX_LENGTH}
                                             value={code}
-                                            onChange={(value) => setCode(value)}
+                                            onChange={(val) => setCode(val)}
                                             disabled={processing}
                                             pattern={REGEXP_ONLY_DIGITS}
                                             autoFocus
                                         >
-                                            <InputOTPGroup>
-                                                {Array.from(
-                                                    { length: OTP_MAX_LENGTH },
-                                                    (_, index) => (
-                                                        <InputOTPSlot
-                                                            key={index}
-                                                            index={index}
-                                                        />
-                                                    ),
-                                                )}
+                                            <InputOTPGroup className="gap-1.5">
+                                                {Array.from({ length: OTP_MAX_LENGTH }, (_, index) => (
+                                                    <InputOTPSlot
+                                                        key={index}
+                                                        index={index}
+                                                        className="size-9 sm:size-9.5 text-sm font-bold rounded-md border border-border shadow-2xs"
+                                                    />
+                                                ))}
                                             </InputOTPGroup>
                                         </InputOTP>
                                     </div>
@@ -106,28 +90,37 @@ export default function TwoFactorChallenge() {
 
                             <Button
                                 type="submit"
-                                className="w-full"
+                                className="w-full h-9 font-medium text-xs shadow-xs gap-1.5 mt-1"
                                 disabled={processing}
                             >
-                                Continue
+                                {processing ? (
+                                    <>
+                                        <Spinner className="size-3.5" />
+                                        <span>Memverifikasi...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldCheck className="size-3.5" />
+                                        <span>Verifikasi & Masuk</span>
+                                    </>
+                                )}
                             </Button>
 
-                            <div className="text-center text-sm text-muted-foreground">
-                                <span>or you can </span>
+                            <div className="text-center pt-1">
                                 <button
                                     type="button"
-                                    className="cursor-pointer text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
-                                    onClick={() =>
-                                        toggleRecoveryMode(clearErrors)
-                                    }
+                                    className="cursor-pointer text-[11px] font-medium text-primary hover:underline transition-colors"
+                                    onClick={() => toggleRecoveryMode(clearErrors)}
                                 >
-                                    {authConfigContent.toggleText}
+                                    {showRecoveryInput
+                                        ? 'Gunakan kode dari aplikasi authenticator'
+                                        : 'Gunakan kode pemulihan darurat'}
                                 </button>
                             </div>
                         </>
                     )}
                 </Form>
             </div>
-        </>
+        </AuthLayout>
     );
 }

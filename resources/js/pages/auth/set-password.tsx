@@ -1,11 +1,13 @@
 import { Form, Head } from '@inertiajs/react';
-import { KeyRound, ShieldCheck } from 'lucide-react';
+import { ArrowRight, KeyRound, ShieldCheck, UserCheck } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import AuthLayout from '@/layouts/auth-layout';
 
 type Props = {
     token: string;
@@ -16,105 +18,101 @@ type Props = {
 
 export default function SetPassword({ token, email, name, roleLabel }: Props) {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center bg-muted/40 p-6 md:p-10">
-            <Head title="Aktivasi Akun & Buat Kata Sandi" />
+        <AuthLayout
+            title="Aktivasi Akun Baru"
+            description="Buat kata sandi untuk mengaktifkan akun portal Anda"
+            badge="Undangan Bergabung"
+            icon={KeyRound}
+            maxWidth="md"
+        >
+            <Head title="Aktivasi Akun — Portal Purchasing Tulola" />
 
-            <div className="w-full max-w-md">
-                <div className="mb-6 text-center">
-                    <h1 className="font-serif text-2xl font-bold tracking-widest uppercase text-foreground">
-                        T U L O L A
-                    </h1>
-                    <p className="mt-1 text-xs tracking-widest uppercase text-primary font-medium">
-                        Purchasing & Supply Chain Portal
-                    </p>
+            <div className="space-y-3">
+                {/* User Info Highlight Card - Compact */}
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 flex items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                            <UserCheck className="size-3.5" />
+                        </div>
+                        <div className="min-w-0 leading-tight">
+                            <p className="text-xs font-semibold text-foreground truncate">
+                                {name}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground truncate">
+                                {email}
+                            </p>
+                        </div>
+                    </div>
+                    <Badge variant="outline" className="shrink-0 text-[10px] px-2 py-0 border-primary/30 text-primary bg-background">
+                        {roleLabel}
+                    </Badge>
                 </div>
 
-                <Card className="border-border/70 shadow-sm">
-                    <CardHeader className="text-center pb-4">
-                        <div className="mx-auto mb-2 flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            <KeyRound className="size-5" />
+                <Form
+                    action={`/invitation/${token}`}
+                    method="post"
+                    className="space-y-2.5"
+                    resetOnSuccess={['password', 'password_confirmation']}
+                >
+                    {({ errors, processing }) => (
+                        <div className="space-y-2.5">
+                            <div className="space-y-1">
+                                <Label htmlFor="password" className="text-[11px] font-medium">
+                                    Kata Sandi Baru *
+                                </Label>
+                                <PasswordInput
+                                    id="password"
+                                    name="password"
+                                    autoComplete="new-password"
+                                    autoFocus
+                                    placeholder="Minimal 8 karakter"
+                                    required
+                                    className="h-8.5 text-xs"
+                                />
+                                <InputError message={errors.password} />
+                            </div>
+
+                            <div className="space-y-1">
+                                <Label htmlFor="password_confirmation" className="text-[11px] font-medium">
+                                    Konfirmasi Kata Sandi Baru *
+                                </Label>
+                                <PasswordInput
+                                    id="password_confirmation"
+                                    name="password_confirmation"
+                                    autoComplete="new-password"
+                                    placeholder="Ulangi kata sandi baru"
+                                    required
+                                    className="h-8.5 text-xs"
+                                />
+                                <InputError message={errors.password_confirmation} />
+                            </div>
+
+                            <div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-muted-foreground">
+                                <ShieldCheck className="size-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <span>Minimal 8 karakter kombinasi huruf & angka.</span>
+                            </div>
+
+                            <Button
+                                type="submit"
+                                className="w-full h-9 font-medium text-xs shadow-xs gap-1.5 mt-1"
+                                disabled={processing}
+                            >
+                                {processing ? (
+                                    <>
+                                        <Spinner className="size-3.5" />
+                                        <span>Menyimpan & Mengaktifkan...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Aktifkan Akun & Masuk</span>
+                                        <ArrowRight className="size-3.5" />
+                                    </>
+                                )}
+                            </Button>
                         </div>
-                        <CardTitle className="text-xl font-semibold">
-                            Aktivasi Akun Baru
-                        </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground mt-1">
-                            Halo <span className="font-semibold text-foreground">{name}</span> ({roleLabel}), silakan buat kata sandi untuk mengamankan akun portal Anda.
-                        </CardDescription>
-                    </CardHeader>
-
-                    <CardContent className="pt-2">
-                        <Form
-                            action={`/invitation/${token}`}
-                            method="post"
-                            className="space-y-4"
-                            resetOnSuccess={['password', 'password_confirmation']}
-                        >
-                            {({ errors, processing }) => (
-                                <>
-                                    <div className="space-y-1.5">
-                                        <Label htmlFor="email" className="text-xs font-medium">
-                                            Alamat Email Terdaftar
-                                        </Label>
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            value={email}
-                                            readOnly
-                                            className="bg-muted text-muted-foreground cursor-not-allowed text-xs h-9"
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <Label htmlFor="password" className="text-xs font-semibold">
-                                            Kata Sandi Baru *
-                                        </Label>
-                                        <PasswordInput
-                                            id="password"
-                                            name="password"
-                                            autoComplete="new-password"
-                                            autoFocus
-                                            placeholder="Minimal 8 karakter"
-                                            required
-                                            className="h-9 text-xs"
-                                        />
-                                        <InputError message={errors.password} />
-                                    </div>
-
-                                    <div className="space-y-1.5">
-                                        <Label htmlFor="password_confirmation" className="text-xs font-semibold">
-                                            Konfirmasi Kata Sandi *
-                                        </Label>
-                                        <PasswordInput
-                                            id="password_confirmation"
-                                            name="password_confirmation"
-                                            autoComplete="new-password"
-                                            placeholder="Ulangi kata sandi baru"
-                                            required
-                                            className="h-9 text-xs"
-                                        />
-                                        <InputError message={errors.password_confirmation} />
-                                    </div>
-
-                                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground flex gap-2.5 items-start">
-                                        <ShieldCheck className="size-4 text-amber-600 shrink-0 mt-0.5" />
-                                        <span>
-                                            Gunakan kombinasi minimal 8 karakter dengan huruf dan angka untuk keamanan data purchasing.
-                                        </span>
-                                    </div>
-
-                                    <Button
-                                        type="submit"
-                                        className="w-full font-medium h-9 mt-2"
-                                        disabled={processing}
-                                    >
-                                        {processing ? 'Menyimpan...' : 'Simpan Sandi & Masuk ke Portal'}
-                                    </Button>
-                                </>
-                            )}
-                        </Form>
-                    </CardContent>
-                </Card>
+                    )}
+                </Form>
             </div>
-        </div>
+        </AuthLayout>
     );
 }

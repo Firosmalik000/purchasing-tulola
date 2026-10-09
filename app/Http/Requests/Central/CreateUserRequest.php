@@ -23,8 +23,10 @@ class CreateUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', Rule::unique(User::class)],
             'role' => ['required', Rule::enum(UserRole::class)],
             'password' => ['nullable', 'confirmed', Password::defaults()],
-            'is_active' => ['required', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
             'send_invitation' => ['nullable', 'boolean'],
+            'store_id' => ['nullable', 'exists:stores,id'],
+            'is_pic' => ['nullable', 'boolean'],
         ];
     }
 }

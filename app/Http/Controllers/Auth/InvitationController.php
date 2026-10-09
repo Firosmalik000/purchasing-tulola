@@ -52,16 +52,14 @@ class InvitationController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        $user->update([
+        $user->forceFill([
             'password' => Hash::make($validated['password']),
             'invitation_token' => null,
             'is_active' => true,
-            'email_verified_at' => $user->email_verified_at ?? now(),
-        ]);
+            'email_verified_at' => now(),
+        ])->save();
 
-        Auth::login($user);
-
-        return redirect()->intended(route('dashboard'))
-            ->with('success', 'Selamat datang! Kata sandi akun berhasil dibuat.');
+        return to_route('login')
+            ->with('status', 'Kata sandi berhasil dibuat dan akun Anda telah aktif! Silakan masuk dengan akun baru Anda.');
     }
 }

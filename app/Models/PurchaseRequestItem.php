@@ -23,17 +23,16 @@ use Illuminate\Support\Carbon;
  * @property string|null $suggested_quantity
  * @property string $requested_quantity
  * @property string|null $approved_quantity
- * @property string|null $estimated_price
  * @property Carbon|null $required_date
  * @property string|null $reason
  * @property PurchaseRequestItemStatus|null $status
  */
-#[Fillable(['purchase_request_id', 'type', 'item_id', 'name', 'description', 'unit_id', 'current_stock_snapshot', 'standard_stock_snapshot', 'suggested_quantity', 'requested_quantity', 'approved_quantity', 'estimated_price', 'required_date', 'reason', 'status'])]
+#[Fillable(['purchase_request_id', 'type', 'item_id', 'name', 'description', 'unit_id', 'current_stock_snapshot', 'standard_stock_snapshot', 'suggested_quantity', 'requested_quantity', 'approved_quantity', 'required_date', 'reason', 'status'])]
 class PurchaseRequestItem extends Model
 {
     protected function casts(): array
     {
-        return ['type' => PurchaseRequestItemType::class, 'current_stock_snapshot' => 'decimal:3', 'standard_stock_snapshot' => 'decimal:3', 'suggested_quantity' => 'decimal:3', 'requested_quantity' => 'decimal:3', 'approved_quantity' => 'decimal:3', 'estimated_price' => 'decimal:2', 'required_date' => 'date', 'status' => PurchaseRequestItemStatus::class];
+        return ['type' => PurchaseRequestItemType::class, 'current_stock_snapshot' => 'decimal:3', 'standard_stock_snapshot' => 'decimal:3', 'suggested_quantity' => 'decimal:3', 'requested_quantity' => 'decimal:3', 'approved_quantity' => 'decimal:3', 'required_date' => 'date', 'status' => PurchaseRequestItemStatus::class];
     }
 
     /** @return BelongsTo<PurchaseRequest, $this> */

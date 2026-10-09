@@ -34,11 +34,6 @@ class PurchaseOrderPolicy
         return $this->update($user, $order);
     }
 
-    public function advance(User $user, PurchaseOrder $order): bool
-    {
-        return $this->canManage($user) && $order->status === PurchaseOrderStatus::ORDERED;
-    }
-
     public function cancel(User $user, PurchaseOrder $order): bool
     {
         return $this->update($user, $order);

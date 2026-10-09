@@ -1,15 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
-import {
-    Clock,
-    Mail,
-    MoreHorizontal,
-    Pencil,
-    Phone,
-    Plus,
-    Search,
-    Truck,
-    User,
-} from 'lucide-react';
+import { MoreHorizontal, Pencil, Plus, Search, Truck } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
 import { PageHeader } from '@/components/common/page-header';
@@ -47,17 +37,23 @@ type Supplier = {
     phone?: string | null;
     email?: string | null;
     address?: string | null;
-    payment_term?: string | null;
     is_active: boolean;
 };
 type Props = {
-    suppliers: { data: Supplier[]; links: PaginationLink[]; current_page?: number; per_page?: number };
+    suppliers: {
+        data: Supplier[];
+        links: PaginationLink[];
+        current_page?: number;
+        per_page?: number;
+    };
     filters: { search: string };
 };
 
 export default function SupplierIndex({ suppliers, filters }: Props) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
-    const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+    const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(
+        null,
+    );
 
     const currentPage = suppliers.current_page || 1;
     const perPage = suppliers.per_page || 15;
@@ -70,9 +66,15 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                     badge="Master"
                     title="Supplier"
                     actions={
-                        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                        <Dialog
+                            open={createDialogOpen}
+                            onOpenChange={setCreateDialogOpen}
+                        >
                             <DialogTrigger asChild>
-                                <Button size="sm" className="h-8 text-xs shadow-xs">
+                                <Button
+                                    size="sm"
+                                    className="h-8 text-xs shadow-xs"
+                                >
                                     <Plus className="mr-1.5 size-3.5" />
                                     Tambah Supplier
                                 </Button>
@@ -94,84 +96,111 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                                         <>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-1">
-                                                    <Label className="text-xs font-medium">Kode Rekanan *</Label>
+                                                    <Label className="text-xs font-medium">
+                                                        Kode Rekanan *
+                                                    </Label>
                                                     <Input
                                                         name="code"
                                                         placeholder="SPL-001"
                                                         required
                                                         className="h-8.5 font-mono text-xs uppercase"
                                                     />
-                                                    <InputError message={errors.code} />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <Label className="text-xs font-medium">Termin Pembayaran</Label>
-                                                    <Input
-                                                        name="payment_term"
-                                                        placeholder="Net 30 / COD"
-                                                        className="h-8.5 text-xs"
+                                                    <InputError
+                                                        message={errors.code}
                                                     />
-                                                    <InputError message={errors.payment_term} />
                                                 </div>
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Nama Perusahaan / Supplier *</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Nama Perusahaan / Supplier *
+                                                </Label>
                                                 <Input
                                                     name="name"
                                                     placeholder="CV Logam Mulia Sejahtera"
                                                     required
                                                     className="h-8.5 text-xs"
                                                 />
-                                                <InputError message={errors.name} />
+                                                <InputError
+                                                    message={errors.name}
+                                                />
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-1">
-                                                    <Label className="text-xs font-medium">Kontak PIC</Label>
+                                                    <Label className="text-xs font-medium">
+                                                        Kontak PIC
+                                                    </Label>
                                                     <Input
                                                         name="contact_person"
                                                         placeholder="Nama narahubung"
                                                         className="h-8.5 text-xs"
                                                     />
-                                                    <InputError message={errors.contact_person} />
+                                                    <InputError
+                                                        message={
+                                                            errors.contact_person
+                                                        }
+                                                    />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <Label className="text-xs font-medium">Nomor Telepon</Label>
+                                                    <Label className="text-xs font-medium">
+                                                        Nomor Telepon
+                                                    </Label>
                                                     <Input
                                                         name="phone"
                                                         placeholder="08123456789"
                                                         className="h-8.5 text-xs"
                                                     />
-                                                    <InputError message={errors.phone} />
+                                                    <InputError
+                                                        message={errors.phone}
+                                                    />
                                                 </div>
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Email Korespondensi</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Email Korespondensi
+                                                </Label>
                                                 <Input
                                                     name="email"
                                                     type="email"
                                                     placeholder="supplier@domain.com"
                                                     className="h-8.5 text-xs"
                                                 />
-                                                <InputError message={errors.email} />
+                                                <InputError
+                                                    message={errors.email}
+                                                />
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Alamat Lengkap</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Alamat Lengkap
+                                                </Label>
                                                 <textarea
                                                     name="address"
                                                     rows={2}
                                                     placeholder="Alamat kantor atau pabrik..."
-                                                    className="w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                    className="w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-xs shadow-2xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                                                 />
-                                                <InputError message={errors.address} />
+                                                <InputError
+                                                    message={errors.address}
+                                                />
                                             </div>
 
                                             <label className="flex items-center gap-2 pt-1 text-xs">
-                                                <input type="hidden" name="is_active" value="0" />
-                                                <Checkbox name="is_active" value="1" defaultChecked />
-                                                <span>Supplier Langsung Aktif</span>
+                                                <input
+                                                    type="hidden"
+                                                    name="is_active"
+                                                    value="0"
+                                                />
+                                                <Checkbox
+                                                    name="is_active"
+                                                    value="1"
+                                                    defaultChecked
+                                                />
+                                                <span>
+                                                    Supplier Langsung Aktif
+                                                </span>
                                             </label>
 
                                             <div className="flex justify-end gap-2 pt-2">
@@ -180,7 +209,11 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                                                     variant="outline"
                                                     size="sm"
                                                     className="h-8 text-xs"
-                                                    onClick={() => setCreateDialogOpen(false)}
+                                                    onClick={() =>
+                                                        setCreateDialogOpen(
+                                                            false,
+                                                        )
+                                                    }
                                                 >
                                                     Batal
                                                 </Button>
@@ -203,7 +236,7 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
 
                 {/* Main Full-Width Data Table Card */}
                 <Card className="border-border/70 shadow-2xs">
-                    <CardHeader className="border-b border-border/40 py-3 px-4">
+                    <CardHeader className="border-b border-border/40 px-4 py-3">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-2">
                                 <Truck className="size-4 text-primary" />
@@ -214,13 +247,13 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
 
                             <Form action="/central/suppliers" method="get">
                                 <div className="relative">
-                                    <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                                    <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         name="search"
                                         defaultValue={filters.search}
                                         placeholder="Cari kode atau nama rekanan..."
                                         aria-label="Cari supplier"
-                                        className="h-8 w-full pl-8 sm:w-64 text-xs"
+                                        className="h-8 w-full pl-8 text-xs sm:w-64"
                                     />
                                 </div>
                             </Form>
@@ -233,85 +266,119 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                                 <EmptyState
                                     icon={Truck}
                                     title="Belum ada supplier terdaftar"
-                                    description="Gunakan tombol Tambah Supplier untuk mendaftarkan mitra vendor baru."
+                                    description="Gunakan tombol Tambah Supplier untuk mencatat sumber pembaruan stok."
                                 />
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse text-xs">
+                                <table className="w-full border-collapse text-left text-xs">
                                     <thead>
                                         <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
-                                            <th className="py-2.5 px-3 w-12 text-center">#</th>
-                                            <th className="py-2.5 px-3">Kode</th>
-                                            <th className="py-2.5 px-3">Nama Perusahaan / Supplier</th>
-                                            <th className="py-2.5 px-3">Kontak & Telp</th>
-                                            <th className="py-2.5 px-3">Email</th>
-                                            <th className="py-2.5 px-3">Termin Bayar</th>
-                                            <th className="py-2.5 px-3 text-center">Status</th>
-                                            <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                            <th className="w-12 px-3 py-2.5 text-center">
+                                                #
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Kode
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Nama Perusahaan / Supplier
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Kontak & Telp
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Email
+                                            </th>
+                                            <th className="px-3 py-2.5 text-center">
+                                                Status
+                                            </th>
+                                            <th className="w-16 px-3 py-2.5 text-center">
+                                                Aksi
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/40">
                                         {suppliers.data.map((supplier, idx) => (
-                                            <tr key={supplier.id} className="hover:bg-muted/30 transition-colors">
-                                                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
-                                                    {(currentPage - 1) * perPage + idx + 1}
+                                            <tr
+                                                key={supplier.id}
+                                                className="transition-colors hover:bg-muted/30"
+                                            >
+                                                <td className="px-3 py-2.5 text-center font-mono text-[11px] text-muted-foreground">
+                                                    {(currentPage - 1) *
+                                                        perPage +
+                                                        idx +
+                                                        1}
                                                 </td>
-                                                <td className="py-2.5 px-3 font-mono text-[11px] font-semibold text-primary">
+                                                <td className="px-3 py-2.5 font-mono text-[11px] font-semibold text-primary">
                                                     {supplier.code}
                                                 </td>
-                                                <td className="py-2.5 px-3">
+                                                <td className="px-3 py-2.5">
                                                     <span className="font-semibold text-foreground">
                                                         {supplier.name}
                                                     </span>
                                                     {supplier.address && (
-                                                        <p className="max-w-xs truncate text-[11px] text-muted-foreground mt-0.5">
+                                                        <p className="mt-0.5 max-w-xs truncate text-[11px] text-muted-foreground">
                                                             {supplier.address}
                                                         </p>
                                                     )}
                                                 </td>
-                                                <td className="py-2.5 px-3 text-muted-foreground">
-                                                    <div>{supplier.contact_person ?? '-'}</div>
+                                                <td className="px-3 py-2.5 text-muted-foreground">
+                                                    <div>
+                                                        {supplier.contact_person ??
+                                                            '-'}
+                                                    </div>
                                                     {supplier.phone && (
-                                                        <div className="text-[11px] text-muted-foreground/80 font-mono mt-0.5">
+                                                        <div className="mt-0.5 font-mono text-[11px] text-muted-foreground/80">
                                                             {supplier.phone}
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="py-2.5 px-3 text-muted-foreground">
+                                                <td className="px-3 py-2.5 text-muted-foreground">
                                                     {supplier.email ?? '-'}
                                                 </td>
-                                                <td className="py-2.5 px-3">
-                                                    <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
-                                                        {supplier.payment_term || 'COD'}
-                                                    </span>
-                                                </td>
-                                                <td className="py-2.5 px-3 text-center">
+                                                <td className="px-3 py-2.5 text-center">
                                                     <Badge
-                                                        variant={supplier.is_active ? 'default' : 'secondary'}
+                                                        variant={
+                                                            supplier.is_active
+                                                                ? 'default'
+                                                                : 'secondary'
+                                                        }
                                                         className="text-[10px]"
                                                     >
-                                                        {supplier.is_active ? 'Aktif' : 'Nonaktif'}
+                                                        {supplier.is_active
+                                                            ? 'Aktif'
+                                                            : 'Nonaktif'}
                                                     </Badge>
                                                 </td>
-                                                <td className="py-2.5 px-3 text-center">
+                                                <td className="px-3 py-2.5 text-center">
                                                     <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
+                                                        <DropdownMenuTrigger
+                                                            asChild
+                                                        >
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="size-7 text-muted-foreground hover:text-foreground"
                                                             >
                                                                 <MoreHorizontal className="size-4" />
-                                                                <span className="sr-only">Aksi</span>
+                                                                <span className="sr-only">
+                                                                    Aksi
+                                                                </span>
                                                             </Button>
                                                         </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-36 text-xs">
+                                                        <DropdownMenuContent
+                                                            align="end"
+                                                            className="w-36 text-xs"
+                                                        >
                                                             <DropdownMenuLabel className="text-[10px] text-muted-foreground">
                                                                 Pilihan
                                                             </DropdownMenuLabel>
                                                             <DropdownMenuItem
-                                                                onClick={() => setEditingSupplier(supplier)}
+                                                                onClick={() =>
+                                                                    setEditingSupplier(
+                                                                        supplier,
+                                                                    )
+                                                                }
                                                                 className="cursor-pointer"
                                                             >
                                                                 <Pencil className="mr-2 size-3.5" />
@@ -327,14 +394,19 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                             </div>
                         )}
                         <div className="border-t border-border/40 p-3">
-                            <PaginationLinks links={suppliers.links} />
+                            <PaginationLinks pagination={suppliers} />
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Edit Supplier Dialog */}
                 {editingSupplier && (
-                    <Dialog open={!!editingSupplier} onOpenChange={(open) => !open && setEditingSupplier(null)}>
+                    <Dialog
+                        open={!!editingSupplier}
+                        onOpenChange={(open) =>
+                            !open && setEditingSupplier(null)
+                        }
+                    >
                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
                                 <DialogTitle className="text-base font-semibold">
@@ -351,31 +423,32 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                                     <>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Kode Rekanan *</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Kode Rekanan *
+                                                </Label>
                                                 <Input
                                                     name="code"
-                                                    defaultValue={editingSupplier.code}
+                                                    defaultValue={
+                                                        editingSupplier.code
+                                                    }
                                                     required
                                                     className="h-8.5 font-mono text-xs uppercase"
                                                 />
-                                                <InputError message={errors.code} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Termin Pembayaran</Label>
-                                                <Input
-                                                    name="payment_term"
-                                                    defaultValue={editingSupplier.payment_term ?? ''}
-                                                    className="h-8.5 text-xs"
+                                                <InputError
+                                                    message={errors.code}
                                                 />
-                                                <InputError message={errors.payment_term} />
                                             </div>
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Nama Supplier *</Label>
+                                            <Label className="text-xs font-medium">
+                                                Nama Supplier *
+                                            </Label>
                                             <Input
                                                 name="name"
-                                                defaultValue={editingSupplier.name}
+                                                defaultValue={
+                                                    editingSupplier.name
+                                                }
                                                 required
                                                 className="h-8.5 text-xs"
                                             />
@@ -384,55 +457,92 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
 
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Kontak PIC</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Kontak PIC
+                                                </Label>
                                                 <Input
                                                     name="contact_person"
-                                                    defaultValue={editingSupplier.contact_person ?? ''}
+                                                    defaultValue={
+                                                        editingSupplier.contact_person ??
+                                                        ''
+                                                    }
                                                     className="h-8.5 text-xs"
                                                 />
-                                                <InputError message={errors.contact_person} />
+                                                <InputError
+                                                    message={
+                                                        errors.contact_person
+                                                    }
+                                                />
                                             </div>
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Nomor Telepon</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Nomor Telepon
+                                                </Label>
                                                 <Input
                                                     name="phone"
-                                                    defaultValue={editingSupplier.phone ?? ''}
+                                                    defaultValue={
+                                                        editingSupplier.phone ??
+                                                        ''
+                                                    }
                                                     className="h-8.5 text-xs"
                                                 />
-                                                <InputError message={errors.phone} />
+                                                <InputError
+                                                    message={errors.phone}
+                                                />
                                             </div>
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Email</Label>
+                                            <Label className="text-xs font-medium">
+                                                Email
+                                            </Label>
                                             <Input
                                                 name="email"
                                                 type="email"
-                                                defaultValue={editingSupplier.email ?? ''}
+                                                defaultValue={
+                                                    editingSupplier.email ?? ''
+                                                }
                                                 className="h-8.5 text-xs"
                                             />
-                                            <InputError message={errors.email} />
+                                            <InputError
+                                                message={errors.email}
+                                            />
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Alamat</Label>
+                                            <Label className="text-xs font-medium">
+                                                Alamat
+                                            </Label>
                                             <textarea
                                                 name="address"
                                                 rows={2}
-                                                defaultValue={editingSupplier.address ?? ''}
-                                                className="w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                                defaultValue={
+                                                    editingSupplier.address ??
+                                                    ''
+                                                }
+                                                className="w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-xs shadow-2xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                                             />
-                                            <InputError message={errors.address} />
+                                            <InputError
+                                                message={errors.address}
+                                            />
                                         </div>
 
                                         <label className="flex items-center gap-2 pt-1 text-xs">
-                                            <input type="hidden" name="is_active" value="0" />
+                                            <input
+                                                type="hidden"
+                                                name="is_active"
+                                                value="0"
+                                            />
                                             <Checkbox
                                                 name="is_active"
                                                 value="1"
-                                                defaultChecked={editingSupplier.is_active}
+                                                defaultChecked={
+                                                    editingSupplier.is_active
+                                                }
                                             />
-                                            <span>Supplier Aktif Bekerjasama</span>
+                                            <span>
+                                                Supplier Aktif Bekerjasama
+                                            </span>
                                         </label>
 
                                         <div className="flex justify-end gap-2 pt-2">
@@ -441,7 +551,9 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                                                 variant="outline"
                                                 size="sm"
                                                 className="h-8 text-xs"
-                                                onClick={() => setEditingSupplier(null)}
+                                                onClick={() =>
+                                                    setEditingSupplier(null)
+                                                }
                                             >
                                                 Batal
                                             </Button>

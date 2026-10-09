@@ -36,7 +36,7 @@ class PurchaseRequestManagementTest extends TestCase
             'notes' => 'Special only',
             'special_items' => [[
                 'name' => 'Display khusus', 'unit_id' => $unit->id, 'requested_quantity' => 1,
-                'description' => 'Display event', 'reason' => 'Acara toko', 'estimated_price' => 150000,
+                'description' => 'Display event', 'reason' => 'Acara toko',
                 'required_date' => now()->addDays(10)->toDateString(),
             ]],
         ])->assertSessionHasNoErrors();
@@ -66,7 +66,10 @@ class PurchaseRequestManagementTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('store/requests/index')
-                ->has('requests.data', 1));
+                ->has('requests.data', 1)
+                ->has('stores', 1)
+                ->where('selectedStoreId', $store->id)
+                ->where('filters.store_id', (string) $store->id));
         $this->actingAs($pic)->get(route('store.requests.create'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
@@ -137,6 +140,7 @@ class PurchaseRequestManagementTest extends TestCase
         $otherStore = Store::factory()->create();
         $outsider->stores()->attach($otherStore, ['is_pic' => true, 'is_active' => true]);
 
+        $this->actingAs($owner)->get(route('store.requests.index', ['store_id' => $otherStore->id]))->assertForbidden();
         $this->actingAs($outsider)->get(route('store.requests.show', $request))->assertForbidden();
         $this->actingAs($outsider)->get(route('store.requests.edit', $request))->assertForbidden();
         $this->actingAs($outsider)->put(route('store.requests.update', $request), [

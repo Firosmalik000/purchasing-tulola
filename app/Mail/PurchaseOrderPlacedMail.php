@@ -15,7 +15,7 @@ class PurchaseOrderPlacedMail extends Mailable
     use Queueable, SerializesModels;
 
     /**
-     * @param array<int, array{name: string, sku: string|null, quantity: string, unit: string}> $items
+     * @param  array<int, array{name: string, sku: string|null, quantity: string, unit: string}>  $items
      */
     public function __construct(
         public PurchaseOrder $purchaseOrder,
@@ -27,7 +27,7 @@ class PurchaseOrderPlacedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Pesanan Pembelian Telah Dipesan [{$this->purchaseOrder->number}] - {$this->purchaseOrder->supplier->name}",
+            subject: "Order Internal Siap Diterima [{$this->purchaseOrder->number}] - {$this->store->name}",
         );
     }
 

@@ -12,10 +12,7 @@ enum ManagementReportType: string
     case STOCK_BY_STORE = 'stock-by-store';
     case STOCK_VS_STANDARD = 'stock-vs-standard';
     case STOCK_UPDATE_HISTORY = 'stock-update-history';
-    case PURCHASE_BY_STORE = 'purchase-by-store';
-    case PURCHASE_BY_CATEGORY = 'purchase-by-category';
     case SPECIAL_REQUEST = 'special-request';
-    case PURCHASE_PRICE_HISTORY = 'purchase-price-history';
 
     public function label(): string
     {
@@ -28,10 +25,7 @@ enum ManagementReportType: string
             self::STOCK_BY_STORE => 'Stok per Toko',
             self::STOCK_VS_STANDARD => 'Stok vs Standar',
             self::STOCK_UPDATE_HISTORY => 'Riwayat Pembaruan Stok',
-            self::PURCHASE_BY_STORE => 'Pembelian per Toko',
-            self::PURCHASE_BY_CATEGORY => 'Pembelian per Kategori',
             self::SPECIAL_REQUEST => 'Permintaan Khusus',
-            self::PURCHASE_PRICE_HISTORY => 'Riwayat Harga Pembelian',
         };
     }
 
@@ -40,16 +34,13 @@ enum ManagementReportType: string
         return match ($this) {
             self::PURCHASING_REQUEST => 'Dokumen purchasing request dengan distribusi toko otomatis.',
             self::REQUEST_BY_STORE => 'Ringkasan jumlah permintaan dan kuantitas per toko.',
-            self::ORDER => 'Daftar purchase order beserta nilai dan status.',
+            self::ORDER => 'Daftar order internal beserta kuantitas dan status.',
             self::OUTSTANDING_ORDER => 'Sisa kuantitas pesanan yang belum diterima.',
             self::RECEIVED_ORDER => 'Rincian penerimaan aktual dari toko.',
             self::STOCK_BY_STORE => 'Posisi stok terkini untuk setiap toko.',
             self::STOCK_VS_STANDARD => 'Perbandingan stok terkini dengan stok standar.',
             self::STOCK_UPDATE_HISTORY => 'Audit perubahan kuantitas stok.',
-            self::PURCHASE_BY_STORE => 'Nilai pembelian berdasarkan alokasi toko.',
-            self::PURCHASE_BY_CATEGORY => 'Nilai pembelian per kategori item.',
             self::SPECIAL_REQUEST => 'Rincian item khusus di luar master item.',
-            self::PURCHASE_PRICE_HISTORY => 'Perubahan harga beli item dari waktu ke waktu.',
         };
     }
 

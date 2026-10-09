@@ -95,7 +95,7 @@ class MasterDataManagementTest extends TestCase
         $this->actingAs($user)->put(route('central.suppliers.update', $supplier), [
             'code' => 'UPD-SUP', 'name' => 'Updated Supplier', 'contact_person' => 'Contact',
             'phone' => '08123456789', 'email' => 'supplier@example.com', 'address' => 'Jakarta',
-            'payment_term' => 'NET 30', 'is_active' => false,
+            'is_active' => false,
         ])->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('item_categories', ['id' => $category->id, 'code' => 'UPD', 'is_active' => false]);

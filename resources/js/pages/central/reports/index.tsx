@@ -1,18 +1,11 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import {
-    BarChart3,
-    Calendar,
     CalendarRange,
     ChartNoAxesCombined,
-    ChevronRight,
     Download,
     FileSpreadsheet,
-    FileText,
     Filter,
-    Layers,
     Printer,
-    Store,
-    TrendingUp,
 } from 'lucide-react';
 import { EmptyState } from '@/components/common/empty-state';
 import { PageHeader } from '@/components/common/page-header';
@@ -103,7 +96,8 @@ export default function ReportIndex({
                                 <a
                                     href={`/central/reports/excel?${exportQuery}`}
                                 >
-                                    <FileSpreadsheet className="size-4" /> Ekspor Excel
+                                    <FileSpreadsheet className="size-4" />{' '}
+                                    Ekspor Excel
                                 </a>
                             </Button>
                         </div>
@@ -172,7 +166,11 @@ export default function ReportIndex({
                             method="get"
                             className="grid gap-4 md:grid-cols-2 xl:grid-cols-6"
                         >
-                            <input type="hidden" name="report" value={filters.report} />
+                            <input
+                                type="hidden"
+                                name="report"
+                                value={filters.report}
+                            />
 
                             <Field label="Dari Tanggal">
                                 <Input
@@ -194,7 +192,7 @@ export default function ReportIndex({
                                 />
                             </Field>
 
-                            <Field label="Toko / Butik">
+                            <Field label="Toko Cabang">
                                 <select
                                     name="store_id"
                                     defaultValue={filters.store_id ?? ''}
@@ -257,7 +255,11 @@ export default function ReportIndex({
                                 <Button className="h-10 flex-1 font-medium">
                                     Terapkan Filter
                                 </Button>
-                                <Button variant="outline" className="h-10" asChild>
+                                <Button
+                                    variant="outline"
+                                    className="h-10"
+                                    asChild
+                                >
                                     <Link href="/central/reports">Reset</Link>
                                 </Button>
                             </div>
@@ -317,7 +319,7 @@ export default function ReportIndex({
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-max text-left text-sm">
-                                    <thead className="border-b border-border/60 bg-muted/40 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                    <thead className="border-b border-border/60 bg-muted/40 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                         <tr>
                                             {report.columns.map((column) => (
                                                 <th
@@ -365,7 +367,7 @@ export default function ReportIndex({
                             Object.keys(report.signatures).length > 0) && (
                             <div className="grid gap-6 border-t border-border/60 bg-muted/10 p-5 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                    <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                         Ringkasan Total Akumulasi
                                     </p>
                                     {report.summary.map((item) => (
@@ -388,26 +390,26 @@ export default function ReportIndex({
 
                                 {Object.keys(report.signatures).length > 0 && (
                                     <div className="space-y-2">
-                                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                        <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                             Otorisasi & Pengesahan
                                         </p>
                                         <div className="grid grid-cols-3 gap-2.5">
-                                            {Object.entries(report.signatures).map(
-                                                ([label, name]) => (
-                                                    <div
-                                                        key={label}
-                                                        className="flex flex-col justify-between rounded-xl border border-border/70 bg-card p-3 text-center"
-                                                    >
-                                                        <p className="text-[11px] font-medium text-muted-foreground">
-                                                            {label}
-                                                        </p>
-                                                        <div className="h-10" />
-                                                        <p className="truncate text-xs font-semibold text-foreground border-t border-border/50 pt-1">
-                                                            {name}
-                                                        </p>
-                                                    </div>
-                                                ),
-                                            )}
+                                            {Object.entries(
+                                                report.signatures,
+                                            ).map(([label, name]) => (
+                                                <div
+                                                    key={label}
+                                                    className="flex flex-col justify-between rounded-xl border border-border/70 bg-card p-3 text-center"
+                                                >
+                                                    <p className="text-[11px] font-medium text-muted-foreground">
+                                                        {label}
+                                                    </p>
+                                                    <div className="h-10" />
+                                                    <p className="truncate border-t border-border/50 pt-1 text-xs font-semibold text-foreground">
+                                                        {name}
+                                                    </p>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
@@ -417,7 +419,9 @@ export default function ReportIndex({
                 </Card>
 
                 <p className="text-center text-xs text-muted-foreground">
-                    Dokumen digenerate pada {report.generated_at} · Seluruh data bersumber dari catatan transaksi asli Tulola Purchasing System.
+                    Dokumen digenerate pada {report.generated_at} · Seluruh data
+                    bersumber dari catatan transaksi asli Tulola Purchasing
+                    System.
                 </p>
             </main>
         </>
@@ -435,7 +439,9 @@ function Field({
 }) {
     return (
         <div className={`space-y-1.5 ${className}`}>
-            <Label className="text-xs font-semibold text-foreground">{label}</Label>
+            <Label className="text-xs font-semibold text-foreground">
+                {label}
+            </Label>
             {children}
         </div>
     );

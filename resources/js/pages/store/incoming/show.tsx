@@ -9,7 +9,6 @@ import {
     History as HistoryIcon,
     Package,
     PackageCheck,
-    Store as StoreIcon,
     Truck,
 } from 'lucide-react';
 import type { FormEvent } from 'react';
@@ -48,7 +47,6 @@ type Order = {
     order_date: string;
     expected_date: string | null;
     status: string;
-    supplier: { code: string; name: string } | null;
     notes: string | null;
     lines: Line[];
     can_receive: boolean;
@@ -111,7 +109,7 @@ export default function IncomingShow({
                                 <Link
                                     href={`/store/incoming?store_id=${store.id}`}
                                 >
-                                    <ArrowLeft className="size-4" /> Kembali ke Daftar
+                                    <ArrowLeft className="size-4" /> Kembali
                                 </Link>
                             </Button>
                         </div>
@@ -126,9 +124,11 @@ export default function IncomingShow({
                                 <Truck className="size-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Supplier Pengirim</p>
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    Sumber Pengiriman
+                                </p>
                                 <p className="mt-0.5 font-medium text-foreground">
-                                    {purchaseOrder.supplier?.name ?? 'Internal / Kantor Pusat'}
+                                    Internal / Purchasing Pusat
                                 </p>
                             </div>
                         </div>
@@ -138,7 +138,9 @@ export default function IncomingShow({
                                 <Calendar className="size-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Tanggal Order</p>
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    Tanggal Order
+                                </p>
                                 <p className="mt-0.5 font-medium text-foreground">
                                     {purchaseOrder.order_date.slice(0, 10)}
                                 </p>
@@ -150,9 +152,14 @@ export default function IncomingShow({
                                 <Clock className="size-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Estimasi Tiba</p>
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    Estimasi Tiba
+                                </p>
                                 <p className="mt-0.5 font-medium text-foreground">
-                                    {purchaseOrder.expected_date?.slice(0, 10) ?? '—'}
+                                    {purchaseOrder.expected_date?.slice(
+                                        0,
+                                        10,
+                                    ) ?? '—'}
                                 </p>
                             </div>
                         </div>
@@ -162,7 +169,9 @@ export default function IncomingShow({
                                 <FileText className="size-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">Instruksi / Catatan Pusat</p>
+                                <p className="text-xs font-medium text-muted-foreground">
+                                    Instruksi / Catatan Pusat
+                                </p>
                                 <p className="mt-0.5 font-medium text-foreground">
                                     {purchaseOrder.notes || '—'}
                                 </p>
@@ -183,7 +192,9 @@ export default function IncomingShow({
                                     Daftar Alokasi Barang untuk Toko
                                 </CardTitle>
                                 <p className="text-xs text-muted-foreground">
-                                    Rincian barang yang dialokasikan, total yang telah diterima sebelumnya, dan sisa outstanding
+                                    Rincian barang yang dialokasikan, total yang
+                                    telah diterima sebelumnya, dan sisa
+                                    outstanding
                                 </p>
                             </div>
                         </div>
@@ -191,7 +202,8 @@ export default function IncomingShow({
 
                     <CardContent className="space-y-3 p-5">
                         {purchaseOrder.lines.map((line) => {
-                            const isFulfilled = Number(line.outstanding_quantity) <= 0;
+                            const isFulfilled =
+                                Number(line.outstanding_quantity) <= 0;
                             return (
                                 <article
                                     key={line.allocation_id}
@@ -203,25 +215,33 @@ export default function IncomingShow({
                                                 {line.name}
                                             </p>
                                             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
-                                                {line.type === 'STOCK' ? 'Stok' : 'Khusus'}
+                                                {line.type === 'STOCK'
+                                                    ? 'Stok'
+                                                    : 'Khusus'}
                                             </span>
                                         </div>
                                         <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                                            {line.sku ?? 'Custom / Non-SKU'} · Satuan: {line.unit.symbol}
+                                            {line.sku ?? 'Custom / Non-SKU'} ·
+                                            Satuan: {line.unit.symbol}
                                         </p>
                                     </div>
 
                                     <div>
-                                        <p className="text-[11px] text-muted-foreground">Asal Permintaan (PR)</p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Asal Permintaan (PR)
+                                        </p>
                                         <p className="mt-0.5 font-mono text-xs font-semibold text-primary">
                                             {line.request_number}
                                         </p>
                                     </div>
 
                                     <div className="rounded-lg bg-muted/40 p-2 text-center">
-                                        <p className="text-[11px] text-muted-foreground">Dialokasikan</p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                            Dialokasikan
+                                        </p>
                                         <p className="mt-0.5 font-mono text-sm font-medium tabular-nums">
-                                            {line.ordered_quantity} {line.unit.symbol}
+                                            {line.ordered_quantity}{' '}
+                                            {line.unit.symbol}
                                         </p>
                                     </div>
 
@@ -229,23 +249,27 @@ export default function IncomingShow({
                                         <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
                                             Sudah Diterima
                                         </p>
-                                        <p className="mt-0.5 font-mono text-sm font-bold text-emerald-700 dark:text-emerald-300 tabular-nums">
-                                            {line.received_quantity} {line.unit.symbol}
+                                        <p className="mt-0.5 font-mono text-sm font-bold text-emerald-700 tabular-nums dark:text-emerald-300">
+                                            {line.received_quantity}{' '}
+                                            {line.unit.symbol}
                                         </p>
                                     </div>
 
                                     <div
-                                        className={`rounded-lg p-2 text-center border ${
+                                        className={`rounded-lg border p-2 text-center ${
                                             isFulfilled
                                                 ? 'border-border/60 bg-muted/20 text-muted-foreground'
                                                 : 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300'
                                         }`}
                                     >
                                         <p className="text-[11px] font-semibold">
-                                            {isFulfilled ? 'Selesai' : 'Outstanding Sisa'}
+                                            {isFulfilled
+                                                ? 'Selesai'
+                                                : 'Outstanding Sisa'}
                                         </p>
                                         <p className="mt-0.5 font-mono text-sm font-bold tabular-nums">
-                                            {line.outstanding_quantity} {line.unit.symbol}
+                                            {line.outstanding_quantity}{' '}
+                                            {line.unit.symbol}
                                         </p>
                                     </div>
                                 </article>
@@ -267,7 +291,8 @@ export default function IncomingShow({
                                         Form Konfirmasi Penerimaan Fisik
                                     </CardTitle>
                                     <p className="text-xs text-muted-foreground">
-                                        Input jumlah fisik yang benar-benar diperiksa dan diterima di toko saat ini
+                                        Input jumlah fisik yang benar-benar
+                                        diperiksa dan diterima di toko saat ini
                                     </p>
                                 </div>
                             </div>
@@ -278,14 +303,18 @@ export default function IncomingShow({
                                 <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-700 dark:text-emerald-300">
                                     <CheckCircle2 className="size-5 shrink-0" />
                                     <p className="text-sm font-medium">
-                                        Semua alokasi barang untuk pesanan ini telah diterima lengkap (outstanding 0).
+                                        Semua alokasi barang untuk pesanan ini
+                                        telah diterima lengkap (outstanding 0).
                                     </p>
                                 </div>
                             ) : (
                                 <form onSubmit={submit} className="space-y-6">
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-1.5">
-                                            <Label htmlFor="received_at" className="text-xs font-semibold">
+                                            <Label
+                                                htmlFor="received_at"
+                                                className="text-xs font-semibold"
+                                            >
                                                 Waktu Fisik Diterima *
                                             </Label>
                                             <Input
@@ -304,8 +333,12 @@ export default function IncomingShow({
                                         </div>
 
                                         <div className="space-y-1.5">
-                                            <Label htmlFor="notes" className="text-xs font-semibold">
-                                                Catatan Kondisi Barang (Opsional)
+                                            <Label
+                                                htmlFor="notes"
+                                                className="text-xs font-semibold"
+                                            >
+                                                Catatan Kondisi Barang
+                                                (Opsional)
                                             </Label>
                                             <Input
                                                 id="notes"
@@ -323,7 +356,7 @@ export default function IncomingShow({
                                     </div>
 
                                     <div className="space-y-3">
-                                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                        <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                             Daftar Barang yang Siap Diterima
                                         </Label>
                                         {receivableLines.map((line, index) => (
@@ -336,9 +369,13 @@ export default function IncomingShow({
                                                         {line.name}
                                                     </p>
                                                     <p className="mt-0.5 text-xs text-muted-foreground">
-                                                        {line.sku ?? 'Custom'} · Sisa belum diterima:{' '}
+                                                        {line.sku ?? 'Custom'} ·
+                                                        Sisa belum diterima:{' '}
                                                         <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                                                            {line.outstanding_quantity} {line.unit.symbol}
+                                                            {
+                                                                line.outstanding_quantity
+                                                            }{' '}
+                                                            {line.unit.symbol}
                                                         </span>
                                                     </p>
                                                 </div>
@@ -357,15 +394,28 @@ export default function IncomingShow({
                                                             size="sm"
                                                             className="h-5 px-1.5 text-[10px] text-primary hover:bg-primary/10"
                                                             onClick={() => {
-                                                                const items = [...form.data.items];
+                                                                const items = [
+                                                                    ...form.data
+                                                                        .items,
+                                                                ];
                                                                 items[index] = {
-                                                                    ...items[index],
-                                                                    received_quantity: line.outstanding_quantity,
+                                                                    ...items[
+                                                                        index
+                                                                    ],
+                                                                    received_quantity:
+                                                                        line.outstanding_quantity,
                                                                 };
-                                                                form.setData('items', items);
+                                                                form.setData(
+                                                                    'items',
+                                                                    items,
+                                                                );
                                                             }}
                                                         >
-                                                            Terima Semua ({line.outstanding_quantity})
+                                                            Terima Semua (
+                                                            {
+                                                                line.outstanding_quantity
+                                                            }
+                                                            )
                                                         </Button>
                                                     </div>
                                                     <div className="relative">
@@ -373,23 +423,42 @@ export default function IncomingShow({
                                                             id={`quantity-${line.allocation_id}`}
                                                             type="number"
                                                             min="0"
-                                                            max={line.outstanding_quantity}
+                                                            max={
+                                                                line.outstanding_quantity
+                                                            }
                                                             step="0.001"
                                                             className="h-10 pr-12 text-right font-medium tabular-nums"
                                                             value={
-                                                                form.data.items[index]?.received_quantity ?? ''
+                                                                form.data.items[
+                                                                    index
+                                                                ]
+                                                                    ?.received_quantity ??
+                                                                ''
                                                             }
-                                                            onChange={(event) => {
-                                                                const items = [...form.data.items];
+                                                            onChange={(
+                                                                event,
+                                                            ) => {
+                                                                const items = [
+                                                                    ...form.data
+                                                                        .items,
+                                                                ];
                                                                 items[index] = {
-                                                                    ...items[index],
-                                                                    received_quantity: event.target.value,
+                                                                    ...items[
+                                                                        index
+                                                                    ],
+                                                                    received_quantity:
+                                                                        event
+                                                                            .target
+                                                                            .value,
                                                                 };
-                                                                form.setData('items', items);
+                                                                form.setData(
+                                                                    'items',
+                                                                    items,
+                                                                );
                                                             }}
                                                             placeholder="0.000"
                                                         />
-                                                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">
+                                                        <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-medium text-muted-foreground">
                                                             {line.unit.symbol}
                                                         </span>
                                                     </div>
@@ -402,7 +471,9 @@ export default function IncomingShow({
                                         <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs font-medium text-destructive">
                                             <AlertCircle className="size-4 shrink-0" />
                                             <span>
-                                                Periksa jumlah penerimaan. Nilai harus lebih dari 0 dan tidak boleh melebihi sisa outstanding.
+                                                Periksa jumlah penerimaan. Nilai
+                                                harus lebih dari 0 dan tidak
+                                                boleh melebihi sisa outstanding.
                                             </span>
                                         </div>
                                     )}
@@ -413,7 +484,9 @@ export default function IncomingShow({
                                             className="gap-2 bg-emerald-600 font-medium text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600"
                                         >
                                             <PackageCheck className="size-4" />
-                                            {form.processing ? 'Menyimpan...' : 'Konfirmasi Penerimaan Barang'}
+                                            {form.processing
+                                                ? 'Menyimpan...'
+                                                : 'Konfirmasi Terima'}
                                         </Button>
                                     </div>
                                 </form>
@@ -434,7 +507,8 @@ export default function IncomingShow({
                                     Riwayat Tanda Terima Toko (Goods Receipts)
                                 </CardTitle>
                                 <p className="text-xs text-muted-foreground">
-                                    Bukti penerimaan fisik yang telah dibuat dan diverifikasi oleh staf toko
+                                    Bukti penerimaan fisik yang telah dibuat dan
+                                    diverifikasi oleh staf toko
                                 </p>
                             </div>
                         </div>
@@ -443,7 +517,8 @@ export default function IncomingShow({
                     <CardContent className="space-y-3 p-5">
                         {purchaseOrder.receipts.length === 0 ? (
                             <p className="text-xs text-muted-foreground">
-                                Belum ada bukti tanda terima yang dikonfirmasi untuk pesanan ini.
+                                Belum ada bukti tanda terima yang dikonfirmasi
+                                untuk pesanan ini.
                             </p>
                         ) : (
                             purchaseOrder.receipts.map((receipt) => (
@@ -461,13 +536,22 @@ export default function IncomingShow({
                                             </span>
                                         </div>
                                         <p className="text-xs text-muted-foreground">
-                                            Diverifikasi oleh: <span className="font-medium text-foreground">{receipt.receiver.name}</span> · {receipt.items.length} item diterima
-                                            {receipt.notes ? ` · Catatan: "${receipt.notes}"` : ''}
+                                            Diverifikasi oleh:{' '}
+                                            <span className="font-medium text-foreground">
+                                                {receipt.receiver.name}
+                                            </span>{' '}
+                                            · {receipt.items.length} item
+                                            diterima
+                                            {receipt.notes
+                                                ? ` · Catatan: "${receipt.notes}"`
+                                                : ''}
                                         </p>
                                     </div>
 
                                     <time className="font-mono text-xs text-muted-foreground">
-                                        {new Date(receipt.received_at).toLocaleString('id-ID', {
+                                        {new Date(
+                                            receipt.received_at,
+                                        ).toLocaleString('id-ID', {
                                             dateStyle: 'medium',
                                             timeStyle: 'short',
                                         })}

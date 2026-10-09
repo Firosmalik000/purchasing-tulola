@@ -5,25 +5,18 @@ const config: Record<
     { label: string; bg: string; text: string; border: string; dot: string }
 > = {
     DRAFT: {
-        label: 'Draft PO',
+        label: 'Proses',
         bg: 'bg-slate-100 dark:bg-slate-800/70',
         text: 'text-slate-700 dark:text-slate-300',
         border: 'border-slate-200 dark:border-slate-700',
         dot: 'bg-slate-400',
     },
     ORDERED: {
-        label: 'Dipesan',
+        label: 'Menunggu Diterima',
         bg: 'bg-purple-50 dark:bg-purple-950/50',
         text: 'text-purple-700 dark:text-purple-300',
         border: 'border-purple-200 dark:border-purple-800/60',
         dot: 'bg-purple-500',
-    },
-    WAITING_RECEIPT: {
-        label: 'Menunggu Diterima',
-        bg: 'bg-amber-50 dark:bg-amber-950/50',
-        text: 'text-amber-700 dark:text-amber-300',
-        border: 'border-amber-200 dark:border-amber-800/60',
-        dot: 'bg-amber-500 animate-pulse',
     },
     PARTIALLY_RECEIVED: {
         label: 'Diterima Sebagian',
@@ -31,13 +24,6 @@ const config: Record<
         text: 'text-cyan-700 dark:text-cyan-300',
         border: 'border-cyan-200 dark:border-cyan-800/60',
         dot: 'bg-cyan-500',
-    },
-    RECEIVED: {
-        label: 'Diterima Lengkap',
-        bg: 'bg-emerald-50 dark:bg-emerald-950/50',
-        text: 'text-emerald-700 dark:text-emerald-300',
-        border: 'border-emerald-200 dark:border-emerald-800/60',
-        dot: 'bg-emerald-500',
     },
     COMPLETED: {
         label: 'Selesai',
@@ -48,10 +34,10 @@ const config: Record<
     },
     CANCELLED: {
         label: 'Dibatalkan',
-        bg: 'bg-stone-100 dark:bg-stone-800/70',
-        text: 'text-stone-600 dark:text-stone-400 line-through',
-        border: 'border-stone-200 dark:border-stone-700',
-        dot: 'bg-stone-400',
+        bg: 'bg-slate-100 dark:bg-slate-800/70',
+        text: 'text-slate-500 dark:text-slate-400 line-through',
+        border: 'border-slate-200 dark:border-slate-700',
+        dot: 'bg-slate-400',
     },
 };
 
@@ -85,7 +71,7 @@ export function OrderStatusBadge({
                 className,
             )}
         >
-            <span className={cn('size-1.5 rounded-full shrink-0', item.dot)} />
+            <span className={cn('size-1.5 shrink-0 rounded-full', item.dot)} />
             {item.label}
         </span>
     );

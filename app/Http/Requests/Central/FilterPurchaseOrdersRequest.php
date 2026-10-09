@@ -19,7 +19,6 @@ class FilterPurchaseOrdersRequest extends FormRequest
     {
         return [
             'status' => ['nullable', Rule::enum(PurchaseOrderStatus::class)],
-            'supplier_id' => ['nullable', 'integer', Rule::exists('suppliers', 'id')],
             'keyword' => ['nullable', 'string', 'max:100'],
         ];
     }

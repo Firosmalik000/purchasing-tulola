@@ -19,14 +19,11 @@ class PlacePurchaseOrder
             if ($purchaseOrder->items->isEmpty()) {
                 throw ValidationException::withMessages(['items' => 'Pesanan harus memiliki item.']);
             }
-            if ($purchaseOrder->items->contains(fn ($item) => (float) $item->unit_price <= 0)) {
-                throw ValidationException::withMessages(['items' => 'Harga satuan seluruh item wajib lebih dari 0 sebelum pesanan ditandai Dipesan.']);
-            }
             $this->transition->handle($purchaseOrder, PurchaseOrderStatus::ORDERED);
             $requestIds = $purchaseOrder->items->flatMap->allocations->map(fn ($allocation) => $allocation->purchaseRequestItem->purchase_request_id)->unique()->sort()->values()->all();
             $this->synchronizeRequests->handle($requestIds, $actor);
 
-            return $purchaseOrder->load(['supplier', 'items.item', 'items.unit', 'items.allocations.purchaseRequestItem.purchaseRequest.store']);
+            return $purchaseOrder->load(['purchaseRequest.store', 'items.item', 'items.unit', 'items.allocations.purchaseRequestItem.purchaseRequest.store']);
         }, 3);
     }
 }

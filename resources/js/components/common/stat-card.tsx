@@ -16,7 +16,7 @@ const toneStyles = {
         iconBg: 'bg-muted text-muted-foreground',
     },
     warning: {
-        iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+        iconBg: 'bg-orange-500/10 text-orange-600 dark:text-orange-400',
     },
     success: {
         iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',

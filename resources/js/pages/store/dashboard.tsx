@@ -1,14 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
 import {
-    AlertTriangle,
     ArrowRight,
-    Boxes,
     ClipboardList,
     PackageCheck,
     PackageOpen,
     Plus,
     Send,
-    Warehouse,
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/page-header';
 import { StatCard } from '@/components/common/stat-card';
@@ -63,11 +60,11 @@ export default function StoreDashboard({
 
     return (
         <>
-            <Head title="Dashboard Butik — Tulola Purchasing" />
+            <Head title="Dashboard Toko Cabang — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
                 <PageHeader
-                    badge="Butik"
-                    title="Dashboard Butik"
+                    badge="Toko Cabang"
+                    title="Dashboard Toko Cabang"
                     actions={
                         <div className="flex flex-wrap gap-2">
                             <Button size="sm" asChild className="h-8 shadow-xs">
@@ -76,7 +73,12 @@ export default function StoreDashboard({
                                     Permintaan Baru
                                 </Link>
                             </Button>
-                            <Button size="sm" variant="outline" asChild className="h-8">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                asChild
+                                className="h-8"
+                            >
                                 <Link href="/store/incoming">
                                     <PackageCheck className="mr-1.5 size-3.5" />
                                     Barang Masuk
@@ -87,7 +89,10 @@ export default function StoreDashboard({
                 />
 
                 {/* KPI Metrics */}
-                <section aria-label="KPI Toko" className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+                <section
+                    aria-label="KPI Toko"
+                    className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-4"
+                >
                     <StatCard
                         label="Draft Permintaan"
                         value={metrics.myDrafts}
@@ -103,30 +108,32 @@ export default function StoreDashboard({
                         tone="warning"
                     />
                     <StatCard
-                        label="Barang Menuju Butik"
+                        label="Barang Menuju Toko Cabang"
                         value={metrics.incomingOrders}
                         helper="PO siap diterima fisik"
                         icon={PackageOpen}
                         tone="info"
                     />
                     <StatCard
-                        label="Stok Di Bawah Standar"
-                        value={metrics.lowStockCount}
-                        helper="Perlu restock segera"
-                        icon={AlertTriangle}
-                        tone={metrics.lowStockCount > 0 ? 'warning' : 'success'}
+                        label="Penerimaan Selesai"
+                        value={metrics.confirmedReceipts}
+                        helper="Histori barang masuk"
+                        icon={PackageCheck}
+                        tone="success"
                     />
                 </section>
 
                 {/* Chart & Quick Action */}
                 <section className="grid gap-5 lg:grid-cols-3">
-                    <Card className="lg:col-span-2 border-border/70 shadow-2xs">
+                    <Card className="border-border/70 shadow-2xs lg:col-span-2">
                         <CardHeader className="border-b border-border/40 pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-semibold">
                                     Tren Pengajuan & Penerimaan Barang
                                 </CardTitle>
-                                <span className="text-xs text-muted-foreground">Volume Butik</span>
+                                <span className="text-xs text-muted-foreground">
+                                    Volume Toko Cabang
+                                </span>
                             </div>
                         </CardHeader>
                         <CardContent className="pt-4">
@@ -134,43 +141,45 @@ export default function StoreDashboard({
                         </CardContent>
                     </Card>
 
-                    <Card className="border-border/70 shadow-2xs flex flex-col justify-between">
+                    <Card className="flex flex-col justify-between border-border/70 shadow-2xs">
                         <CardHeader className="border-b border-border/40 pb-3">
                             <CardTitle className="text-sm font-semibold">
                                 Aksi Cepat Operasional
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-2.5">
-                            <Button variant="outline" size="sm" className="w-full justify-between h-9 text-xs" asChild>
+                        <CardContent className="space-y-2.5 p-4">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 w-full justify-between text-xs"
+                                asChild
+                            >
                                 <Link href="/store/requests/create">
                                     <span className="flex items-center gap-2">
                                         <Plus className="size-3.5 text-primary" />
-                                        Buat Pengajuan Barang
+                                        Buat Permintaan
                                     </span>
                                     <ArrowRight className="size-3 text-muted-foreground" />
                                 </Link>
                             </Button>
-                            <Button variant="outline" size="sm" className="w-full justify-between h-9 text-xs" asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 w-full justify-between text-xs"
+                                asChild
+                            >
                                 <Link href="/store/incoming">
                                     <span className="flex items-center gap-2">
                                         <PackageCheck className="size-3.5 text-emerald-600" />
-                                        Konfirmasi Penerimaan Fisik
-                                    </span>
-                                    <ArrowRight className="size-3 text-muted-foreground" />
-                                </Link>
-                            </Button>
-                            <Button variant="outline" size="sm" className="w-full justify-between h-9 text-xs" asChild>
-                                <Link href="/store/inventory">
-                                    <span className="flex items-center gap-2">
-                                        <Warehouse className="size-3.5 text-indigo-600" />
-                                        Cek Posisi Stok Toko
+                                        Konfirmasi Terima
                                     </span>
                                     <ArrowRight className="size-3 text-muted-foreground" />
                                 </Link>
                             </Button>
 
-                            <div className="pt-2 text-[11px] text-muted-foreground text-center">
-                                Total {metrics.confirmedReceipts} penerimaan fisik telah terkonfirmasi.
+                            <div className="pt-2 text-center text-[11px] text-muted-foreground">
+                                Total {metrics.confirmedReceipts} penerimaan
+                                fisik telah terkonfirmasi.
                             </div>
                         </CardContent>
                     </Card>
@@ -182,11 +191,17 @@ export default function StoreDashboard({
                     <Card className="border-border/70 shadow-2xs">
                         <CardHeader className="flex flex-row items-center justify-between border-b border-border/40 pb-3">
                             <CardTitle className="text-sm font-semibold">
-                                Pengajuan Terakhir Butik
+                                Pengajuan Terakhir Toko Cabang
                             </CardTitle>
-                            <Button variant="ghost" size="sm" asChild className="h-7 text-xs">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className="h-7 text-xs"
+                            >
                                 <Link href="/store/requests">
-                                    Lihat Semua <ArrowRight className="ml-1 size-3" />
+                                    Lihat Semua{' '}
+                                    <ArrowRight className="ml-1 size-3" />
                                 </Link>
                             </Button>
                         </CardHeader>
@@ -198,21 +213,32 @@ export default function StoreDashboard({
                             ) : (
                                 <div className="divide-y divide-border/40">
                                     {recentRequests.map((req, idx) => (
-                                        <div key={req.id} className="flex items-center justify-between p-3.5 text-xs hover:bg-muted/30">
+                                        <div
+                                            key={req.id}
+                                            className="flex items-center justify-between p-3.5 text-xs hover:bg-muted/30"
+                                        >
                                             <div className="flex items-center gap-2.5">
-                                                <span className="font-mono text-[11px] text-muted-foreground/60 w-4">
+                                                <span className="w-4 font-mono text-[11px] text-muted-foreground/60">
                                                     #{idx + 1}
                                                 </span>
                                                 <div>
-                                                    <Link href={`/store/requests/${req.id}`} className="font-medium text-foreground hover:text-primary hover:underline">
+                                                    <Link
+                                                        href={`/store/requests/${req.id}`}
+                                                        className="font-medium text-foreground hover:text-primary hover:underline"
+                                                    >
                                                         {req.number}
                                                     </Link>
-                                                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                                                        Kebutuhan: {req.required_date ?? 'Segera'}
+                                                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                                                        Kebutuhan:{' '}
+                                                        {req.required_date ??
+                                                            'Segera'}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Badge variant="outline" className="text-[10px] font-semibold">
+                                            <Badge
+                                                variant="outline"
+                                                className="text-[10px] font-semibold"
+                                            >
                                                 {req.status}
                                             </Badge>
                                         </div>
@@ -228,9 +254,15 @@ export default function StoreDashboard({
                             <CardTitle className="text-sm font-semibold">
                                 Riwayat Penerimaan Paket
                             </CardTitle>
-                            <Button variant="ghost" size="sm" asChild className="h-7 text-xs">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className="h-7 text-xs"
+                            >
                                 <Link href="/store/incoming">
-                                    Lihat Semua <ArrowRight className="ml-1 size-3" />
+                                    Lihat Semua{' '}
+                                    <ArrowRight className="ml-1 size-3" />
                                 </Link>
                             </Button>
                         </CardHeader>
@@ -242,21 +274,29 @@ export default function StoreDashboard({
                             ) : (
                                 <div className="divide-y divide-border/40">
                                     {recentReceipts.map((rec, idx) => (
-                                        <div key={rec.id} className="flex items-center justify-between p-3.5 text-xs hover:bg-muted/30">
+                                        <div
+                                            key={rec.id}
+                                            className="flex items-center justify-between p-3.5 text-xs hover:bg-muted/30"
+                                        >
                                             <div className="flex items-center gap-2.5">
-                                                <span className="font-mono text-[11px] text-muted-foreground/60 w-4">
+                                                <span className="w-4 font-mono text-[11px] text-muted-foreground/60">
                                                     #{idx + 1}
                                                 </span>
                                                 <div>
                                                     <span className="font-medium text-foreground">
                                                         {rec.number}
                                                     </span>
-                                                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                                                        PO: {rec.purchaseOrder?.number ?? '-'}
+                                                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                                                        PO:{' '}
+                                                        {rec.purchaseOrder
+                                                            ?.number ?? '-'}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Badge variant="outline" className="text-[10px] font-semibold text-emerald-600">
+                                            <Badge
+                                                variant="outline"
+                                                className="text-[10px] font-semibold text-emerald-600"
+                                            >
                                                 {rec.status}
                                             </Badge>
                                         </div>
@@ -273,7 +313,7 @@ export default function StoreDashboard({
 
 StoreDashboard.layout = {
     breadcrumbs: [
-        { title: 'Portal Butik', href: '/store/dashboard' },
+        { title: 'Portal Toko Cabang', href: '/store/dashboard' },
         { title: 'Dashboard', href: '/store/dashboard' },
     ],
 };

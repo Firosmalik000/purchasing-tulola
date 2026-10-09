@@ -28,7 +28,7 @@ class PurchasingNotificationService
             $inviteUrl = route('invitation.accept', ['token' => $user->invitation_token]);
             Mail::to($user->email)->send(new UserInvitationMail($user, $inviteUrl));
         } catch (Throwable $e) {
-            Log::error('Gagal mengirim email undangan pengguna: ' . $e->getMessage(), [
+            Log::error('Gagal mengirim email undangan pengguna: '.$e->getMessage(), [
                 'user_id' => $user->id,
                 'email' => $user->email,
             ]);
@@ -57,7 +57,7 @@ class PurchasingNotificationService
 
             Mail::to($centralEmails)->send(new PurchaseRequestSubmittedMail($request, $viewUrl));
         } catch (Throwable $e) {
-            Log::error('Gagal mengirim email pengajuan PR: ' . $e->getMessage(), [
+            Log::error('Gagal mengirim email pengajuan PR: '.$e->getMessage(), [
                 'request_id' => $request->id,
                 'request_number' => $request->number,
             ]);
@@ -71,7 +71,7 @@ class PurchasingNotificationService
     {
         try {
             $order->loadMissing([
-                'supplier',
+                'purchaseRequest.store',
                 'items.item',
                 'items.unit',
                 'items.allocations.purchaseRequestItem.purchaseRequest.store.users',
@@ -95,14 +95,14 @@ class PurchasingNotificationService
                     }
 
                     $itemName = $orderItem->item_type === PurchaseRequestItemType::STOCK
-                        ? ($orderItem->item?->name ?? 'Item')
+                        ? ($orderItem->item->name ?? 'Item')
                         : ($orderItem->name ?? 'Item Khusus');
 
                     $storesMap[$storeId]['items'][] = [
                         'name' => $itemName,
                         'sku' => $orderItem->item?->sku,
                         'quantity' => rtrim(rtrim(number_format((float) $allocation->allocated_quantity, 3, '.', ''), '0'), '.'),
-                        'unit' => $orderItem->unit?->symbol ?? $orderItem->unit?->name ?? '',
+                        'unit' => $orderItem->unit->symbol ?? $orderItem->unit->name ?? '',
                     ];
                 }
             }
@@ -132,7 +132,7 @@ class PurchasingNotificationService
                 Mail::to($recipientEmails)->send(new PurchaseOrderPlacedMail($order, $store, $items, $viewUrl));
             }
         } catch (Throwable $e) {
-            Log::error('Gagal mengirim email PO ditempatkan ke cabang: ' . $e->getMessage(), [
+            Log::error('Gagal mengirim email PO ditempatkan ke cabang: '.$e->getMessage(), [
                 'order_id' => $order->id,
                 'order_number' => $order->number,
             ]);
@@ -168,7 +168,7 @@ class PurchasingNotificationService
 
             Mail::to($centralEmails)->send(new GoodsReceiptConfirmedMail($receipt, $viewUrl));
         } catch (Throwable $e) {
-            Log::error('Gagal mengirim email konfirmasi penerimaan barang: ' . $e->getMessage(), [
+            Log::error('Gagal mengirim email konfirmasi penerimaan barang: '.$e->getMessage(), [
                 'receipt_id' => $receipt->id,
                 'receipt_number' => $receipt->number,
             ]);

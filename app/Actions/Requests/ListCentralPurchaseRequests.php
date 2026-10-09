@@ -31,7 +31,7 @@ class ListCentralPurchaseRequests
                 ->orWhereHas('requester', fn ($users) => $users->where('name', 'like', "%{$keyword}%"))
                 ->orWhereHas('items', fn ($items) => $items->where('name', 'like', "%{$keyword}%")->orWhereHas('item', fn ($masterItems) => $masterItems->where('sku', 'like', "%{$keyword}%")->orWhere('name', 'like', "%{$keyword}%")))))
             ->latest()
-            ->paginate(15)
+            ->paginate((int) ($filters['per_page'] ?? 15))
             ->withQueryString();
     }
 }

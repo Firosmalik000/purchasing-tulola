@@ -27,8 +27,8 @@ class SynchronizeOrderedPurchaseRequests
             $fullyOrdered = $lines->isNotEmpty() && $lines->every(function (PurchaseRequestItem $line): bool {
                 $ordered = PurchaseOrderRequestItem::query()->where('purchase_request_item_id', $line->id)
                     ->whereHas('purchaseOrderItem.purchaseOrder', fn ($query) => $query->whereIn('status', [
-                        PurchaseOrderStatus::ORDERED, PurchaseOrderStatus::WAITING_RECEIPT,
-                        PurchaseOrderStatus::PARTIALLY_RECEIVED, PurchaseOrderStatus::RECEIVED, PurchaseOrderStatus::COMPLETED,
+                        PurchaseOrderStatus::ORDERED, PurchaseOrderStatus::PARTIALLY_RECEIVED,
+                        PurchaseOrderStatus::COMPLETED,
                     ]))->sum('allocated_quantity');
 
                 return (float) $ordered >= (float) $line->approved_quantity;

@@ -1,9 +1,7 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import {
-    Calendar,
     ClipboardList,
     Eye,
-    Filter,
     MoreHorizontal,
     Search,
 } from 'lucide-react';
@@ -36,7 +34,12 @@ type RequestItem = {
     requester: { id: number; name: string };
 };
 type Props = {
-    requests: { data: RequestItem[]; links: PaginationLink[]; current_page?: number; per_page?: number };
+    requests: {
+        data: RequestItem[];
+        links: PaginationLink[];
+        current_page?: number;
+        per_page?: number;
+    };
     stores: { id: number; code: string; name: string }[];
     statuses: { value: string; label: string }[];
     types: { value: string; label: string }[];
@@ -59,11 +62,11 @@ export default function CentralRequestIndex({
 }: Props) {
     const hasActiveFilters = Boolean(
         filters.store_id ||
-            filters.status ||
-            filters.type ||
-            filters.date_from ||
-            filters.date_to ||
-            filters.keyword,
+        filters.status ||
+        filters.type ||
+        filters.date_from ||
+        filters.date_to ||
+        filters.keyword,
     );
 
     const selectClass =
@@ -74,12 +77,9 @@ export default function CentralRequestIndex({
 
     return (
         <>
-            <Head title="Antrean Permintaan Butik — Tulola Purchasing" />
+            <Head title="Antrean Permintaan Toko Cabang — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <PageHeader
-                    badge="Pengadaan"
-                    title="Permintaan (PR)"
-                />
+                <PageHeader badge="Pengadaan" title="Permintaan (PR)" />
 
                 {/* Filter Toolbar */}
                 <Card className="border border-border/70 bg-card shadow-2xs">
@@ -103,9 +103,9 @@ export default function CentralRequestIndex({
                                     name="store_id"
                                     defaultValue={filters.store_id}
                                     className={selectClass}
-                                    aria-label="Filter butik"
+                                    aria-label="Filter toko cabang"
                                 >
-                                    <option value="">Semua butik</option>
+                                    <option value="">Semua toko cabang</option>
                                     {stores.map((s) => (
                                         <option key={s.id} value={s.id}>
                                             {s.code} — {s.name}
@@ -143,11 +143,19 @@ export default function CentralRequestIndex({
                                     ))}
                                 </select>
                             </div>
-                            <Button size="sm" className="h-8.5 px-3 text-xs font-medium shadow-xs">
+                            <Button
+                                size="sm"
+                                className="h-8.5 px-3 text-xs font-medium shadow-xs"
+                            >
                                 Filter
                             </Button>
                             {hasActiveFilters && (
-                                <Button variant="ghost" size="sm" className="h-8.5 text-xs" asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8.5 text-xs"
+                                    asChild
+                                >
                                     <Link href="/central/requests">Reset</Link>
                                 </Button>
                             )}
@@ -162,32 +170,53 @@ export default function CentralRequestIndex({
                         description={
                             hasActiveFilters
                                 ? 'Tidak ada data permintaan yang cocok dengan kriteria filter.'
-                                : 'Belum ada permintaan yang diajukan oleh cabang butik.'
+                                : 'Belum ada permintaan yang diajukan oleh toko cabang.'
                         }
                     />
                 ) : (
                     <Card className="overflow-hidden border border-border/70 shadow-2xs">
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse text-xs">
+                            <table className="w-full border-collapse text-left text-xs">
                                 <thead>
                                     <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
-                                        <th className="py-2.5 px-3 w-12 text-center">#</th>
-                                        <th className="py-2.5 px-3">Nomor PR</th>
-                                        <th className="py-2.5 px-3">Butik Asal</th>
-                                        <th className="py-2.5 px-3">Diajukan Oleh</th>
-                                        <th className="py-2.5 px-3 text-center">Item</th>
-                                        <th className="py-2.5 px-3">Tanggal Dibuat</th>
-                                        <th className="py-2.5 px-3 text-center">Status</th>
-                                        <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                        <th className="w-12 px-3 py-2.5 text-center">
+                                            #
+                                        </th>
+                                        <th className="px-3 py-2.5">
+                                            Nomor PR
+                                        </th>
+                                        <th className="px-3 py-2.5">
+                                            Toko Cabang Asal
+                                        </th>
+                                        <th className="px-3 py-2.5">
+                                            Diajukan Oleh
+                                        </th>
+                                        <th className="px-3 py-2.5 text-center">
+                                            Item
+                                        </th>
+                                        <th className="px-3 py-2.5">
+                                            Tanggal Dibuat
+                                        </th>
+                                        <th className="px-3 py-2.5 text-center">
+                                            Status
+                                        </th>
+                                        <th className="w-16 px-3 py-2.5 text-center">
+                                            Aksi
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/40">
                                     {requests.data.map((request, idx) => (
-                                        <tr key={request.id} className="hover:bg-muted/30 transition-colors">
-                                            <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
-                                                {(currentPage - 1) * perPage + idx + 1}
+                                        <tr
+                                            key={request.id}
+                                            className="transition-colors hover:bg-muted/30"
+                                        >
+                                            <td className="px-3 py-2.5 text-center font-mono text-[11px] text-muted-foreground">
+                                                {(currentPage - 1) * perPage +
+                                                    idx +
+                                                    1}
                                             </td>
-                                            <td className="py-2.5 px-3">
+                                            <td className="px-3 py-2.5">
                                                 <Link
                                                     href={`/central/requests/${request.id}`}
                                                     className="font-mono font-bold text-foreground hover:text-primary hover:underline"
@@ -195,50 +224,63 @@ export default function CentralRequestIndex({
                                                     {request.number}
                                                 </Link>
                                             </td>
-                                            <td className="py-2.5 px-3">
+                                            <td className="px-3 py-2.5">
                                                 <span className="font-semibold text-foreground">
                                                     {request.store.name}
                                                 </span>
-                                                <span className="text-[11px] text-muted-foreground ml-1.5 font-mono">
+                                                <span className="ml-1.5 font-mono text-[11px] text-muted-foreground">
                                                     ({request.store.code})
                                                 </span>
                                             </td>
-                                            <td className="py-2.5 px-3 text-foreground font-medium">
+                                            <td className="px-3 py-2.5 font-medium text-foreground">
                                                 {request.requester.name}
                                             </td>
-                                            <td className="py-2.5 px-3 text-center font-mono font-semibold">
+                                            <td className="px-3 py-2.5 text-center font-mono font-semibold">
                                                 {request.items_count}
                                             </td>
-                                            <td className="py-2.5 px-3 text-muted-foreground">
-                                                {new Date(request.created_at).toLocaleDateString('id-ID', {
+                                            <td className="px-3 py-2.5 text-muted-foreground">
+                                                {new Date(
+                                                    request.created_at,
+                                                ).toLocaleDateString('id-ID', {
                                                     day: 'numeric',
                                                     month: 'short',
                                                     year: 'numeric',
                                                 })}
                                             </td>
-                                            <td className="py-2.5 px-3 text-center">
-                                                <RequestStatusBadge status={request.status} />
+                                            <td className="px-3 py-2.5 text-center">
+                                                <RequestStatusBadge
+                                                    status={request.status}
+                                                />
                                             </td>
-                                            <td className="py-2.5 px-3 text-center">
+                                            <td className="px-3 py-2.5 text-center">
                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"
                                                             className="size-7 text-muted-foreground hover:text-foreground"
                                                         >
                                                             <MoreHorizontal className="size-4" />
-                                                            <span className="sr-only">Aksi</span>
+                                                            <span className="sr-only">
+                                                                Aksi
+                                                            </span>
                                                         </Button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-36 text-xs">
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="w-36 text-xs"
+                                                    >
                                                         <DropdownMenuLabel className="text-[10px] text-muted-foreground">
                                                             Tindakan
                                                         </DropdownMenuLabel>
-                                                        <DropdownMenuItem asChild>
+                                                        <DropdownMenuItem
+                                                            asChild
+                                                        >
                                                             <Link
                                                                 href={`/central/requests/${request.id}`}
-                                                                className="flex items-center cursor-pointer"
+                                                                className="flex cursor-pointer items-center"
                                                             >
                                                                 <Eye className="mr-2 size-3.5" />
                                                                 Tinjau & Proses
@@ -253,7 +295,7 @@ export default function CentralRequestIndex({
                             </table>
                         </div>
                         <div className="border-t border-border/40 p-3">
-                            <PaginationLinks links={requests.links} />
+                            <PaginationLinks pagination={requests} />
                         </div>
                     </Card>
                 )}

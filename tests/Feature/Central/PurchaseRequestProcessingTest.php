@@ -72,6 +72,17 @@ class PurchaseRequestProcessingTest extends TestCase
             'notes' => 'Stok disetujui sebagian.',
         ]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'purchase_request.processed', 'entity_id' => $request->id]);
+        $this->assertDatabaseHas('purchase_orders', [
+            'purchase_request_id' => $request->id,
+            'status' => 'DRAFT',
+        ]);
+        $this->assertDatabaseHas('purchase_order_request_items', [
+            'purchase_request_item_id' => $stockLine->id,
+            'allocated_quantity' => 3,
+        ]);
+        $this->assertDatabaseMissing('purchase_order_request_items', [
+            'purchase_request_item_id' => $specialLine->id,
+        ]);
         $audit = ActivityLog::query()->where('action', 'purchase_request.processed')->where('entity_id', $request->id)->firstOrFail();
         $this->assertSame('3.000', $audit->new_values['approved_quantities'][(string) $stockLine->id]);
     }

@@ -39,7 +39,7 @@ export function AppSidebarHeader({
                         {isStore ? (
                             <>
                                 <Store className="size-3 text-muted-foreground" />
-                                <span>Butik Toko</span>
+                                <span>Toko Cabang</span>
                             </>
                         ) : (
                             <>

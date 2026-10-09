@@ -1,24 +1,20 @@
 @extends('emails.layout')
 
 @section('content')
-    <div class="greeting">Pesanan Pembelian Telah Dibuat & Dipesan</div>
+    <div class="greeting">Order Internal Siap Diterima</div>
     
     <p>Halo Rekan di <strong>{{ $store->name }}</strong>,</p>
     
-    <p>Kabar baik! Tim purchasing pusat telah memproses pengajuan Anda dan menerbitkan Pesanan Pembelian resmi (PO) dengan nomor <strong>{{ $purchaseOrder->number }}</strong> ke supplier.</p>
+    <p>Tim purchasing pusat telah memproses pengajuan Anda dan mengirim Order Internal nomor <strong>{{ $purchaseOrder->number }}</strong>.</p>
     
     <div class="card-box">
         <div class="card-row">
-            <span class="card-label">Nomor PO:</span>
+            <span class="card-label">Nomor Order:</span>
             <span class="card-value">{{ $purchaseOrder->number }}</span>
         </div>
         <div class="card-row">
-            <span class="card-label">Supplier / Vendor:</span>
-            <span class="card-value">{{ $purchaseOrder->supplier->name }}</span>
-        </div>
-        <div class="card-row">
             <span class="card-label">Estimasi Kedatangan:</span>
-            <span class="card-value">{{ $purchaseOrder->expected_date ? \Carbon\Carbon::parse($purchaseOrder->expected_date)->translatedFormat('d F Y') : 'Menunggu konfirmasi supplier' }}</span>
+            <span class="card-value">{{ $purchaseOrder->expected_date ? \Carbon\Carbon::parse($purchaseOrder->expected_date)->translatedFormat('d F Y') : 'Belum ditentukan' }}</span>
         </div>
         <div class="card-row">
             <span class="card-label">Status Pesanan:</span>

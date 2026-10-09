@@ -2,6 +2,7 @@
 
 namespace App\Actions\Requests;
 
+use App\Actions\Orders\CreateDraftOrderForRequest;
 use App\Enums\PurchaseRequestItemStatus;
 use App\Enums\PurchaseRequestStatus;
 use App\Models\PurchaseRequest;
@@ -13,7 +14,10 @@ use Illuminate\Validation\ValidationException;
 
 class ProcessPurchaseRequest
 {
-    public function __construct(private TransitionPurchaseRequestStatus $transition) {}
+    public function __construct(
+        private TransitionPurchaseRequestStatus $transition,
+        private CreateDraftOrderForRequest $createDraftOrder,
+    ) {}
 
     /** @param array<int, array<string, mixed>> $approvals */
     public function handle(PurchaseRequest $purchaseRequest, User $actor, array $approvals, ?string $notes = null): PurchaseRequest
@@ -39,6 +43,8 @@ class ProcessPurchaseRequest
                 ['processed_at' => now()],
                 ['approved_quantities' => $approvalMap],
             );
+
+            $this->createDraftOrder->handle($purchaseRequest, $actor);
 
             return $purchaseRequest->load(['items.item', 'items.unit', 'statusHistories']);
         }, 3);

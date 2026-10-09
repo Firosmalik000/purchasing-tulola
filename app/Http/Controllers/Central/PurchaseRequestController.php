@@ -24,6 +24,7 @@ class PurchaseRequestController extends Controller
     public function index(FilterPurchaseRequestsRequest $request, ListCentralPurchaseRequests $query): Response
     {
         $filters = $request->validated();
+        $filters['per_page'] = \App\Support\Paging::perPage($request);
 
         return Inertia::render('central/requests/index', [
             'requests' => $query->handle($filters),

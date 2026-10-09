@@ -8,6 +8,7 @@ use App\Models\ItemCategory;
 use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\StoreStockStandard;
+use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -43,6 +44,54 @@ class InventoryManagementTest extends TestCase
         $this->assertDatabaseHas('store_stock_standards', ['standard_quantity' => 68]);
         $this->assertDatabaseCount('stock_movements', 0);
         $this->assertDatabaseHas('activity_logs', ['action' => 'stock_standard.updated']);
+    }
+
+    public function test_stock_update_records_supplier_cost_and_total_value(): void
+    {
+        [$store, $item] = $this->inventoryContext();
+        $admin = User::factory()->centralAdmin()->create();
+        $supplier = Supplier::create(['code' => 'SUP-01', 'name' => 'Supplier Stok', 'is_active' => true]);
+
+        $this->actingAs($admin)->put(route('central.inventory.stock.update'), [
+            'store_id' => $store->id, 'item_id' => $item->id, 'quantity' => '10.000',
+            'supplier_id' => $supplier->id, 'unit_cost' => '12500.00',
+            'movement_type' => StockMovementType::OPENING_BALANCE->value, 'reason' => 'Stok masuk',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('store_stocks', [
+            'store_id' => $store->id, 'item_id' => $item->id,
+            'quantity' => 10, 'average_unit_cost' => 12500, 'total_value' => 125000,
+        ]);
+        $this->assertDatabaseHas('stock_movements', [
+            'supplier_id' => $supplier->id, 'unit_cost' => 12500,
+            'movement_value' => 125000, 'new_value' => 125000,
+        ]);
+    }
+
+    public function test_fractional_stock_reduction_preserves_negative_movement_and_value(): void
+    {
+        [$store, $item] = $this->inventoryContext();
+        $admin = User::factory()->centralAdmin()->create();
+
+        $this->actingAs($admin)->put(route('central.inventory.stock.update'), [
+            'store_id' => $store->id, 'item_id' => $item->id, 'quantity' => '1.000',
+            'unit_cost' => '100.00', 'movement_type' => StockMovementType::OPENING_BALANCE->value,
+            'reason' => 'Saldo awal',
+        ])->assertSessionHasNoErrors();
+
+        $this->actingAs($admin)->put(route('central.inventory.stock.update'), [
+            'store_id' => $store->id, 'item_id' => $item->id, 'quantity' => '0.500',
+            'movement_type' => StockMovementType::CORRECTION->value, 'reason' => 'Koreksi setengah unit',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('store_stocks', [
+            'store_id' => $store->id, 'item_id' => $item->id,
+            'quantity' => 0.5, 'average_unit_cost' => 100, 'total_value' => 50,
+        ]);
+        $this->assertDatabaseHas('stock_movements', [
+            'new_quantity' => 0.5, 'quantity_difference' => -0.5,
+            'movement_value' => -50, 'previous_value' => 100, 'new_value' => 50,
+        ]);
     }
 
     public function test_store_pic_cannot_update_stock_or_standard(): void

@@ -54,6 +54,11 @@ class UserFactory extends Factory
         return $this->state(fn () => ['role' => UserRole::CENTRAL_ADMIN]);
     }
 
+    public function storePic(): static
+    {
+        return $this->state(fn () => ['role' => UserRole::STORE_PIC]);
+    }
+
     public function superAdmin(): static
     {
         return $this->state(fn () => ['role' => UserRole::SUPER_ADMIN]);

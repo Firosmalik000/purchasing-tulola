@@ -21,25 +21,62 @@ class StoreController extends Controller
 
         $search = trim((string) $request->string('search'));
         $stores = Store::query()
-            ->withCount(['users' => fn ($query) => $query->where('store_user.is_active', true)])
+            ->withCount([
+                'users' => fn ($query) => $query->where('store_user.is_active', true),
+                'purchaseRequests',
+            ])
+            ->with([
+                'users' => function ($query) {
+                    $query->where('store_user.is_active', true)
+                        ->select(['users.id', 'users.name', 'users.email', 'users.role', 'users.is_active', 'users.invitation_token']);
+                },
+                'purchaseRequests' => function ($query) {
+                    $query->with([
+                        'requester:id,name,email',
+                        'items' => fn ($iq) => $iq->select('id', 'purchase_request_id', 'name', 'requested_quantity'),
+                    ])
+                    ->withCount('items')
+                    ->latest()
+                    ->take(30);
+                },
+            ])
             ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('code', 'like', "%{$search}%")))
             ->latest()
-            ->paginate(15)
+            ->paginate(\App\Support\Paging::perPage($request))
             ->withQueryString();
+
+        $availableUsers = \App\Models\User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'email', 'role', 'is_active', 'invitation_token']);
 
         return Inertia::render('central/stores/index', [
             'stores' => $stores,
             'filters' => ['search' => $search],
+            'availableUsers' => $availableUsers,
         ]);
     }
 
-    public function store(StoreRequest $request, ActivityLogger $logger): RedirectResponse
+    public function store(StoreRequest $request, ActivityLogger $logger, \App\Actions\Stores\AssignUserToStore $assignAction): RedirectResponse
     {
-        $store = DB::transaction(function () use ($request, $logger): Store {
-            $store = Store::create($request->validated());
+        $store = DB::transaction(function () use ($request, $logger, $assignAction): Store {
+            $data = $request->validated();
+            $store = Store::create([
+                'code' => $data['code'],
+                'name' => $data['name'],
+                'address' => $data['address'] ?? null,
+                'is_active' => (bool) $data['is_active'],
+            ]);
             $logger->log('store.created', $store, newValues: $store->only(['code', 'name', 'address', 'is_active']));
+
+            if (! empty($data['pic_user_id'])) {
+                $user = \App\Models\User::find($data['pic_user_id']);
+                if ($user) {
+                    $isPic = isset($data['is_pic']) ? (bool) $data['is_pic'] : true;
+                    $assignAction->handle($store, $user, $isPic);
+                }
+            }
 
             return $store;
         });

@@ -22,14 +22,19 @@ use Illuminate\Support\Carbon;
  * @property int|null $created_by
  * @property Carbon $created_at
  */
-#[Fillable(['store_id', 'item_id', 'previous_quantity', 'new_quantity', 'quantity_difference', 'movement_type', 'reason', 'notes', 'reference_type', 'reference_id', 'created_by'])]
+#[Fillable(['store_id', 'item_id', 'supplier_id', 'previous_quantity', 'new_quantity', 'quantity_difference', 'unit_cost', 'movement_value', 'previous_value', 'new_value', 'movement_type', 'reason', 'notes', 'reference_type', 'reference_id', 'created_by'])]
 class StockMovement extends Model
 {
     public const UPDATED_AT = null;
 
     protected function casts(): array
     {
-        return ['previous_quantity' => 'decimal:3', 'new_quantity' => 'decimal:3', 'quantity_difference' => 'decimal:3', 'movement_type' => StockMovementType::class];
+        return [
+            'previous_quantity' => 'decimal:3', 'new_quantity' => 'decimal:3',
+            'quantity_difference' => 'decimal:3', 'unit_cost' => 'decimal:2',
+            'movement_value' => 'decimal:2', 'previous_value' => 'decimal:2',
+            'new_value' => 'decimal:2', 'movement_type' => StockMovementType::class,
+        ];
     }
 
     /** @return BelongsTo<Store, $this> */
@@ -42,6 +47,12 @@ class StockMovement extends Model
     public function item(): BelongsTo
     {
         return $this->belongsTo(Item::class);
+    }
+
+    /** @return BelongsTo<Supplier, $this> */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     /** @return BelongsTo<User, $this> */

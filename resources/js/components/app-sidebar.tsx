@@ -6,7 +6,6 @@ import {
     ChevronDown,
     ClipboardList,
     LayoutDashboard,
-    ListChecks,
     PackageCheck,
     ShoppingCart,
     Store,
@@ -63,11 +62,13 @@ function CollapsibleNavGroup({
             <CollapsibleTrigger asChild>
                 <button
                     type="button"
-                    className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground group-data-[state=open]/collapsible:text-foreground"
+                    className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs font-semibold text-muted-foreground transition-colors group-data-[state=open]/collapsible:text-foreground hover:bg-muted/60 hover:text-foreground"
                 >
                     <div className="flex items-center gap-2">
                         <Icon className="size-3.5 text-muted-foreground" />
-                        <span className="text-[11px] font-semibold tracking-wider uppercase">{label}</span>
+                        <span className="text-[11px] font-semibold tracking-wider uppercase">
+                            {label}
+                        </span>
                     </div>
                     <ChevronDown className="size-3 text-muted-foreground/60 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-180" />
                 </button>
@@ -89,7 +90,9 @@ function CollapsibleNavGroup({
                                         {item.icon && (
                                             <item.icon className="size-3.5 shrink-0" />
                                         )}
-                                        <span className="truncate">{item.title}</span>
+                                        <span className="truncate">
+                                            {item.title}
+                                        </span>
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -109,17 +112,14 @@ export function AppSidebar() {
 
     // Central Groups with compact concise labels
     const centralOperasional: NavItem[] = [
-        { title: 'Permintaan (PR)', href: '/central/requests', icon: ClipboardList },
+        {
+            title: 'Permintaan (PR)',
+            href: '/central/requests',
+            icon: ClipboardList,
+        },
     ];
-    if (auth.permissions.manageOrders) {
-        centralOperasional.push({
-            title: 'Planning PO',
-            href: '/central/purchase-planning',
-            icon: ListChecks,
-        });
-    }
     centralOperasional.push({
-        title: 'Pesanan (PO)',
+        title: 'Order Internal',
         href: '/central/orders',
         icon: ShoppingCart,
     });
@@ -170,19 +170,28 @@ export function AppSidebar() {
 
     // Store Groups
     const storeOperasional: NavItem[] = [
-        { title: 'Permintaan (PR)', href: '/store/requests', icon: ClipboardList },
+        {
+            title: 'Permintaan (PR)',
+            href: '/store/requests',
+            icon: ClipboardList,
+        },
         { title: 'Barang Masuk', href: '/store/incoming', icon: PackageCheck },
-    ];
-    const storeInventory: NavItem[] = [
-        { title: 'Stok Toko', href: '/store/inventory', icon: Warehouse },
     ];
 
     return (
-        <Sidebar collapsible="icon" variant="inset" className="border-r border-sidebar-border">
-            <SidebarHeader className="border-b border-sidebar-border/60 py-2.5 px-3">
+        <Sidebar
+            collapsible="icon"
+            variant="inset"
+            className="border-r border-sidebar-border"
+        >
+            <SidebarHeader className="border-b border-sidebar-border/60 px-3 py-2.5">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild className="hover:bg-transparent">
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            className="hover:bg-transparent"
+                        >
                             <Link href={homeUrl} prefetch>
                                 <AppLogo />
                             </Link>
@@ -207,20 +216,12 @@ export function AppSidebar() {
                 </div>
 
                 {isStore ? (
-                    <>
-                        <CollapsibleNavGroup
-                            label="Operasional"
-                            icon={Store}
-                            items={storeOperasional}
-                            defaultOpen={false}
-                        />
-                        <CollapsibleNavGroup
-                            label="Inventaris"
-                            icon={Warehouse}
-                            items={storeInventory}
-                            defaultOpen={false}
-                        />
-                    </>
+                    <CollapsibleNavGroup
+                        label="Operasional"
+                        icon={Store}
+                        items={storeOperasional}
+                        defaultOpen={true}
+                    />
                 ) : (
                     <>
                         <CollapsibleNavGroup
@@ -265,7 +266,7 @@ export function AppSidebar() {
                         <Building2 className="size-3 shrink-0" />
                     )}
                     <span className="truncate text-[11px] font-medium">
-                        {isStore ? 'Portal Butik' : 'Pusat Operasional'}
+                        {isStore ? 'Portal Toko Cabang' : 'Pusat Operasional'}
                     </span>
                 </div>
                 <NavUser />

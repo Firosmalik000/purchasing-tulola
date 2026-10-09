@@ -24,7 +24,7 @@ class ItemController extends Controller
         return Inertia::render('central/items/index', [
             'items' => Item::query()->with(['category:id,name', 'unit:id,name,symbol'])
                 ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('sku', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
-                ->orderBy('name')->paginate(15)->withQueryString(),
+                ->orderBy('name')->paginate(\App\Support\Paging::perPage($request))->withQueryString(),
             'categories' => ItemCategory::query()->orderBy('name')->get(),
             'units' => Unit::query()->orderBy('name')->get(),
             'filters' => ['search' => $search],

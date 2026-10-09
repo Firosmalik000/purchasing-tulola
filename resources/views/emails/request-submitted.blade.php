@@ -5,7 +5,7 @@
     
     <p>Halo Tim Purchasing Pusat,</p>
     
-    <p>Cabang butik <strong>{{ $purchaseRequest->store->name }}</strong> telah mengajukan Surat Permintaan Pembelian (Purchase Request) baru dengan nomor <strong>{{ $purchaseRequest->number }}</strong>.</p>
+    <p>Toko cabang <strong>{{ $purchaseRequest->store->name }}</strong> telah mengajukan Surat Permintaan Pembelian (Purchase Request) baru dengan nomor <strong>{{ $purchaseRequest->number }}</strong>.</p>
     
     <div class="card-box">
         <div class="card-row">
@@ -13,7 +13,7 @@
             <span class="card-value">{{ $purchaseRequest->number }}</span>
         </div>
         <div class="card-row">
-            <span class="card-label">Cabang / Butik:</span>
+            <span class="card-label">Toko Cabang:</span>
             <span class="card-value">{{ $purchaseRequest->store->name }} ({{ $purchaseRequest->store->code }})</span>
         </div>
         <div class="card-row">

@@ -14,16 +14,14 @@ use Illuminate\Support\Carbon;
 /**
  * @property int $id
  * @property string $number
- * @property int|null $supplier_id
+ * @property int|null $purchase_request_id
  * @property Carbon $order_date
  * @property Carbon|null $expected_date
- * @property string|null $payment_method
- * @property string|null $payment_term
  * @property string|null $notes
  * @property PurchaseOrderStatus $status
  * @property int $created_by
  */
-#[Fillable(['number', 'supplier_id', 'order_date', 'expected_date', 'payment_method', 'payment_term', 'notes', 'status', 'created_by'])]
+#[Fillable(['number', 'purchase_request_id', 'order_date', 'expected_date', 'notes', 'status', 'created_by'])]
 class PurchaseOrder extends Model
 {
     /** @use HasFactory<PurchaseOrderFactory> */
@@ -34,10 +32,10 @@ class PurchaseOrder extends Model
         return ['status' => PurchaseOrderStatus::class, 'order_date' => 'date', 'expected_date' => 'date'];
     }
 
-    /** @return BelongsTo<Supplier, $this> */
-    public function supplier(): BelongsTo
+    /** @return BelongsTo<PurchaseRequest, $this> */
+    public function purchaseRequest(): BelongsTo
     {
-        return $this->belongsTo(Supplier::class);
+        return $this->belongsTo(PurchaseRequest::class);
     }
 
     /** @return BelongsTo<User, $this> */

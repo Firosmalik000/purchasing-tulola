@@ -1,17 +1,13 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, router } from '@inertiajs/react';
 import {
     Building2,
-    Check,
-    KeyRound,
+    Mail,
     MoreHorizontal,
     Pencil,
-    Plus,
-    Shield,
+    Send,
     Trash2,
-    UserCheck,
     UserPlus,
     Users,
-    X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
@@ -51,18 +47,30 @@ type User = {
     email: string;
     role: string;
     is_active: boolean;
+    has_pending_invitation?: boolean;
+    invitation_token?: string | null;
     stores: Store[];
 };
 type Props = {
-    users: { data: User[]; links: PaginationLink[]; current_page?: number; per_page?: number };
+    auth: { user: { id: number } };
+    users: {
+        data: User[];
+        links: PaginationLink[];
+        current_page?: number;
+        per_page?: number;
+    };
     stores: Store[];
     roles: { value: string; label: string }[];
 };
 
-export default function UserIndex({ users, stores, roles }: Props) {
+export default function UserIndex({ auth, users, stores, roles }: Props) {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [assigningUser, setAssigningUser] = useState<User | null>(null);
+    const [isInviteMode, setIsInviteMode] = useState(true);
+    const [selectedRole, setSelectedRole] = useState(
+        roles[0]?.value || 'STORE_PIC',
+    );
 
     const roleLabels: Record<string, string> = {
         CENTRAL_ADMIN: 'Admin Purchasing Pusat',
@@ -81,7 +89,10 @@ export default function UserIndex({ users, stores, roles }: Props) {
                     badge="Akses"
                     title="Pengguna"
                     actions={
-                        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                        <Dialog
+                            open={createDialogOpen}
+                            onOpenChange={setCreateDialogOpen}
+                        >
                             <DialogTrigger asChild>
                                 <Button size="sm" className="h-8 shadow-xs">
                                     <UserPlus className="mr-1.5 size-3.5" />
@@ -94,20 +105,57 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                         Tambah Pengguna Baru
                                     </DialogTitle>
                                     <DialogDescription className="text-xs">
-                                        Undang staf atau buat kredensial akun baru untuk sistem purchasing.
+                                        Undang staf atau buat akun baru untuk
+                                        sistem purchasing.
                                     </DialogDescription>
                                 </DialogHeader>
+
+                                {/* Mode Switch: Invite Email vs Manual Credentials */}
+                                <div className="grid grid-cols-2 gap-1 rounded-lg border border-border/80 bg-muted/40 p-1 text-xs">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsInviteMode(true)}
+                                        className={`rounded-md py-1.5 text-center font-medium transition-colors ${
+                                            isInviteMode
+                                                ? 'bg-card text-foreground shadow-xs'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                    >
+                                        Undang via Email
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsInviteMode(false)}
+                                        className={`rounded-md py-1.5 text-center font-medium transition-colors ${
+                                            !isInviteMode
+                                                ? 'bg-card text-foreground shadow-xs'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                    >
+                                        Input Password Manual
+                                    </button>
+                                </div>
+
                                 <Form
                                     action="/central/users"
                                     method="post"
-                                    className="space-y-3.5 pt-2"
+                                    className="space-y-3 pt-1"
                                     onSuccess={() => setCreateDialogOpen(false)}
                                     resetOnSuccess
                                 >
                                     {({ errors, processing }) => (
                                         <>
+                                            <input
+                                                type="hidden"
+                                                name="send_invitation"
+                                                value={isInviteMode ? '1' : '0'}
+                                            />
+
                                             <div className="space-y-1">
-                                                <Label htmlFor="create-name" className="text-xs font-medium">
+                                                <Label
+                                                    htmlFor="create-name"
+                                                    className="text-xs font-medium"
+                                                >
                                                     Nama Lengkap *
                                                 </Label>
                                                 <Input
@@ -117,11 +165,16 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                                     placeholder="Nama staf"
                                                     required
                                                 />
-                                                <InputError message={errors.name} />
+                                                <InputError
+                                                    message={errors.name}
+                                                />
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label htmlFor="create-email" className="text-xs font-medium">
+                                                <Label
+                                                    htmlFor="create-email"
+                                                    className="text-xs font-medium"
+                                                >
                                                     Alamat Email *
                                                 </Label>
                                                 <Input
@@ -132,60 +185,168 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                                     placeholder="email@tulolajewelry.com"
                                                     required
                                                 />
-                                                <InputError message={errors.email} />
+                                                <InputError
+                                                    message={errors.email}
+                                                />
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label htmlFor="create-role" className="text-xs font-medium">
+                                                <Label
+                                                    htmlFor="create-role"
+                                                    className="text-xs font-medium"
+                                                >
                                                     Peran / Role *
                                                 </Label>
                                                 <select
                                                     id="create-role"
                                                     name="role"
+                                                    value={selectedRole}
+                                                    onChange={(e) =>
+                                                        setSelectedRole(
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                     className="form-select-custom h-8.5 w-full text-xs"
                                                     required
                                                 >
                                                     {roles.map((r) => (
-                                                        <option key={r.value} value={r.value}>
+                                                        <option
+                                                            key={r.value}
+                                                            value={r.value}
+                                                        >
                                                             {r.label}
                                                         </option>
                                                     ))}
                                                 </select>
-                                                <InputError message={errors.role} />
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <Label htmlFor="create-password" className="text-xs font-medium">
-                                                    Kata Sandi (Opsional)
-                                                </Label>
-                                                <Input
-                                                    id="create-password"
-                                                    name="password"
-                                                    type="password"
-                                                    className="h-8.5 text-xs"
-                                                    placeholder="Kosongkan untuk kirim link email"
-                                                />
-                                                <InputError message={errors.password} />
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <Label htmlFor="create-pass-confirm" className="text-xs font-medium">
-                                                    Konfirmasi Sandi
-                                                </Label>
-                                                <Input
-                                                    id="create-pass-confirm"
-                                                    name="password_confirmation"
-                                                    type="password"
-                                                    className="h-8.5 text-xs"
-                                                    placeholder="Ulangi jika mengisi sandi"
+                                                <InputError
+                                                    message={errors.role}
                                                 />
                                             </div>
 
-                                            <label className="flex items-center gap-2 pt-1 text-xs">
-                                                <input type="hidden" name="is_active" value="0" />
-                                                <Checkbox name="is_active" value="1" defaultChecked />
-                                                <span>Akun Langsung Aktif</span>
-                                            </label>
+                                            {/* Optional Store Assignment when role is STORE_PIC */}
+                                            {selectedRole === 'STORE_PIC' && (
+                                                <div className="space-y-1.5 rounded-lg border border-border/70 bg-muted/20 p-2.5">
+                                                    <Label
+                                                        htmlFor="create-store"
+                                                        className="text-xs font-medium"
+                                                    >
+                                                        Tugaskan ke Toko Cabang
+                                                        (Opsional)
+                                                    </Label>
+                                                    <select
+                                                        id="create-store"
+                                                        name="store_id"
+                                                        className="form-select-custom h-8.5 w-full text-xs"
+                                                        defaultValue=""
+                                                    >
+                                                        <option value="">
+                                                            -- Pilih Toko Cabang
+                                                            Penugasan --
+                                                        </option>
+                                                        {stores.map((s) => (
+                                                            <option
+                                                                key={s.id}
+                                                                value={s.id}
+                                                            >
+                                                                [{s.code}]{' '}
+                                                                {s.name}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <label className="flex items-center gap-2 pt-1 text-[11px] text-muted-foreground">
+                                                        <input
+                                                            type="hidden"
+                                                            name="is_pic"
+                                                            value="0"
+                                                        />
+                                                        <Checkbox
+                                                            name="is_pic"
+                                                            value="1"
+                                                            defaultChecked
+                                                        />
+                                                        <span>
+                                                            Tetapkan sebagai PIC
+                                                            Utama toko cabang
+                                                            ini
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            )}
+
+                                            {isInviteMode ? (
+                                                <div className="flex items-start gap-2.5 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3 text-xs text-muted-foreground">
+                                                    <Mail className="mt-0.5 size-4 shrink-0 text-blue-600" />
+                                                    <span>
+                                                        Tautan email akan
+                                                        dikirim ke staf. Staf
+                                                        akan membuat kata sandi
+                                                        sendiri saat mengklik
+                                                        link undangan. Status
+                                                        akun otomatis{' '}
+                                                        <strong>
+                                                            Menunggu Aktivasi
+                                                        </strong>
+                                                        .
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div className="space-y-1">
+                                                        <Label
+                                                            htmlFor="create-password"
+                                                            className="text-xs font-medium"
+                                                        >
+                                                            Kata Sandi *
+                                                        </Label>
+                                                        <Input
+                                                            id="create-password"
+                                                            name="password"
+                                                            type="password"
+                                                            className="h-8.5 text-xs"
+                                                            placeholder="Minimal 8 karakter"
+                                                            required
+                                                        />
+                                                        <InputError
+                                                            message={
+                                                                errors.password
+                                                            }
+                                                        />
+                                                    </div>
+
+                                                    <div className="space-y-1">
+                                                        <Label
+                                                            htmlFor="create-pass-confirm"
+                                                            className="text-xs font-medium"
+                                                        >
+                                                            Konfirmasi Sandi *
+                                                        </Label>
+                                                        <Input
+                                                            id="create-pass-confirm"
+                                                            name="password_confirmation"
+                                                            type="password"
+                                                            className="h-8.5 text-xs"
+                                                            placeholder="Ulangi kata sandi"
+                                                            required
+                                                        />
+                                                    </div>
+
+                                                    <label className="flex items-center gap-2 pt-1 text-xs">
+                                                        <input
+                                                            type="hidden"
+                                                            name="is_active"
+                                                            value="0"
+                                                        />
+                                                        <Checkbox
+                                                            name="is_active"
+                                                            value="1"
+                                                            defaultChecked
+                                                        />
+                                                        <span>
+                                                            Akun Langsung Aktif
+                                                        </span>
+                                                    </label>
+                                                </>
+                                            )}
 
                                             <div className="flex justify-end gap-2 pt-2">
                                                 <Button
@@ -193,7 +354,11 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                                     variant="outline"
                                                     size="sm"
                                                     className="h-8 text-xs"
-                                                    onClick={() => setCreateDialogOpen(false)}
+                                                    onClick={() =>
+                                                        setCreateDialogOpen(
+                                                            false,
+                                                        )
+                                                    }
                                                 >
                                                     Batal
                                                 </Button>
@@ -203,7 +368,9 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                                     className="h-8 text-xs font-medium"
                                                     disabled={processing}
                                                 >
-                                                    Simpan Pengguna
+                                                    {isInviteMode
+                                                        ? 'Kirim Undangan'
+                                                        : 'Simpan Pengguna'}
                                                 </Button>
                                             </div>
                                         </>
@@ -216,7 +383,7 @@ export default function UserIndex({ users, stores, roles }: Props) {
 
                 {/* Main Full-Width Data Table Card */}
                 <Card className="border-border/70 shadow-2xs">
-                    <CardHeader className="border-b border-border/40 py-3 px-4">
+                    <CardHeader className="border-b border-border/40 px-4 py-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Users className="size-4 text-primary" />
@@ -235,89 +402,206 @@ export default function UserIndex({ users, stores, roles }: Props) {
                             />
                         ) : (
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse text-xs">
+                                <table className="w-full border-collapse text-left text-xs">
                                     <thead>
                                         <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
-                                            <th className="py-2.5 px-3 w-12 text-center">#</th>
-                                            <th className="py-2.5 px-3">Nama Pengguna</th>
-                                            <th className="py-2.5 px-3">Email</th>
-                                            <th className="py-2.5 px-3">Peran / Otoritas</th>
-                                            <th className="py-2.5 px-3">Penugasan Butik</th>
-                                            <th className="py-2.5 px-3 text-center">Status</th>
-                                            <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                            <th className="w-12 px-3 py-2.5 text-center">
+                                                #
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Nama Pengguna
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Email
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Peran / Otoritas
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Penugasan Toko Cabang
+                                            </th>
+                                            <th className="px-3 py-2.5 text-center">
+                                                Status
+                                            </th>
+                                            <th className="w-16 px-3 py-2.5 text-center">
+                                                Aksi
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/40">
                                         {users.data.map((user, idx) => (
-                                            <tr key={user.id} className="hover:bg-muted/30 transition-colors">
-                                                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
-                                                    {(currentPage - 1) * perPage + idx + 1}
+                                            <tr
+                                                key={user.id}
+                                                className="transition-colors hover:bg-muted/30"
+                                            >
+                                                <td className="px-3 py-2.5 text-center font-mono text-[11px] text-muted-foreground">
+                                                    {(currentPage - 1) *
+                                                        perPage +
+                                                        idx +
+                                                        1}
                                                 </td>
-                                                <td className="py-2.5 px-3 font-semibold text-foreground">
+                                                <td className="px-3 py-2.5 font-semibold text-foreground">
                                                     {user.name}
                                                 </td>
-                                                <td className="py-2.5 px-3 text-muted-foreground">
+                                                <td className="px-3 py-2.5 text-muted-foreground">
                                                     {user.email}
                                                 </td>
-                                                <td className="py-2.5 px-3">
-                                                    <Badge variant="outline" className="text-[10px] font-semibold">
-                                                        {roleLabels[user.role] ?? user.role}
+                                                <td className="px-3 py-2.5">
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="text-[10px] font-semibold"
+                                                    >
+                                                        {roleLabels[
+                                                            user.role
+                                                        ] ?? user.role}
                                                     </Badge>
                                                 </td>
-                                                <td className="py-2.5 px-3">
-                                                    {user.stores.length === 0 ? (
-                                                        <span className="text-[11px] italic text-muted-foreground">
-                                                            {user.role === 'STORE_PIC' ? 'Belum ada toko' : 'Akses Global'}
+                                                <td className="px-3 py-2.5">
+                                                    {user.stores.length ===
+                                                    0 ? (
+                                                        <span className="text-[11px] text-muted-foreground italic">
+                                                            {user.role ===
+                                                            'STORE_PIC'
+                                                                ? 'Belum ada toko'
+                                                                : 'Akses Global'}
                                                         </span>
                                                     ) : (
                                                         <div className="flex flex-wrap gap-1">
-                                                            {user.stores.map((s) => (
-                                                                <Badge key={s.id} variant="secondary" className="text-[10px] py-0 px-1.5">
-                                                                    {s.name}
-                                                                </Badge>
-                                                            ))}
+                                                            {user.stores.map(
+                                                                (s) => (
+                                                                    <Badge
+                                                                        key={
+                                                                            s.id
+                                                                        }
+                                                                        variant="secondary"
+                                                                        className="px-1.5 py-0 text-[10px]"
+                                                                    >
+                                                                        {s.name}
+                                                                    </Badge>
+                                                                ),
+                                                            )}
                                                         </div>
                                                     )}
                                                 </td>
-                                                <td className="py-2.5 px-3 text-center">
-                                                    <Badge
-                                                        variant={user.is_active ? 'default' : 'secondary'}
-                                                        className="text-[10px]"
-                                                    >
-                                                        {user.is_active ? 'Aktif' : 'Nonaktif'}
-                                                    </Badge>
+                                                <td className="px-3 py-2.5 text-center">
+                                                    {user.has_pending_invitation ||
+                                                    (user.invitation_token !==
+                                                        null &&
+                                                        user.invitation_token !==
+                                                            undefined) ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="inline-flex items-center gap-1 border-blue-500/30 bg-blue-500/10 text-[10px] text-blue-700 dark:text-blue-300"
+                                                        >
+                                                            <Mail className="size-3 text-blue-600" />
+                                                            Menunggu Aktivasi
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge
+                                                            variant={
+                                                                user.is_active
+                                                                    ? 'default'
+                                                                    : 'secondary'
+                                                            }
+                                                            className="text-[10px]"
+                                                        >
+                                                            {user.is_active
+                                                                ? 'Aktif'
+                                                                : 'Nonaktif'}
+                                                        </Badge>
+                                                    )}
                                                 </td>
-                                                <td className="py-2.5 px-3 text-center">
+                                                <td className="px-3 py-2.5 text-center">
                                                     <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
+                                                        <DropdownMenuTrigger
+                                                            asChild
+                                                        >
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="size-7 text-muted-foreground hover:text-foreground"
                                                             >
                                                                 <MoreHorizontal className="size-4" />
-                                                                <span className="sr-only">Aksi</span>
+                                                                <span className="sr-only">
+                                                                    Aksi
+                                                                </span>
                                                             </Button>
                                                         </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-40 text-xs">
+                                                        <DropdownMenuContent
+                                                            align="end"
+                                                            className="w-44 text-xs"
+                                                        >
                                                             <DropdownMenuLabel className="text-[10px] text-muted-foreground">
                                                                 Tindakan
                                                             </DropdownMenuLabel>
+                                                            {(user.has_pending_invitation ||
+                                                                user.invitation_token) && (
+                                                                <DropdownMenuItem
+                                                                    onClick={() =>
+                                                                        router.post(
+                                                                            `/central/users/${user.id}/resend-invitation`,
+                                                                        )
+                                                                    }
+                                                                    className="cursor-pointer font-medium text-blue-600 dark:text-blue-400"
+                                                                >
+                                                                    <Send className="mr-2 size-3.5" />
+                                                                    Kirim Ulang
+                                                                    Undangan
+                                                                </DropdownMenuItem>
+                                                            )}
                                                             <DropdownMenuItem
-                                                                onClick={() => setEditingUser(user)}
+                                                                onClick={() =>
+                                                                    setEditingUser(
+                                                                        user,
+                                                                    )
+                                                                }
                                                                 className="cursor-pointer"
                                                             >
                                                                 <Pencil className="mr-2 size-3.5" />
                                                                 Edit Data
                                                             </DropdownMenuItem>
-                                                            {user.role === 'STORE_PIC' && (
+                                                            {user.role ===
+                                                                'STORE_PIC' && (
                                                                 <DropdownMenuItem
-                                                                    onClick={() => setAssigningUser(user)}
+                                                                    onClick={() =>
+                                                                        setAssigningUser(
+                                                                            user,
+                                                                        )
+                                                                    }
                                                                     className="cursor-pointer"
                                                                 >
                                                                     <Building2 className="mr-2 size-3.5" />
-                                                                    Atur Butik
+                                                                    Atur Toko
+                                                                    Cabang
                                                                 </DropdownMenuItem>
+                                                            )}
+                                                            {user.id !==
+                                                                auth.user
+                                                                    .id && (
+                                                                <>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => {
+                                                                            if (
+                                                                                confirm(
+                                                                                    `Hapus pengguna ${user.name}? Tindakan ini tidak dapat dibatalkan.`,
+                                                                                )
+                                                                            ) {
+                                                                                router.delete(
+                                                                                    `/central/users/${user.id}`,
+                                                                                    {
+                                                                                        preserveScroll: true,
+                                                                                    },
+                                                                                );
+                                                                            }
+                                                                        }}
+                                                                        className="cursor-pointer text-destructive focus:text-destructive"
+                                                                    >
+                                                                        <Trash2 className="mr-2 size-3.5" />
+                                                                        Hapus
+                                                                        Pengguna
+                                                                    </DropdownMenuItem>
+                                                                </>
                                                             )}
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -329,14 +613,17 @@ export default function UserIndex({ users, stores, roles }: Props) {
                             </div>
                         )}
                         <div className="border-t border-border/40 p-3">
-                            <PaginationLinks links={users.links} />
+                            <PaginationLinks pagination={users} />
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Edit User Dialog */}
                 {editingUser && (
-                    <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+                    <Dialog
+                        open={!!editingUser}
+                        onOpenChange={(open) => !open && setEditingUser(null)}
+                    >
                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
                                 <DialogTitle className="text-base font-semibold">
@@ -352,7 +639,9 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                 {({ errors, processing }) => (
                                     <>
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Nama Lengkap *</Label>
+                                            <Label className="text-xs font-medium">
+                                                Nama Lengkap *
+                                            </Label>
                                             <Input
                                                 name="name"
                                                 defaultValue={editingUser.name}
@@ -363,7 +652,9 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Email *</Label>
+                                            <Label className="text-xs font-medium">
+                                                Email *
+                                            </Label>
                                             <Input
                                                 name="email"
                                                 type="email"
@@ -371,18 +662,25 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                                 required
                                                 className="h-8.5 text-xs"
                                             />
-                                            <InputError message={errors.email} />
+                                            <InputError
+                                                message={errors.email}
+                                            />
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Peran / Otoritas *</Label>
+                                            <Label className="text-xs font-medium">
+                                                Peran / Otoritas *
+                                            </Label>
                                             <select
                                                 name="role"
                                                 defaultValue={editingUser.role}
                                                 className="form-select-custom h-8.5 w-full text-xs"
                                             >
                                                 {roles.map((r) => (
-                                                    <option key={r.value} value={r.value}>
+                                                    <option
+                                                        key={r.value}
+                                                        value={r.value}
+                                                    >
                                                         {r.label}
                                                     </option>
                                                 ))}
@@ -391,7 +689,9 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Kata Sandi Baru (Opsional)</Label>
+                                            <Label className="text-xs font-medium">
+                                                Kata Sandi Baru (Opsional)
+                                            </Label>
                                             <Input
                                                 name="password"
                                                 type="password"
@@ -401,7 +701,9 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Konfirmasi Sandi Baru</Label>
+                                            <Label className="text-xs font-medium">
+                                                Konfirmasi Sandi Baru
+                                            </Label>
                                             <Input
                                                 name="password_confirmation"
                                                 type="password"
@@ -411,11 +713,17 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                         </div>
 
                                         <label className="flex items-center gap-2 pt-1 text-xs">
-                                            <input type="hidden" name="is_active" value="0" />
+                                            <input
+                                                type="hidden"
+                                                name="is_active"
+                                                value="0"
+                                            />
                                             <Checkbox
                                                 name="is_active"
                                                 value="1"
-                                                defaultChecked={editingUser.is_active}
+                                                defaultChecked={
+                                                    editingUser.is_active
+                                                }
                                             />
                                             <span>Akun Aktif Bisa Login</span>
                                         </label>
@@ -426,7 +734,9 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                                 variant="outline"
                                                 size="sm"
                                                 className="h-8 text-xs"
-                                                onClick={() => setEditingUser(null)}
+                                                onClick={() =>
+                                                    setEditingUser(null)
+                                                }
                                             >
                                                 Batal
                                             </Button>
@@ -448,14 +758,18 @@ export default function UserIndex({ users, stores, roles }: Props) {
 
                 {/* Manage Store Assignments Dialog */}
                 {assigningUser && (
-                    <Dialog open={!!assigningUser} onOpenChange={(open) => !open && setAssigningUser(null)}>
+                    <Dialog
+                        open={!!assigningUser}
+                        onOpenChange={(open) => !open && setAssigningUser(null)}
+                    >
                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
                                 <DialogTitle className="text-base font-semibold">
-                                    Penugasan Toko Butik: {assigningUser.name}
+                                    Penugasan Toko Cabang: {assigningUser.name}
                                 </DialogTitle>
                                 <DialogDescription className="text-xs">
-                                    Atur cabang butik yang dapat diakses oleh PIC ini.
+                                    Atur toko cabang yang dapat diakses oleh PIC
+                                    ini.
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -465,7 +779,9 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                         Toko yang Sedang Ditugaskan:
                                     </Label>
                                     {assigningUser.stores.length === 0 ? (
-                                        <p className="text-xs italic text-muted-foreground">Belum ada penugasan.</p>
+                                        <p className="text-xs text-muted-foreground italic">
+                                            Belum ada penugasan.
+                                        </p>
                                     ) : (
                                         <div className="space-y-1.5">
                                             {assigningUser.stores.map((st) => (
@@ -473,13 +789,27 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                                     key={st.id}
                                                     className="flex items-center justify-between rounded-md border border-border/50 bg-muted/20 p-2 text-xs"
                                                 >
-                                                    <span className="font-medium text-foreground">{st.name} ({st.code})</span>
+                                                    <span className="font-medium text-foreground">
+                                                        {st.name} ({st.code})
+                                                    </span>
                                                     <Form
                                                         action={`/central/stores/${st.id}/users/${assigningUser.id}`}
                                                         method="delete"
                                                         onSuccess={() => {
-                                                            setAssigningUser((prev) =>
-                                                                prev ? { ...prev, stores: prev.stores.filter((s) => s.id !== st.id) } : null
+                                                            setAssigningUser(
+                                                                (prev) =>
+                                                                    prev
+                                                                        ? {
+                                                                              ...prev,
+                                                                              stores: prev.stores.filter(
+                                                                                  (
+                                                                                      s,
+                                                                                  ) =>
+                                                                                      s.id !==
+                                                                                      st.id,
+                                                                              ),
+                                                                          }
+                                                                        : null,
                                                             );
                                                         }}
                                                     >
@@ -489,7 +819,9 @@ export default function UserIndex({ users, stores, roles }: Props) {
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="size-6 text-red-500 hover:text-red-700"
-                                                                disabled={processing}
+                                                                disabled={
+                                                                    processing
+                                                                }
                                                             >
                                                                 <Trash2 className="size-3.5" />
                                                             </Button>
@@ -503,12 +835,19 @@ export default function UserIndex({ users, stores, roles }: Props) {
 
                                 <div className="border-t border-border/50 pt-3">
                                     <Label className="text-xs font-semibold text-muted-foreground uppercase">
-                                        Tambah Penugasan Butik:
+                                        Tambah Penugasan Toko Cabang:
                                     </Label>
                                     <AssignmentForm
                                         userId={assigningUser.id}
-                                        stores={stores.filter((s) => !assigningUser.stores.some((as) => as.id === s.id))}
-                                        onAssigned={() => setAssigningUser(null)}
+                                        stores={stores.filter(
+                                            (s) =>
+                                                !assigningUser.stores.some(
+                                                    (as) => as.id === s.id,
+                                                ),
+                                        )}
+                                        onAssigned={() =>
+                                            setAssigningUser(null)
+                                        }
                                     />
                                 </div>
                             </div>
@@ -532,7 +871,11 @@ function AssignmentForm({
     const [storeId, setStoreId] = useState('');
 
     if (stores.length === 0) {
-        return <p className="mt-1 text-xs text-muted-foreground">Semua toko butik sudah ditugaskan.</p>;
+        return (
+            <p className="mt-1 text-xs text-muted-foreground">
+                Semua toko cabang sudah ditugaskan.
+            </p>
+        );
     }
 
     return (
@@ -552,7 +895,7 @@ function AssignmentForm({
                         className="form-select-custom h-8.5 flex-1 text-xs"
                         required
                     >
-                        <option value="">Pilih butik toko...</option>
+                        <option value="">Pilih toko cabang...</option>
                         {stores.map((st) => (
                             <option key={st.id} value={st.id}>
                                 {st.name} ({st.code})
@@ -563,7 +906,7 @@ function AssignmentForm({
                         type="submit"
                         size="sm"
                         disabled={!storeId || processing}
-                        className="h-8.5 text-xs shrink-0"
+                        className="h-8.5 shrink-0 text-xs"
                     >
                         Tugaskan
                     </Button>

@@ -226,7 +226,7 @@ export default function ItemIndex({
                             </div>
                         )}
                         <div className="border-t border-border/40 p-3">
-                            <PaginationLinks links={items.links} />
+                            <PaginationLinks pagination={items} />
                         </div>
                     </CardContent>
                 </Card>

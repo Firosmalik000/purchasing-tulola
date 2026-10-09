@@ -10,7 +10,6 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\Receipt;
 use App\Models\StoreStock;
-use App\Models\StoreStockStandard;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -29,7 +28,7 @@ class StoreDashboardController extends Controller
 
         // Incoming POs waiting for receipt
         $incomingOrders = PurchaseOrder::query()
-            ->whereIn('status', [PurchaseOrderStatus::WAITING_RECEIPT, PurchaseOrderStatus::PARTIALLY_RECEIVED])
+            ->whereIn('status', [PurchaseOrderStatus::ORDERED, PurchaseOrderStatus::PARTIALLY_RECEIVED])
             ->whereHas('items.allocations.purchaseRequestItem.purchaseRequest', fn ($q) => $q->whereIn('store_id', $storeIds))
             ->count();
 

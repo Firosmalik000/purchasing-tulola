@@ -37,10 +37,7 @@ class BuildManagementReport
             ManagementReportType::STOCK_BY_STORE => $this->stockByStore($filters),
             ManagementReportType::STOCK_VS_STANDARD => $this->stockVsStandard($filters),
             ManagementReportType::STOCK_UPDATE_HISTORY => $this->stockHistory($filters),
-            ManagementReportType::PURCHASE_BY_STORE => $this->purchaseByStore($filters),
-            ManagementReportType::PURCHASE_BY_CATEGORY => $this->purchaseByCategory($filters),
             ManagementReportType::SPECIAL_REQUEST => $this->specialRequests($filters),
-            ManagementReportType::PURCHASE_PRICE_HISTORY => $this->priceHistory($filters),
         };
 
         return [
@@ -83,7 +80,7 @@ class BuildManagementReport
         $query = PurchaseOrder::query()
             ->where('status', '!=', PurchaseOrderStatus::CANCELLED)
             ->with([
-                'supplier:id,name', 'creator:id,name', 'items.item:id,sku,name,item_category_id', 'items.unit:id,symbol',
+                'creator:id,name', 'items.item:id,sku,name,item_category_id', 'items.unit:id,symbol',
                 'items.allocations.purchaseRequestItem.purchaseRequest.store:id,code,name',
                 'items.allocations.purchaseRequestItem.purchaseRequest.requester:id,name',
             ]);
@@ -94,7 +91,6 @@ class BuildManagementReport
         if (! $order) {
             return [
                 'columns' => $this->purchasingRequestColumns(), 'rows' => [],
-                'summary' => [['label' => 'Grand Total', 'value' => '0.00', 'format' => 'currency']],
                 'context' => [], 'signatures' => ['Requested By' => '—', 'Checked By' => 'Purchasing', 'Approved By' => 'Management'],
             ];
         }
@@ -110,8 +106,6 @@ class BuildManagementReport
                 'stock' => $stock,
                 'standard_stock' => $standard,
                 'quantity' => $line->quantity,
-                'unit_price' => $line->unit_price,
-                'total' => $line->total,
                 'remarks' => $allocations->groupBy(fn ($allocation) => $allocation->purchaseRequestItem->purchaseRequest->store->code)
                     ->map(fn (Collection $entries, string $code) => $code.' '.$this->quantity($entries->sum('allocated_quantity')))
                     ->values()->implode(', '),
@@ -124,17 +118,12 @@ class BuildManagementReport
         return [
             'columns' => $this->purchasingRequestColumns(),
             'rows' => $rows,
-            'summary' => [['label' => 'Grand Total', 'value' => $this->money($order->items->sum('total')), 'format' => 'currency']],
             'context' => [
                 'Date' => $order->order_date->format('d/m/Y'),
                 'PR No / Report No' => $requests->pluck('number')->implode(', ') ?: $order->number,
                 'Ship To' => $requests->pluck('store.name')->unique()->implode(', ') ?: '—',
                 'Requisitioner' => $requests->pluck('requester.name')->unique()->implode(', ') ?: '—',
-                'Budget' => '—',
-                'Payment Method' => $order->payment_method ?: '—',
                 'Material / Type' => $types ?: '—',
-                'TOP' => $order->payment_term ?: '—',
-                'Supplier' => data_get($order, 'supplier.name', '—'),
                 'Order No' => $order->number,
             ],
             'signatures' => [
@@ -151,8 +140,7 @@ class BuildManagementReport
         return [
             $this->column('no', 'No', 'integer', 'center'), $this->column('item', 'Items'),
             $this->column('stock', 'Stock', 'text', 'right'), $this->column('standard_stock', 'Standard Stock', 'text', 'right'),
-            $this->column('quantity', 'Qty', 'quantity', 'right'), $this->column('unit_price', 'Unit Price', 'currency', 'right'),
-            $this->column('total', 'Total', 'currency', 'right'), $this->column('remarks', 'Remarks'),
+            $this->column('quantity', 'Qty', 'quantity', 'right'), $this->column('remarks', 'Remarks'),
         ];
     }
 
@@ -198,11 +186,11 @@ class BuildManagementReport
      */
     private function orders(array $filters): array
     {
-        $query = PurchaseOrder::query()->with(['supplier:id,name'])->withCount('items')->withSum('items as grand_total', 'total');
+        $query = PurchaseOrder::query()->with(['purchaseRequest.store:id,code,name'])->withCount('items');
         $this->dateRange($query, 'order_date', $filters);
-        $rows = $query->latest('order_date')->get()->map(fn (PurchaseOrder $order) => ['date' => $order->order_date->format('d/m/Y'), 'number' => $order->number, 'supplier' => data_get($order, 'supplier.name', '—'), 'status' => $order->status->label(), 'items' => $order->items_count, 'total' => $this->money($order->grand_total ?? 0), 'payment' => trim(($order->payment_method ?? '—').' / '.($order->payment_term ?? '—'))])->all();
+        $rows = $query->latest('order_date')->get()->map(fn (PurchaseOrder $order) => ['date' => $order->order_date->format('d/m/Y'), 'number' => $order->number, 'request' => $order->purchaseRequest->number ?? 'Data lama', 'store' => data_get($order, 'purchaseRequest.store.code', '—'), 'status' => $order->status->label(), 'items' => $order->items_count])->all();
 
-        return ['columns' => [$this->column('date', 'Tanggal'), $this->column('number', 'No. Pesanan'), $this->column('supplier', 'Supplier'), $this->column('status', 'Status'), $this->column('items', 'Baris', 'integer', 'right'), $this->column('total', 'Total', 'currency', 'right'), $this->column('payment', 'Pembayaran / TOP')], 'rows' => $rows, 'summary' => [['label' => 'Total Pesanan', 'value' => $this->money(collect($rows)->sum('total')), 'format' => 'currency']]];
+        return ['columns' => [$this->column('date', 'Tanggal'), $this->column('number', 'No. Order'), $this->column('request', 'No. Request'), $this->column('store', 'Toko'), $this->column('status', 'Status'), $this->column('items', 'Baris', 'integer', 'right')], 'rows' => $rows];
     }
 
     /**
@@ -211,13 +199,13 @@ class BuildManagementReport
      */
     private function outstandingOrders(array $filters): array
     {
-        $query = PurchaseOrderItem::query()->with(['purchaseOrder:id,number,order_date,expected_date,status,supplier_id', 'purchaseOrder.supplier:id,name', 'item:id,name,item_category_id', 'unit:id,symbol'])->withSum('receiptItems as received_quantity', 'received_quantity')
+        $query = PurchaseOrderItem::query()->with(['purchaseOrder:id,number,order_date,expected_date,status', 'item:id,name,item_category_id', 'unit:id,symbol'])->withSum('receiptItems as received_quantity', 'received_quantity')
             ->whereHas('purchaseOrder', fn ($orders) => $orders->whereNotIn('status', [PurchaseOrderStatus::DRAFT, PurchaseOrderStatus::CANCELLED]));
         $this->orderDateRange($query, $filters);
         $this->applyCategory($query, $filters);
-        $rows = $query->get()->filter(fn ($line) => (float) $line->quantity > (float) ($line->received_quantity ?? 0))->map(fn ($line) => ['order' => $line->purchaseOrder->number, 'order_date' => $line->purchaseOrder->order_date->format('d/m/Y'), 'expected' => $line->purchaseOrder->expected_date?->format('d/m/Y') ?? '—', 'supplier' => data_get($line, 'purchaseOrder.supplier.name', '—'), 'item' => data_get($line, 'item.name', $line->name ?? '—'), 'ordered' => $line->quantity, 'received' => $this->quantity($line->received_quantity ?? 0), 'outstanding' => $this->quantity((float) $line->quantity - (float) ($line->received_quantity ?? 0)), 'unit' => $line->unit->symbol])->values()->all();
+        $rows = $query->get()->filter(fn ($line) => (float) $line->quantity > (float) ($line->received_quantity ?? 0))->map(fn ($line) => ['order' => $line->purchaseOrder->number, 'order_date' => $line->purchaseOrder->order_date->format('d/m/Y'), 'expected' => $line->purchaseOrder->expected_date?->format('d/m/Y') ?? '—', 'item' => data_get($line, 'item.name', $line->name ?? '—'), 'ordered' => $line->quantity, 'received' => $this->quantity($line->received_quantity ?? 0), 'outstanding' => $this->quantity((float) $line->quantity - (float) ($line->received_quantity ?? 0)), 'unit' => $line->unit->symbol])->values()->all();
 
-        return ['columns' => [$this->column('order', 'No. Pesanan'), $this->column('order_date', 'Tanggal'), $this->column('expected', 'Target'), $this->column('supplier', 'Supplier'), $this->column('item', 'Item'), $this->column('ordered', 'Dipesan', 'quantity', 'right'), $this->column('received', 'Diterima', 'quantity', 'right'), $this->column('outstanding', 'Outstanding', 'quantity', 'right'), $this->column('unit', 'Unit')], 'rows' => $rows];
+        return ['columns' => [$this->column('order', 'No. Order'), $this->column('order_date', 'Tanggal'), $this->column('expected', 'Target'), $this->column('item', 'Item'), $this->column('ordered', 'Dikirim', 'quantity', 'right'), $this->column('received', 'Diterima', 'quantity', 'right'), $this->column('outstanding', 'Outstanding', 'quantity', 'right'), $this->column('unit', 'Unit')], 'rows' => $rows];
     }
 
     /**
@@ -243,9 +231,9 @@ class BuildManagementReport
     {
         $query = StoreStock::query()->with(['store:id,code,name', 'item:id,sku,name,item_category_id,unit_id', 'item.category:id,name', 'item.unit:id,symbol']);
         $this->applyStockFilters($query, $filters);
-        $rows = $query->get()->sortBy(fn ($stock) => $stock->store->code.$stock->item->name)->map(fn ($stock) => ['store' => $stock->store->code.' - '.$stock->store->name, 'sku' => $stock->item->sku, 'item' => $stock->item->name, 'category' => $stock->item->category->name, 'quantity' => $stock->quantity, 'unit' => $stock->item->unit->symbol])->values()->all();
+        $rows = $query->get()->sortBy(fn ($stock) => $stock->store->code.$stock->item->name)->map(fn ($stock) => ['store' => $stock->store->code.' - '.$stock->store->name, 'sku' => $stock->item->sku, 'item' => $stock->item->name, 'category' => $stock->item->category->name, 'quantity' => $stock->quantity, 'unit' => $stock->item->unit->symbol, 'average_cost' => $stock->average_unit_cost, 'total_value' => $stock->total_value])->values()->all();
 
-        return ['columns' => [$this->column('store', 'Toko'), $this->column('sku', 'SKU'), $this->column('item', 'Item'), $this->column('category', 'Kategori'), $this->column('quantity', 'Stok', 'quantity', 'right'), $this->column('unit', 'Unit')], 'rows' => $rows];
+        return ['columns' => [$this->column('store', 'Toko'), $this->column('sku', 'SKU'), $this->column('item', 'Item'), $this->column('category', 'Kategori'), $this->column('quantity', 'Stok', 'quantity', 'right'), $this->column('unit', 'Unit'), $this->column('average_cost', 'Harga Rata-rata', 'currency', 'right'), $this->column('total_value', 'Total Nilai', 'currency', 'right')], 'rows' => $rows, 'summary' => [['label' => 'Total Nilai Stok', 'value' => $this->money(collect($rows)->sum('total_value')), 'format' => 'currency']]];
     }
 
     /**
@@ -274,46 +262,13 @@ class BuildManagementReport
      */
     private function stockHistory(array $filters): array
     {
-        $query = StockMovement::query()->with(['store:id,code,name', 'item:id,sku,name,item_category_id', 'creator:id,name']);
+        $query = StockMovement::query()->with(['store:id,code,name', 'item:id,sku,name,item_category_id', 'creator:id,name', 'supplier:id,name']);
         $this->dateRange($query, 'created_at', $filters);
         $query->when($filters['store_id'], fn ($movements, $id) => $movements->where('store_id', $id));
         $query->when($filters['category_id'], fn ($movements, $id) => $movements->whereHas('item', fn ($items) => $items->where('item_category_id', $id)));
-        $rows = $query->latest()->get()->map(fn ($movement) => ['date' => $movement->created_at->format('d/m/Y H:i'), 'store' => $movement->store->code, 'sku' => $movement->item->sku, 'item' => $movement->item->name, 'type' => $movement->movement_type->label(), 'previous' => $movement->previous_quantity, 'new' => $movement->new_quantity, 'difference' => $movement->quantity_difference, 'reason' => $movement->reason, 'by' => data_get($movement, 'creator.name', 'Sistem')])->all();
+        $rows = $query->latest()->get()->map(fn ($movement) => ['date' => $movement->created_at->format('d/m/Y H:i'), 'store' => $movement->store->code, 'sku' => $movement->item->sku, 'item' => $movement->item->name, 'type' => $movement->movement_type->label(), 'previous' => $movement->previous_quantity, 'new' => $movement->new_quantity, 'difference' => $movement->quantity_difference, 'supplier' => data_get($movement, 'supplier.name', 'Internal / koreksi'), 'unit_cost' => $movement->unit_cost ?? 0, 'new_value' => $movement->new_value, 'reason' => $movement->reason, 'by' => data_get($movement, 'creator.name', 'Sistem')])->all();
 
-        return ['columns' => [$this->column('date', 'Waktu'), $this->column('store', 'Toko'), $this->column('sku', 'SKU'), $this->column('item', 'Item'), $this->column('type', 'Tipe'), $this->column('previous', 'Sebelum', 'quantity', 'right'), $this->column('new', 'Sesudah', 'quantity', 'right'), $this->column('difference', 'Selisih', 'quantity', 'right'), $this->column('reason', 'Alasan'), $this->column('by', 'Oleh')], 'rows' => $rows];
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
-     * @return array<string, mixed>
-     */
-    private function purchaseByStore(array $filters): array
-    {
-        $query = PurchaseOrderItem::query()->with(['purchaseOrder:id,order_date,status', 'allocations.purchaseRequestItem.purchaseRequest.store:id,code,name'])
-            ->whereHas('purchaseOrder', fn ($orders) => $orders->whereNotIn('status', [PurchaseOrderStatus::DRAFT, PurchaseOrderStatus::CANCELLED]));
-        $this->orderDateRange($query, $filters);
-        $this->applyCategory($query, $filters);
-        $allocations = $query->get()->flatMap(fn ($line) => $line->allocations->map(fn ($allocation) => ['store' => $allocation->purchaseRequestItem->purchaseRequest->store, 'quantity' => (float) $allocation->allocated_quantity, 'value' => (float) $allocation->allocated_quantity * (float) $line->unit_price]));
-        if ($filters['store_id']) {
-            $allocations = $allocations->where('store.id', $filters['store_id']);
-        }
-        $rows = $allocations->groupBy('store.id')->map(fn (Collection $group) => ['store' => $group->first()['store']->code.' - '.$group->first()['store']->name, 'lines' => $group->count(), 'quantity' => $this->quantity($group->sum('quantity')), 'total' => $this->money($group->sum('value'))])->values()->all();
-
-        return ['columns' => [$this->column('store', 'Toko'), $this->column('lines', 'Baris', 'integer', 'right'), $this->column('quantity', 'Qty', 'quantity', 'right'), $this->column('total', 'Nilai Pembelian', 'currency', 'right')], 'rows' => $rows, 'summary' => [['label' => 'Total Pembelian', 'value' => $this->money(collect($rows)->sum('total')), 'format' => 'currency']]];
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
-     * @return array<string, mixed>
-     */
-    private function purchaseByCategory(array $filters): array
-    {
-        $query = PurchaseOrderItem::query()->with(['item.category:id,name'])->whereHas('purchaseOrder', fn ($orders) => $orders->whereNotIn('status', [PurchaseOrderStatus::DRAFT, PurchaseOrderStatus::CANCELLED]));
-        $this->orderDateRange($query, $filters);
-        $this->applyCategory($query, $filters);
-        $rows = $query->get()->groupBy(fn (PurchaseOrderItem $line): string => $line->item_id === null ? 'Special' : $line->item->category->name)->map(fn (Collection $group, string $category) => ['category' => $category, 'lines' => $group->count(), 'quantity' => $this->quantity($group->sum('quantity')), 'total' => $this->money($group->sum('total'))])->values()->all();
-
-        return ['columns' => [$this->column('category', 'Kategori'), $this->column('lines', 'Baris', 'integer', 'right'), $this->column('quantity', 'Qty', 'quantity', 'right'), $this->column('total', 'Nilai Pembelian', 'currency', 'right')], 'rows' => $rows, 'summary' => [['label' => 'Total Pembelian', 'value' => $this->money(collect($rows)->sum('total')), 'format' => 'currency']]];
+        return ['columns' => [$this->column('date', 'Waktu'), $this->column('store', 'Toko'), $this->column('sku', 'SKU'), $this->column('item', 'Item'), $this->column('type', 'Tipe'), $this->column('previous', 'Sebelum', 'quantity', 'right'), $this->column('new', 'Sesudah', 'quantity', 'right'), $this->column('difference', 'Selisih', 'quantity', 'right'), $this->column('supplier', 'Supplier'), $this->column('unit_cost', 'Harga Satuan', 'currency', 'right'), $this->column('new_value', 'Nilai Akhir', 'currency', 'right'), $this->column('reason', 'Alasan'), $this->column('by', 'Oleh')], 'rows' => $rows];
     }
 
     /**
@@ -328,22 +283,6 @@ class BuildManagementReport
         $rows = $query->latest()->get()->map(fn ($line) => ['date' => $line->created_at->format('d/m/Y'), 'request' => $line->purchaseRequest->number, 'store' => $line->purchaseRequest->store->code, 'requisitioner' => $line->purchaseRequest->requester->name, 'item' => $line->name ?? '—', 'description' => $line->description ?? '—', 'requested' => $line->requested_quantity, 'approved' => $line->approved_quantity ?? '—', 'unit' => $line->unit->symbol, 'reason' => $line->reason ?? '—'])->all();
 
         return ['columns' => [$this->column('date', 'Tanggal'), $this->column('request', 'No. Permintaan'), $this->column('store', 'Toko'), $this->column('requisitioner', 'Pemohon'), $this->column('item', 'Item'), $this->column('description', 'Deskripsi'), $this->column('requested', 'Diminta', 'quantity', 'right'), $this->column('approved', 'Disetujui', 'quantity', 'right'), $this->column('unit', 'Unit'), $this->column('reason', 'Alasan')], 'rows' => $rows];
-    }
-
-    /**
-     * @param  array<string, mixed>  $filters
-     * @return array<string, mixed>
-     */
-    private function priceHistory(array $filters): array
-    {
-        $query = PurchaseOrderItem::query()->with(['purchaseOrder:id,number,order_date,status,supplier_id', 'purchaseOrder.supplier:id,name', 'item:id,sku,name,item_category_id', 'unit:id,symbol'])
-            ->where('item_type', PurchaseRequestItemType::STOCK)->where('unit_price', '>', 0)
-            ->whereHas('purchaseOrder', fn ($orders) => $orders->where('status', '!=', PurchaseOrderStatus::CANCELLED));
-        $this->orderDateRange($query, $filters);
-        $this->applyCategory($query, $filters);
-        $rows = $query->get()->sortByDesc(fn ($line) => $line->purchaseOrder->order_date)->map(fn ($line) => ['date' => $line->purchaseOrder->order_date->format('d/m/Y'), 'order' => $line->purchaseOrder->number, 'sku' => data_get($line, 'item.sku', '—'), 'item' => data_get($line, 'item.name', '—'), 'supplier' => data_get($line, 'purchaseOrder.supplier.name', '—'), 'quantity' => $line->quantity, 'unit' => $line->unit->symbol, 'unit_price' => $line->unit_price])->values()->all();
-
-        return ['columns' => [$this->column('date', 'Tanggal'), $this->column('order', 'No. Pesanan'), $this->column('sku', 'SKU'), $this->column('item', 'Item'), $this->column('supplier', 'Supplier'), $this->column('quantity', 'Qty', 'quantity', 'right'), $this->column('unit', 'Unit'), $this->column('unit_price', 'Harga Satuan', 'currency', 'right')], 'rows' => $rows];
     }
 
     /**

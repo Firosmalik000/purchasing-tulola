@@ -16,15 +16,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $name
  * @property int $unit_id
  * @property string $quantity
- * @property string $unit_price
  * @property string $total
  */
-#[Fillable(['purchase_order_id', 'item_type', 'item_id', 'name', 'unit_id', 'quantity', 'unit_price', 'total'])]
+#[Fillable(['purchase_order_id', 'item_type', 'item_id', 'name', 'unit_id', 'quantity'])]
 class PurchaseOrderItem extends Model
 {
     protected function casts(): array
     {
-        return ['item_type' => PurchaseRequestItemType::class, 'quantity' => 'decimal:3', 'unit_price' => 'decimal:2', 'total' => 'decimal:2'];
+        return ['item_type' => PurchaseRequestItemType::class, 'quantity' => 'decimal:3'];
     }
 
     /** @return BelongsTo<PurchaseOrder, $this> */

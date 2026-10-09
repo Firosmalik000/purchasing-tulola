@@ -25,6 +25,8 @@ class StoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:2000'],
             'is_active' => ['required', 'boolean'],
+            'pic_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'is_pic' => ['nullable', 'boolean'],
         ];
     }
 

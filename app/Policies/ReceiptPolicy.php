@@ -19,11 +19,6 @@ class ReceiptPolicy
         return $this->assignedTo($user, $store);
     }
 
-    public function applyStock(User $user, Receipt $receipt): bool
-    {
-        return $user->role === UserRole::CENTRAL_ADMIN && $receipt->stock_applied_at === null;
-    }
-
     private function assignedTo(User $user, Store $store): bool
     {
         return $user->role === UserRole::STORE_PIC

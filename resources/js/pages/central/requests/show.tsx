@@ -1,5 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Clock, Store, User, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/common/page-header';
 import {
@@ -38,7 +38,6 @@ type RequestItem = {
     suggested_quantity: string | null;
     requested_quantity: string;
     approved_quantity: string | null;
-    estimated_price: string | null;
     required_date: string | null;
     reason: string | null;
     status: string | null;
@@ -85,7 +84,9 @@ export default function CentralRequestShow({
 
     return (
         <>
-            <Head title={`Tinjau PR ${purchaseRequest.number} — Tulola Purchasing`} />
+            <Head
+                title={`Tinjau PR ${purchaseRequest.number} — Tulola Purchasing`}
+            />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-6">
                 <PageHeader
                     badge="Review PR"
@@ -155,7 +156,7 @@ export default function CentralRequestShow({
                             }
                         />
                         <Info
-                            label="Catatan Khusus Butik"
+                            label="Catatan Khusus Toko Cabang"
                             value={purchaseRequest.notes || 'Tidak ada catatan'}
                         />
                     </CardContent>
@@ -188,22 +189,29 @@ export default function CentralRequestShow({
                                 <Card className="border-amber-500/30 bg-gradient-to-b from-amber-500/5 to-transparent shadow-xs">
                                     <CardContent className="space-y-4 p-5">
                                         <div className="space-y-2">
-                                            <Label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                                Catatan Verifikasi Purchasing Pusat
+                                            <Label
+                                                htmlFor="notes"
+                                                className="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                            >
+                                                Catatan Verifikasi Purchasing
+                                                Pusat
                                             </Label>
                                             <textarea
                                                 id="notes"
                                                 name="notes"
                                                 rows={3}
-                                                className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground shadow-xs transition-colors focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-                                                placeholder="Contoh: Stok disesuaikan dengan kuantitas minimal order supplier..."
+                                                className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground shadow-xs transition-colors focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none"
+                                                placeholder="Contoh: Kuantitas disetujui sesuai kebutuhan dan stok toko..."
                                             />
                                             <InputError
                                                 message={errors.notes}
                                             />
                                         </div>
                                         <div className="flex justify-end">
-                                            <Button disabled={processing} className="h-10 px-6 font-medium shadow-xs">
+                                            <Button
+                                                disabled={processing}
+                                                className="h-10 px-6 font-medium shadow-xs"
+                                            >
                                                 <CheckCircle2 className="mr-2 size-4" />
                                                 Setujui & Tandai Diproses
                                             </Button>
@@ -240,12 +248,17 @@ export default function CentralRequestShow({
                                                   )}
                                         </p>
                                     </div>
-                                    <p className="text-[11px] text-muted-foreground pl-4">
-                                        Diproses oleh: <strong className="text-foreground">{history.changer?.name ?? 'Sistem'}</strong>
-                                        {history.notes ? ` · "${history.notes}"` : ''}
+                                    <p className="pl-4 text-[11px] text-muted-foreground">
+                                        Diproses oleh:{' '}
+                                        <strong className="text-foreground">
+                                            {history.changer?.name ?? 'Sistem'}
+                                        </strong>
+                                        {history.notes
+                                            ? ` · "${history.notes}"`
+                                            : ''}
                                     </p>
                                 </div>
-                                <time className="text-[11px] font-mono text-muted-foreground">
+                                <time className="font-mono text-[11px] text-muted-foreground">
                                     {new Date(
                                         history.created_at,
                                     ).toLocaleString('id-ID', {
@@ -307,7 +320,10 @@ function RequestSection({
                             </p>
                             {line.reason && (
                                 <p className="mt-2 rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
-                                    <strong className="text-foreground">Alasan:</strong> {line.reason}
+                                    <strong className="text-foreground">
+                                        Alasan:
+                                    </strong>{' '}
+                                    {line.reason}
                                 </p>
                             )}
                         </div>
@@ -333,15 +349,9 @@ function RequestSection({
                                     label="Tanggal Dibutuhkan"
                                     value={
                                         line.required_date
-                                            ? new Date(line.required_date).toLocaleDateString('id-ID')
-                                            : '—'
-                                    }
-                                />
-                                <Info
-                                    label="Estimasi Harga Satuan"
-                                    value={
-                                        line.estimated_price
-                                            ? `Rp ${Number(line.estimated_price).toLocaleString('id-ID')}`
+                                            ? new Date(
+                                                  line.required_date,
+                                              ).toLocaleDateString('id-ID')
                                             : '—'
                                     }
                                 />
@@ -353,7 +363,10 @@ function RequestSection({
                             {canProcess ? (
                                 <div className="space-y-1.5">
                                     <div className="flex items-center justify-between text-xs font-semibold">
-                                        <Label htmlFor={`approved-${line.id}`} className="text-xs">
+                                        <Label
+                                            htmlFor={`approved-${line.id}`}
+                                            className="text-xs"
+                                        >
                                             Qty Disetujui
                                         </Label>
                                         <span className="text-[11px] text-muted-foreground">
@@ -427,15 +440,23 @@ function RejectDialog({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogTrigger asChild>
-                <Button type="button" variant="destructive" size="sm" className="h-9 shadow-xs">
+                <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="h-9 shadow-xs"
+                >
                     <XCircle className="mr-1.5 size-4" /> Tolak Permintaan
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle className="font-serif text-lg font-bold">Tolak Seluruh Permintaan?</DialogTitle>
+                    <DialogTitle className="font-serif text-lg font-bold">
+                        Tolak Seluruh Permintaan?
+                    </DialogTitle>
                     <DialogDescription className="text-xs">
-                        Semua item dalam pengajuan ini akan ditandai ditolak dan butik cabang tidak dapat mengeditnya kembali.
+                        Semua item dalam pengajuan ini akan ditandai ditolak dan
+                        toko cabang tidak dapat mengeditnya kembali.
                     </DialogDescription>
                 </DialogHeader>
                 <Form
@@ -446,14 +467,19 @@ function RejectDialog({
                     {({ processing, errors }) => (
                         <>
                             <div className="space-y-2">
-                                <Label htmlFor="reason" className="text-xs font-semibold">Alasan Penolakan Resmi</Label>
+                                <Label
+                                    htmlFor="reason"
+                                    className="text-xs font-semibold"
+                                >
+                                    Alasan Penolakan Resmi
+                                </Label>
                                 <textarea
                                     id="reason"
                                     name="reason"
                                     rows={4}
                                     required
-                                    className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground shadow-xs transition-colors focus:border-destructive focus:outline-none focus:ring-2 focus:ring-destructive/20"
-                                    placeholder="Tuliskan alasan penolakan untuk catatan PIC butik..."
+                                    className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm text-foreground shadow-xs transition-colors focus:border-destructive focus:ring-2 focus:ring-destructive/20 focus:outline-none"
+                                    placeholder="Tuliskan alasan penolakan untuk catatan PIC toko cabang..."
                                 />
                                 <InputError message={errors.reason} />
                             </div>
@@ -491,8 +517,12 @@ function Info({
 }) {
     return (
         <div className="space-y-0.5">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-            <p className="font-mono text-sm font-semibold tabular-nums text-foreground">{value}</p>
+            <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                {label}
+            </p>
+            <p className="font-mono text-sm font-semibold text-foreground tabular-nums">
+                {value}
+            </p>
             {detail && (
                 <p className="text-xs text-muted-foreground">{detail}</p>
             )}

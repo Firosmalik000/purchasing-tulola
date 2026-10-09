@@ -36,7 +36,6 @@ class SavePurchaseRequestRequest extends FormRequest
             'special_items.*.requested_quantity' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
             'special_items.*.required_date' => ['nullable', 'date', 'after_or_equal:today'],
             'special_items.*.reason' => ['required', 'string', 'max:2000'],
-            'special_items.*.estimated_price' => ['nullable', 'numeric', 'min:0', 'decimal:0,2'],
         ];
     }
 

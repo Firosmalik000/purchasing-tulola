@@ -19,7 +19,7 @@ class InventoryController extends Controller
         return Inertia::render('store/inventory/index', [
             'stores' => $stores,
             'selectedStoreId' => $storeId,
-            'items' => Item::query()->where('is_active', true)->with(['unit:id,symbol', 'stocks' => fn ($query) => $query->where('store_id', $storeId), 'stockStandards' => fn ($query) => $query->where('store_id', $storeId)])->orderBy('name')->paginate(20)->withQueryString(),
+            'items' => Item::query()->where('is_active', true)->with(['unit:id,symbol', 'stocks' => fn ($query) => $query->where('store_id', $storeId), 'stockStandards' => fn ($query) => $query->where('store_id', $storeId)])->orderBy('name')->paginate(\App\Support\Paging::perPage($request))->withQueryString(),
         ]);
     }
 }

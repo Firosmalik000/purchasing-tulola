@@ -13,20 +13,20 @@ const config: Record<
     },
     SUBMITTED: {
         label: 'Diajukan',
-        bg: 'bg-amber-50 dark:bg-amber-950/50',
-        text: 'text-amber-700 dark:text-amber-300',
-        border: 'border-amber-200 dark:border-amber-800/60',
-        dot: 'bg-amber-500 animate-pulse',
+        bg: 'bg-blue-50 dark:bg-blue-950/50',
+        text: 'text-blue-700 dark:text-blue-300',
+        border: 'border-blue-200 dark:border-blue-800/60',
+        dot: 'bg-blue-500 animate-pulse',
     },
     PROCESSED: {
-        label: 'Diproses',
+        label: 'Disetujui',
         bg: 'bg-indigo-50 dark:bg-indigo-950/50',
         text: 'text-indigo-700 dark:text-indigo-300',
         border: 'border-indigo-200 dark:border-indigo-800/60',
         dot: 'bg-indigo-500',
     },
     ORDERED: {
-        label: 'Dipesan (PO)',
+        label: 'Order Dikirim',
         bg: 'bg-purple-50 dark:bg-purple-950/50',
         text: 'text-purple-700 dark:text-purple-300',
         border: 'border-purple-200 dark:border-purple-800/60',
@@ -48,10 +48,10 @@ const config: Record<
     },
     CANCELLED: {
         label: 'Dibatalkan',
-        bg: 'bg-stone-100 dark:bg-stone-800/70',
-        text: 'text-stone-600 dark:text-stone-400 line-through',
-        border: 'border-stone-200 dark:border-stone-700',
-        dot: 'bg-stone-400',
+        bg: 'bg-slate-100 dark:bg-slate-800/70',
+        text: 'text-slate-500 dark:text-slate-400 line-through',
+        border: 'border-slate-200 dark:border-slate-700',
+        dot: 'bg-slate-400',
     },
 };
 
@@ -85,7 +85,7 @@ export function RequestStatusBadge({
                 className,
             )}
         >
-            <span className={cn('size-1.5 rounded-full shrink-0', item.dot)} />
+            <span className={cn('size-1.5 shrink-0 rounded-full', item.dot)} />
             {item.label}
         </span>
     );

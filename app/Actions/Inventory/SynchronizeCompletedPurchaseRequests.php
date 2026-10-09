@@ -47,7 +47,7 @@ class SynchronizeCompletedPurchaseRequests
                     $request,
                     PurchaseRequestStatus::COMPLETED,
                     $actor,
-                    'Seluruh alokasi telah diterima dan pembaruan stok pusat selesai.',
+                    'Seluruh item telah diterima dan stok toko diperbarui.',
                     ['completed_at' => now()],
                 );
             }

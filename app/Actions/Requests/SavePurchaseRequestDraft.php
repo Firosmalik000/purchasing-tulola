@@ -32,7 +32,7 @@ class SavePurchaseRequestDraft
                 $request->items()->create(['type' => PurchaseRequestItemType::STOCK, 'item_id' => $item->id, 'unit_id' => $item->unit_id, 'requested_quantity' => $line['requested_quantity']]);
             }
             foreach ($data['special_items'] ?? [] as $line) {
-                $request->items()->create(['type' => PurchaseRequestItemType::SPECIAL, 'name' => $line['name'], 'description' => $line['description'] ?? null, 'unit_id' => $line['unit_id'], 'requested_quantity' => $line['requested_quantity'], 'estimated_price' => $line['estimated_price'] ?? null, 'required_date' => $line['required_date'] ?? null, 'reason' => $line['reason']]);
+                $request->items()->create(['type' => PurchaseRequestItemType::SPECIAL, 'name' => $line['name'], 'description' => $line['description'] ?? null, 'unit_id' => $line['unit_id'], 'requested_quantity' => $line['requested_quantity'], 'required_date' => $line['required_date'] ?? null, 'reason' => $line['reason']]);
             }
 
             if ($creating) {

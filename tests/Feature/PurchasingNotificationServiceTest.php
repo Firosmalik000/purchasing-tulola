@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\PurchaseOrderStatus;
 use App\Enums\PurchaseRequestItemType;
-use App\Enums\UserRole;
+use App\Enums\ReceiptStatus;
 use App\Mail\GoodsReceiptConfirmedMail;
 use App\Mail\PurchaseOrderPlacedMail;
 use App\Mail\PurchaseRequestSubmittedMail;
@@ -15,7 +15,6 @@ use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
 use App\Models\Receipt;
 use App\Models\Store;
-use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
 use App\Services\PurchasingNotificationService;
@@ -36,14 +35,14 @@ class PurchasingNotificationServiceTest extends TestCase
         $pic = User::factory()->storePic()->create();
         $store->users()->attach($pic, ['is_pic' => true, 'is_active' => true]);
 
-        $unit = Unit::factory()->create(['symbol' => 'PCS']);
+        $unit = Unit::create(['name' => 'Piece A', 'symbol' => 'PCS', 'is_active' => true]);
         $pr = PurchaseRequest::factory()->create([
             'store_id' => $store->id,
             'requested_by' => $pic->id,
         ]);
-        PurchaseRequestItem::factory()->create([
+        PurchaseRequestItem::create([
             'purchase_request_id' => $pr->id,
-            'type' => PurchaseRequestItemType::NON_STOCK,
+            'type' => PurchaseRequestItemType::SPECIAL,
             'name' => 'Kotak Cincin Beludru',
             'unit_id' => $unit->id,
             'requested_quantity' => '10.000',
@@ -65,32 +64,30 @@ class PurchasingNotificationServiceTest extends TestCase
         $pic = User::factory()->storePic()->create(['email' => 'storepic@tulolajewelry.com']);
         $store->users()->attach($pic, ['is_pic' => true, 'is_active' => true]);
 
-        $unit = Unit::factory()->create(['symbol' => 'PCS']);
-        $supplier = Supplier::factory()->create();
+        $unit = Unit::create(['name' => 'Piece B', 'symbol' => 'PCS', 'is_active' => true]);
         $centralAdmin = User::factory()->centralAdmin()->create();
 
         $pr = PurchaseRequest::factory()->create(['store_id' => $store->id, 'requested_by' => $pic->id]);
-        $prItem = PurchaseRequestItem::factory()->create([
+        $prItem = PurchaseRequestItem::create([
             'purchase_request_id' => $pr->id,
-            'type' => PurchaseRequestItemType::NON_STOCK,
+            'type' => PurchaseRequestItemType::SPECIAL,
             'name' => 'Pouch Beludru Luxury',
             'unit_id' => $unit->id,
             'requested_quantity' => '50.000',
         ]);
 
         $po = PurchaseOrder::factory()->create([
-            'supplier_id' => $supplier->id,
+            'purchase_request_id' => $pr->id,
             'created_by' => $centralAdmin->id,
             'status' => PurchaseOrderStatus::ORDERED,
         ]);
 
-        $poItem = PurchaseOrderItem::factory()->create([
+        $poItem = PurchaseOrderItem::create([
             'purchase_order_id' => $po->id,
-            'item_type' => PurchaseRequestItemType::NON_STOCK,
+            'item_type' => PurchaseRequestItemType::SPECIAL,
             'name' => 'Pouch Beludru Luxury',
             'unit_id' => $unit->id,
-            'unit_price' => '15000.00',
-            'total' => '750000.00',
+            'quantity' => '50.000',
         ]);
 
         PurchaseOrderRequestItem::create([
@@ -114,17 +111,18 @@ class PurchasingNotificationServiceTest extends TestCase
         $centralAdmin = User::factory()->centralAdmin()->create(['email' => 'central@tulolajewelry.com']);
         $store = Store::factory()->create();
         $pic = User::factory()->storePic()->create();
-        $supplier = Supplier::factory()->create();
 
         $po = PurchaseOrder::factory()->create([
-            'supplier_id' => $supplier->id,
             'created_by' => $centralAdmin->id,
         ]);
 
-        $receipt = Receipt::factory()->create([
+        $receipt = Receipt::create([
+            'number' => 'RCV/EMAIL/0001',
             'purchase_order_id' => $po->id,
             'store_id' => $store->id,
             'received_by' => $pic->id,
+            'received_at' => now(),
+            'status' => ReceiptStatus::CONFIRMED,
         ]);
 
         $service = app(PurchasingNotificationService::class);

@@ -1,11 +1,11 @@
 <?php
 
+use App\Http\Controllers\Auth\InvitationController;
 use App\Http\Controllers\Central\InventoryController;
 use App\Http\Controllers\Central\ItemCategoryController;
 use App\Http\Controllers\Central\ItemController;
 use App\Http\Controllers\Central\ManagementReportController;
 use App\Http\Controllers\Central\PurchaseOrderController;
-use App\Http\Controllers\Central\PurchasePlanningController;
 use App\Http\Controllers\Central\PurchaseRequestController as CentralPurchaseRequestController;
 use App\Http\Controllers\Central\StoreController;
 use App\Http\Controllers\Central\StoreUserController;
@@ -17,8 +17,6 @@ use App\Http\Controllers\Store\IncomingOrderController;
 use App\Http\Controllers\Store\InventoryController as StoreInventoryController;
 use App\Http\Controllers\Store\PurchaseRequestController as StorePurchaseRequestController;
 use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\Auth\InvitationController;
 
 Route::inertia('/', 'welcome')->name('home');
 
@@ -34,7 +32,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::middleware('central')->prefix('central')->name('central.')->group(function () {
         Route::get('dashboard', CentralDashboardController::class)->name('dashboard');
         Route::resource('stores', StoreController::class)->only(['index', 'store', 'update']);
-        Route::resource('users', UserController::class)->only(['index', 'store', 'update']);
+        Route::resource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::post('users/{user}/resend-invitation', [UserController::class, 'resendInvitation'])->name('users.resend-invitation');
         Route::post('stores/{store}/users', [StoreUserController::class, 'store'])->name('stores.users.store');
         Route::delete('stores/{store}/users/{user}', [StoreUserController::class, 'destroy'])->name('stores.users.destroy');
         Route::resource('items', ItemController::class)->only(['index', 'store', 'update']);
@@ -44,17 +43,14 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::put('inventory/stock', [InventoryController::class, 'updateStock'])->name('inventory.stock.update');
         Route::put('inventory/standard', [InventoryController::class, 'updateStandard'])->name('inventory.standard.update');
-        Route::post('inventory/receipts/{receipt}/apply', [InventoryController::class, 'applyReceipt'])->name('inventory.receipts.apply');
         Route::get('requests', [CentralPurchaseRequestController::class, 'index'])->name('requests.index');
         Route::get('requests/{purchase_request}', [CentralPurchaseRequestController::class, 'show'])->name('requests.show');
         Route::post('requests/{purchase_request}/process', [CentralPurchaseRequestController::class, 'process'])->name('requests.process');
         Route::post('requests/{purchase_request}/reject', [CentralPurchaseRequestController::class, 'reject'])->name('requests.reject');
-        Route::get('purchase-planning', PurchasePlanningController::class)->name('planning.index');
         Route::resource('orders', PurchaseOrderController::class)
             ->parameters(['orders' => 'purchase_order'])
-            ->only(['index', 'store', 'show', 'update']);
+            ->only(['index', 'show', 'update']);
         Route::post('orders/{purchase_order}/place', [PurchaseOrderController::class, 'place'])->name('orders.place');
-        Route::post('orders/{purchase_order}/wait-for-receipt', [PurchaseOrderController::class, 'waitForReceipt'])->name('orders.wait-for-receipt');
         Route::post('orders/{purchase_order}/cancel', [PurchaseOrderController::class, 'cancel'])->name('orders.cancel');
         Route::get('reports', [ManagementReportController::class, 'index'])->name('reports.index');
         Route::get('reports/print', [ManagementReportController::class, 'print'])->name('reports.print');
@@ -74,5 +70,11 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::post('requests/{purchase_request}/submit', [StorePurchaseRequestController::class, 'submit'])->name('requests.submit');
     });
 });
+
+Route::get('errors/{code}', function (int $code) {
+    abort_if(! in_array($code, [401, 403, 404, 419, 500, 503]), 404);
+
+    return inertia('error', ['status' => $code]);
+})->name('errors.preview');
 
 require __DIR__.'/settings.php';

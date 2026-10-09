@@ -46,7 +46,7 @@ class IncomingOrderReceivingTest extends TestCase
         $this->assertStringNotContainsString($secondRequestNumber, $response->getContent());
     }
 
-    public function test_partial_receiving_creates_audited_receipt_without_changing_stock(): void
+    public function test_partial_receiving_creates_audited_receipt_and_updates_stock(): void
     {
         [$order, $pic, $store, $item, $allocation] = $this->sharedOrder();
         StoreStock::create(['store_id' => $store->id, 'item_id' => $item->id, 'quantity' => 19]);
@@ -65,8 +65,8 @@ class IncomingOrderReceivingTest extends TestCase
             'ordered_quantity' => 10, 'received_quantity' => 4,
         ]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'receipt.confirmed']);
-        $this->assertSame('19.000', StoreStock::firstOrFail()->quantity);
-        $this->assertDatabaseCount('stock_movements', 0);
+        $this->assertSame('23.000', StoreStock::firstOrFail()->quantity);
+        $this->assertDatabaseCount('stock_movements', 1);
     }
 
     public function test_multiple_receipts_complete_single_store_order_and_numbers_are_sequential(): void
@@ -78,7 +78,7 @@ class IncomingOrderReceivingTest extends TestCase
         $this->actingAs($pic)->post(route('store.incoming.receipts.store', $order), $this->payload($store, $allocation->id, '6'))
             ->assertSessionHasNoErrors();
 
-        $this->assertSame(PurchaseOrderStatus::RECEIVED, $order->fresh()->status);
+        $this->assertSame(PurchaseOrderStatus::COMPLETED, $order->fresh()->status);
         $this->assertSame([
             'RCV/'.$store->code.'/'.now()->format('Y/m').'/0001',
             'RCV/'.$store->code.'/'.now()->format('Y/m').'/0002',
@@ -96,7 +96,7 @@ class IncomingOrderReceivingTest extends TestCase
 
         $this->actingAs($secondPic)->post(route('store.incoming.receipts.store', $order), $this->payload($secondStore, $secondAllocation->id, '5'))
             ->assertSessionHasNoErrors();
-        $this->assertSame(PurchaseOrderStatus::RECEIVED, $order->fresh()->status);
+        $this->assertSame(PurchaseOrderStatus::COMPLETED, $order->fresh()->status);
     }
 
     public function test_receiving_more_than_outstanding_rolls_back(): void
@@ -108,7 +108,7 @@ class IncomingOrderReceivingTest extends TestCase
 
         $this->assertDatabaseCount('receipts', 0);
         $this->assertDatabaseCount('receipt_items', 0);
-        $this->assertSame(PurchaseOrderStatus::WAITING_RECEIPT, $order->fresh()->status);
+        $this->assertSame(PurchaseOrderStatus::ORDERED, $order->fresh()->status);
     }
 
     public function test_store_cannot_view_or_receive_another_store_allocation(): void
@@ -127,7 +127,7 @@ class IncomingOrderReceivingTest extends TestCase
     public function test_order_must_be_waiting_before_store_can_receive(): void
     {
         [$order, $pic, $store, , $allocation] = $this->singleStoreOrder();
-        $order->update(['status' => PurchaseOrderStatus::ORDERED]);
+        $order->update(['status' => PurchaseOrderStatus::DRAFT]);
 
         $this->actingAs($pic)->post(route('store.incoming.receipts.store', $order), $this->payload($store, $allocation->id, '1'))
             ->assertSessionHasErrors('status');
@@ -148,11 +148,11 @@ class IncomingOrderReceivingTest extends TestCase
         $secondRequest = $this->orderedRequest($secondStore, $secondPic, $item, $unit, 5);
         $creator = User::factory()->create(['role' => UserRole::CENTRAL_ADMIN]);
         $order = PurchaseOrder::factory()->create([
-            'status' => PurchaseOrderStatus::WAITING_RECEIPT, 'created_by' => $creator->id,
+            'status' => PurchaseOrderStatus::ORDERED, 'created_by' => $creator->id,
         ]);
         $orderItem = $order->items()->create([
             'item_type' => PurchaseRequestItemType::STOCK, 'item_id' => $item->id,
-            'unit_id' => $unit->id, 'quantity' => 15, 'unit_price' => 100, 'total' => 1500,
+            'unit_id' => $unit->id, 'quantity' => 15,
         ]);
         $firstAllocation = $orderItem->allocations()->create([
             'purchase_request_item_id' => $firstRequest->items()->firstOrFail()->id, 'allocated_quantity' => 10,
@@ -169,7 +169,7 @@ class IncomingOrderReceivingTest extends TestCase
     {
         $values = $this->sharedOrder();
         $values[0]->items()->firstOrFail()->allocations()->whereKey($values[8]->id)->delete();
-        $values[0]->items()->firstOrFail()->update(['quantity' => 10, 'total' => 1000]);
+        $values[0]->items()->firstOrFail()->update(['quantity' => 10]);
 
         return $values;
     }

@@ -22,7 +22,7 @@ class InvitationTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
 
         $response = $this->actingAs($admin)->post(route('central.users.store'), [
-            'name' => 'Staf Baru Butik',
+            'name' => 'Staf Toko Cabang Baru',
             'email' => 'newpic@tulolajewelry.com',
             'role' => UserRole::STORE_PIC->value,
             'is_active' => true,
@@ -40,6 +40,26 @@ class InvitationTest extends TestCase
         });
     }
 
+    public function test_admin_provisioned_user_with_password_is_already_verified(): void
+    {
+        $admin = User::factory()->superAdmin()->create();
+
+        $this->actingAs($admin)->post(route('central.users.store'), [
+            'name' => 'Staf Purchasing',
+            'email' => 'purchasing@tulolajewelry.com',
+            'role' => UserRole::PURCHASING->value,
+            'password' => 'secret12345!',
+            'password_confirmation' => 'secret12345!',
+            'is_active' => true,
+            'send_invitation' => false,
+        ])->assertSessionHasNoErrors();
+
+        $user = User::where('email', 'purchasing@tulolajewelry.com')->firstOrFail();
+
+        $this->assertNotNull($user->email_verified_at);
+        $this->assertNull($user->invitation_token);
+    }
+
     public function test_invited_user_can_view_set_password_page(): void
     {
         $token = Str::random(40);
@@ -52,13 +72,14 @@ class InvitationTest extends TestCase
         $response->assertOk();
     }
 
-    public function test_invited_user_can_set_password_and_auto_login(): void
+    public function test_invited_user_can_set_password_and_redirect_to_login(): void
     {
         $token = Str::random(40);
         $user = User::factory()->create([
             'invitation_token' => $token,
             'invitation_sent_at' => now(),
             'is_active' => false,
+            'email_verified_at' => null,
         ]);
 
         $response = $this->post(route('invitation.update', ['token' => $token]), [
@@ -66,12 +87,13 @@ class InvitationTest extends TestCase
             'password_confirmation' => 'secret12345!',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
-        $this->assertAuthenticatedAs($user->fresh());
+        $response->assertRedirect(route('login'));
+        $this->assertGuest();
 
         $user->refresh();
         $this->assertNull($user->invitation_token);
         $this->assertTrue($user->is_active);
+        $this->assertNotNull($user->email_verified_at);
         $this->assertTrue(Hash::check('secret12345!', $user->password));
     }
 }

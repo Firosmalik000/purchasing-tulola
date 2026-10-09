@@ -14,6 +14,7 @@ use App\Models\PurchaseOrderRequestItem;
 use App\Models\Receipt;
 use App\Models\ReceiptItem;
 use App\Models\Store;
+use App\Services\PurchasingNotificationService;
 use App\Support\Decimal;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -34,7 +35,6 @@ class IncomingOrderController extends Controller
             ->whereIn('status', $status !== '' ? [$status] : $this->visibleStatuses())
             ->whereHas('items.allocations.purchaseRequestItem.purchaseRequest', fn (Builder $query) => $query->where('store_id', $store->id))
             ->with([
-                'supplier:id,code,name',
                 'items:id,purchase_order_id,item_type,item_id,name,unit_id',
                 'items.item:id,sku,name',
                 'items.unit:id,name,symbol',
@@ -43,7 +43,7 @@ class IncomingOrderController extends Controller
                 'receipts' => fn ($query) => $query->where('store_id', $store->id)->where('status', ReceiptStatus::CONFIRMED),
                 'receipts.items:id,receipt_id,purchase_order_item_id,purchase_request_item_id,received_quantity',
             ])
-            ->latest('order_date')->paginate(15)->withQueryString()
+            ->latest('order_date')->paginate(\App\Support\Paging::perPage($request))->withQueryString()
             ->through(fn (PurchaseOrder $order) => $this->summary($order));
 
         return Inertia::render('store/incoming/index', [
@@ -73,7 +73,7 @@ class IncomingOrderController extends Controller
         ]);
     }
 
-    public function store(ConfirmReceiptRequest $request, PurchaseOrder $purchaseOrder, ConfirmReceipt $action, \App\Services\PurchasingNotificationService $notifications): RedirectResponse
+    public function store(ConfirmReceiptRequest $request, PurchaseOrder $purchaseOrder, ConfirmReceipt $action, PurchasingNotificationService $notifications): RedirectResponse
     {
         $store = Store::query()->findOrFail($request->integer('store_id'));
         $receipt = $action->handle($purchaseOrder, $store, $request->user(), $request->validated());
@@ -104,16 +104,15 @@ class IncomingOrderController extends Controller
     private function visibleStatuses(): array
     {
         return [
-            PurchaseOrderStatus::WAITING_RECEIPT->value,
+            PurchaseOrderStatus::ORDERED->value,
             PurchaseOrderStatus::PARTIALLY_RECEIVED->value,
-            PurchaseOrderStatus::RECEIVED->value,
+            PurchaseOrderStatus::COMPLETED->value,
         ];
     }
 
     private function loadForStore(PurchaseOrder $order, Store $store): void
     {
         $order->load([
-            'supplier:id,code,name',
             'items:id,purchase_order_id,item_type,item_id,name,unit_id',
             'items.item:id,sku,name',
             'items.unit:id,name,symbol',
@@ -135,7 +134,7 @@ class IncomingOrderController extends Controller
         return [
             'id' => $order->id, 'number' => $order->number, 'order_date' => $order->order_date,
             'expected_date' => $order->expected_date, 'status' => $order->status,
-            'supplier' => $order->supplier, 'line_count' => $allocations->count(),
+            'line_count' => $allocations->count(),
             'ordered_quantity' => Decimal::quantity($ordered),
             'received_quantity' => Decimal::quantity($received),
             'outstanding_quantity' => Decimal::quantity(max($ordered - $received, 0)),
@@ -171,8 +170,8 @@ class IncomingOrderController extends Controller
         return [
             'id' => $order->id, 'number' => $order->number, 'order_date' => $order->order_date,
             'expected_date' => $order->expected_date, 'status' => $order->status,
-            'supplier' => $order->supplier, 'notes' => $order->notes, 'lines' => $lines,
-            'can_receive' => in_array($order->status, [PurchaseOrderStatus::WAITING_RECEIPT, PurchaseOrderStatus::PARTIALLY_RECEIVED], true)
+            'notes' => $order->notes, 'lines' => $lines,
+            'can_receive' => in_array($order->status, [PurchaseOrderStatus::ORDERED, PurchaseOrderStatus::PARTIALLY_RECEIVED], true)
                 && $lines->contains(fn (array $line) => Decimal::quantityMills($line['outstanding_quantity']) > 0),
             'receipts' => $order->receipts->map(fn ($receipt) => [
                 'id' => $receipt->id, 'number' => $receipt->number, 'received_at' => $receipt->received_at,

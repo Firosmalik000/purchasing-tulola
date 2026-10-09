@@ -2,9 +2,13 @@
 
 namespace App\Actions\Receipts;
 
+use App\Actions\Inventory\SynchronizeCompletedPurchaseRequests;
+use App\Actions\Inventory\UpdateStoreStock;
 use App\Actions\Orders\TransitionPurchaseOrderStatus;
 use App\Enums\PurchaseOrderStatus;
+use App\Enums\PurchaseRequestItemType;
 use App\Enums\ReceiptStatus;
+use App\Enums\StockMovementType;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderRequestItem;
 use App\Models\Receipt;
@@ -22,6 +26,8 @@ class ConfirmReceipt
     public function __construct(
         private GenerateReceiptNumber $numbers,
         private TransitionPurchaseOrderStatus $transition,
+        private UpdateStoreStock $stocks,
+        private SynchronizeCompletedPurchaseRequests $requestCompletion,
         private ActivityLogger $logger,
     ) {}
 
@@ -30,14 +36,14 @@ class ConfirmReceipt
     {
         return DB::transaction(function () use ($purchaseOrder, $store, $actor, $data): Receipt {
             $purchaseOrder = PurchaseOrder::query()->lockForUpdate()->findOrFail($purchaseOrder->id);
-            if (! in_array($purchaseOrder->status, [PurchaseOrderStatus::WAITING_RECEIPT, PurchaseOrderStatus::PARTIALLY_RECEIVED], true)) {
+            if (! in_array($purchaseOrder->status, [PurchaseOrderStatus::ORDERED, PurchaseOrderStatus::PARTIALLY_RECEIVED], true)) {
                 throw ValidationException::withMessages(['status' => 'Pesanan belum dapat diterima atau sudah selesai diterima.']);
             }
 
             $this->ensureAssignedStore($actor, $store);
             $allAllocations = PurchaseOrderRequestItem::query()
                 ->whereHas('purchaseOrderItem', fn ($query) => $query->where('purchase_order_id', $purchaseOrder->id))
-                ->with('purchaseRequestItem.purchaseRequest:id,store_id')
+                ->with(['purchaseRequestItem.purchaseRequest:id,store_id', 'purchaseOrderItem.item'])
                 ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
             $input = collect($this->normalizeItems($data))->keyBy('allocation_id');
             $selected = $allAllocations->filter(fn (PurchaseOrderRequestItem $allocation) => $input->has($allocation->id));
@@ -66,7 +72,30 @@ class ConfirmReceipt
                 ]);
             }
 
+            $receipt->update(['stock_applied_at' => now(), 'stock_applied_by' => $actor->id]);
+            $selected->filter(fn (PurchaseOrderRequestItem $allocation) => $allocation->purchaseOrderItem->item_type === PurchaseRequestItemType::STOCK)
+                ->groupBy(fn (PurchaseOrderRequestItem $allocation): int => $allocation->purchaseOrderItem->item->id)
+                ->each(function (Collection $allocations) use ($receipt, $store, $actor, $receivedMills): void {
+                    $first = $allocations->first();
+                    $quantityMills = $allocations->sum(fn (PurchaseOrderRequestItem $allocation) => $receivedMills[$allocation->id]);
+                    $this->stocks->handle(
+                        $store,
+                        $first->purchaseOrderItem->item,
+                        Decimal::quantity($quantityMills),
+                        StockMovementType::ORDER_RECEIVED,
+                        "Penerimaan {$receipt->number}",
+                        $receipt->notes,
+                        increment: true,
+                        reference: $receipt,
+                        actor: $actor,
+                    );
+                });
+
             $this->synchronizeOrderStatus($purchaseOrder, $allAllocations);
+            if ($purchaseOrder->fresh()->status === PurchaseOrderStatus::COMPLETED) {
+                $requestIds = $allAllocations->pluck('purchaseRequestItem.purchase_request_id')->unique()->values()->all();
+                $this->requestCompletion->handle($requestIds, $actor);
+            }
             $this->logger->log('receipt.confirmed', $receipt, newValues: [
                 'number' => $receipt->number,
                 'purchase_order_id' => $purchaseOrder->id,
@@ -126,7 +155,7 @@ class ConfirmReceipt
             ->whereIn('purchase_order_item_id', $purchaseOrder->items()->pluck('id'))
             ->whereHas('receipt', fn ($query) => $query->where('status', ReceiptStatus::CONFIRMED))
             ->get()->sum(fn (ReceiptItem $item) => Decimal::quantityMills($item->received_quantity));
-        $next = $received >= $ordered ? PurchaseOrderStatus::RECEIVED : PurchaseOrderStatus::PARTIALLY_RECEIVED;
+        $next = $received >= $ordered ? PurchaseOrderStatus::COMPLETED : PurchaseOrderStatus::PARTIALLY_RECEIVED;
 
         if ($purchaseOrder->status !== $next) {
             $this->transition->handle($purchaseOrder, $next, 'Penerimaan toko dikonfirmasi.');
