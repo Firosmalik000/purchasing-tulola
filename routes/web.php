@@ -28,6 +28,8 @@ use App\Http\Controllers\Store\StoreDashboardController;
 
 Route::middleware(['auth', 'verified', 'active'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('request-items/{purchase_request_item}/sample-image', [StorePurchaseRequestController::class, 'sampleImage'])
+        ->name('request-items.sample-image');
 
     Route::middleware('central')->prefix('central')->name('central.')->group(function () {
         Route::get('dashboard', CentralDashboardController::class)->name('dashboard');
@@ -42,6 +44,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::resource('suppliers', SupplierController::class)->only(['index', 'store', 'update']);
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
         Route::put('inventory/stock', [InventoryController::class, 'updateStock'])->name('inventory.stock.update');
+        Route::post('inventory/bulk-stock', [InventoryController::class, 'bulkStock'])->name('inventory.stock.bulk');
         Route::put('inventory/standard', [InventoryController::class, 'updateStandard'])->name('inventory.standard.update');
         Route::get('requests', [CentralPurchaseRequestController::class, 'index'])->name('requests.index');
         Route::get('requests/{purchase_request}', [CentralPurchaseRequestController::class, 'show'])->name('requests.show');

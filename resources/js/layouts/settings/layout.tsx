@@ -39,9 +39,9 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
             />
 
             <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full max-w-xl lg:w-48">
+                <aside className="w-full lg:w-48">
                     <nav
-                        className="flex flex-col space-y-1 space-x-0"
+                        className="flex flex-row overflow-x-auto gap-1 pb-1 scrollbar-none lg:flex-col lg:space-y-1 lg:space-x-0 lg:pb-0"
                         aria-label="Settings"
                     >
                         {sidebarNavItems.map((item, index) => (
@@ -50,13 +50,13 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                 size="sm"
                                 variant="ghost"
                                 asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': isCurrentOrParentUrl(item.href),
+                                className={cn('whitespace-nowrap lg:w-full justify-start', {
+                                    'bg-muted font-medium': isCurrentOrParentUrl(item.href),
                                 })}
                             >
                                 <Link href={item.href}>
                                     {item.icon && (
-                                        <item.icon className="h-4 w-4" />
+                                        <item.icon className="mr-2 h-4 w-4 shrink-0" />
                                     )}
                                     {item.title}
                                 </Link>

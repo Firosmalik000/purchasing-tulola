@@ -25,20 +25,6 @@ const config: Record<
         border: 'border-indigo-200 dark:border-indigo-800/60',
         dot: 'bg-indigo-500',
     },
-    ORDERED: {
-        label: 'Order Dikirim',
-        bg: 'bg-purple-50 dark:bg-purple-950/50',
-        text: 'text-purple-700 dark:text-purple-300',
-        border: 'border-purple-200 dark:border-purple-800/60',
-        dot: 'bg-purple-500',
-    },
-    COMPLETED: {
-        label: 'Selesai',
-        bg: 'bg-emerald-50 dark:bg-emerald-950/50',
-        text: 'text-emerald-700 dark:text-emerald-300',
-        border: 'border-emerald-200 dark:border-emerald-800/60',
-        dot: 'bg-emerald-500',
-    },
     REJECTED: {
         label: 'Ditolak',
         bg: 'bg-rose-50 dark:bg-rose-950/50',

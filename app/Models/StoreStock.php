@@ -11,7 +11,7 @@ class StoreStock extends Model
 {
     protected function casts(): array
     {
-        return ['quantity' => 'decimal:3', 'average_unit_cost' => 'decimal:2', 'total_value' => 'decimal:2'];
+        return ['quantity' => 'integer', 'average_unit_cost' => 'integer', 'total_value' => 'integer'];
     }
 
     /** @return BelongsTo<Store, $this> */

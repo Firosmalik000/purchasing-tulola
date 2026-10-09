@@ -11,6 +11,7 @@ use App\Http\Requests\Central\FilterPurchaseOrdersRequest;
 use App\Http\Requests\Central\UpdatePurchaseOrderRequest;
 use App\Models\PurchaseOrder;
 use App\Services\PurchasingNotificationService;
+use App\Support\Paging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -23,24 +24,42 @@ class PurchaseOrderController extends Controller
     {
         $filters = $request->validated();
         $keyword = trim((string) ($filters['keyword'] ?? ''));
+        $dateFrom = $filters['date_from'] ?? now()->startOfMonth()->toDateString();
+        $dateTo = $filters['date_to'] ?? now()->endOfMonth()->toDateString();
 
         return Inertia::render('central/orders/index', [
             'orders' => PurchaseOrder::query()->with(['purchaseRequest.store:id,code,name', 'creator:id,name'])->withCount('items')
                 ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+                ->when($dateFrom, fn ($query) => $query->whereDate('order_date', '>=', $dateFrom))
+                ->when($dateTo, fn ($query) => $query->whereDate('order_date', '<=', $dateTo))
                 ->when($keyword !== '', fn ($query) => $query->where(fn ($search) => $search
                     ->where('number', 'like', "%{$keyword}%")
                     ->orWhereHas('purchaseRequest', fn ($requests) => $requests->where('number', 'like', "%{$keyword}%")
                         ->orWhereHas('store', fn ($stores) => $stores->where('name', 'like', "%{$keyword}%")->orWhere('code', 'like', "%{$keyword}%")))))
-                ->latest()->paginate(\App\Support\Paging::perPage($request))->withQueryString(),
+                ->latest()->paginate(Paging::perPage($request))->withQueryString(),
             'statuses' => collect(PurchaseOrderStatus::cases())->map(fn ($status) => ['value' => $status->value, 'label' => $status->label()]),
-            'filters' => ['status' => (string) ($filters['status'] ?? ''), 'keyword' => $keyword],
+            'filters' => [
+                'status' => (string) ($filters['status'] ?? ''),
+                'keyword' => $keyword,
+                'date_from' => (string) $dateFrom,
+                'date_to' => (string) $dateTo,
+            ],
         ]);
     }
 
     public function show(Request $request, PurchaseOrder $purchaseOrder): Response
     {
         Gate::authorize('view', $purchaseOrder);
-        $purchaseOrder->load(['purchaseRequest.store:id,code,name', 'creator:id,name', 'items.item:id,sku,name', 'items.unit:id,name,symbol', 'items.allocations.purchaseRequestItem.purchaseRequest.store:id,code,name']);
+        $purchaseOrder->load([
+            'purchaseRequest.store:id,code,name',
+            'creator:id,name',
+            'items.item:id,sku,name',
+            'items.unit:id,name,symbol',
+            'items.allocations.purchaseRequestItem.purchaseRequest.store:id,code,name',
+            'receipts.store:id,code,name',
+            'receipts.receiver:id,name',
+            'receipts.items',
+        ]);
 
         return Inertia::render('central/orders/show', [
             'purchaseOrder' => $purchaseOrder,
@@ -60,7 +79,7 @@ class PurchaseOrderController extends Controller
     public function place(Request $request, PurchaseOrder $purchaseOrder, PlacePurchaseOrder $action, PurchasingNotificationService $notifications): RedirectResponse
     {
         Gate::authorize('place', $purchaseOrder);
-        $order = $action->handle($purchaseOrder, $request->user());
+        $order = $action->handle($purchaseOrder);
         $notifications->sendPurchaseOrderPlaced($order);
 
         return back()->with('success', 'Order internal dikirim dan sekarang menunggu penerimaan toko.');
@@ -69,7 +88,7 @@ class PurchaseOrderController extends Controller
     public function cancel(Request $request, PurchaseOrder $purchaseOrder, CancelPurchaseOrder $action): RedirectResponse
     {
         Gate::authorize('cancel', $purchaseOrder);
-        $action->handle($purchaseOrder, $request->user());
+        $action->handle($purchaseOrder);
 
         return to_route('central.orders.show', $purchaseOrder)->with('success', 'Order dibatalkan.');
     }

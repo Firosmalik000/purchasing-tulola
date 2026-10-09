@@ -8,7 +8,7 @@ export default function AppLogo() {
             </div>
             <div className="grid flex-1 text-left leading-none">
                 <span className="text-sm font-bold tracking-tight text-foreground">
-                    TULOLA
+                    SHOP TULOLA
                 </span>
                 <span className="mt-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                     Purchasing

@@ -30,7 +30,7 @@ export function PurchasingBarChart({ data, height = 200 }: Props) {
                     <div className="flex items-center gap-1.5 font-medium">
                         <span className="size-2.5 rounded-xs bg-indigo-500" />
                         <span className="text-muted-foreground">
-                            Order Internal
+                            Order Selesai
                         </span>
                     </div>
                 </div>
@@ -76,7 +76,7 @@ export function PurchasingBarChart({ data, height = 200 }: Props) {
                                 <div
                                     className="w-full max-w-[1.25rem] rounded-t-sm bg-indigo-500/85 transition-all duration-300 group-hover:brightness-105 hover:bg-indigo-500"
                                     style={{ height: `${orderHeight}px` }}
-                                    title={`Pesanan: ${item.orders}`}
+                                    title={`Order Selesai: ${item.orders}`}
                                 />
                             </div>
                             <span className="mt-2 text-[11px] font-semibold text-muted-foreground">

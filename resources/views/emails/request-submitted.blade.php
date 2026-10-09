@@ -56,7 +56,7 @@
                     </span>
                 </td>
                 <td style="text-align: right; font-weight: 600;">
-                    {{ rtrim(rtrim(number_format((float)$item->requested_quantity, 3, '.', ''), '0'), '.') }} {{ $item->unit->symbol ?? $item->unit->name }}
+                    {{ number_format((int) $item->requested_quantity, 0, ',', '.') }} {{ $item->unit->symbol ?? $item->unit->name }}
                 </td>
             </tr>
             @endforeach

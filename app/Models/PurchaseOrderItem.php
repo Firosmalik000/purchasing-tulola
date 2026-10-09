@@ -23,7 +23,7 @@ class PurchaseOrderItem extends Model
 {
     protected function casts(): array
     {
-        return ['item_type' => PurchaseRequestItemType::class, 'quantity' => 'decimal:3'];
+        return ['item_type' => PurchaseRequestItemType::class, 'quantity' => 'integer'];
     }
 
     /** @return BelongsTo<PurchaseOrder, $this> */

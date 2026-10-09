@@ -17,6 +17,7 @@ import {
 import { RequestStatusBadge } from '@/components/common/request-status-badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -45,7 +46,12 @@ type Props = {
     stores: Store[];
     selectedStoreId: number;
     statuses: { value: string; label: string }[];
-    filters: { status: string; store_id?: string };
+    filters: {
+        status: string;
+        store_id?: string;
+        date_from?: string;
+        date_to?: string;
+    };
 };
 
 export default function StoreRequestIndex({
@@ -55,6 +61,12 @@ export default function StoreRequestIndex({
     statuses,
     filters,
 }: Props) {
+    const hasActiveFilters = Boolean(
+        filters.status ||
+        filters.date_from ||
+        filters.date_to,
+    );
+
     const selectClass =
         'h-8.5 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
@@ -122,13 +134,31 @@ export default function StoreRequestIndex({
                                 ))}
                             </select>
 
+                            <Input
+                                type="date"
+                                name="date_from"
+                                defaultValue={filters.date_from}
+                                className="h-8.5 w-auto text-xs"
+                                aria-label="Tanggal mulai"
+                                title="Tanggal mulai"
+                            />
+
+                            <Input
+                                type="date"
+                                name="date_to"
+                                defaultValue={filters.date_to}
+                                className="h-8.5 w-auto text-xs"
+                                aria-label="Tanggal akhir"
+                                title="Tanggal akhir"
+                            />
+
                             <Button
                                 size="sm"
                                 className="h-8.5 px-3 text-xs font-medium shadow-xs"
                             >
                                 Filter
                             </Button>
-                            {filters.status && (
+                            {hasActiveFilters && (
                                 <Button
                                     variant="ghost"
                                     size="sm"

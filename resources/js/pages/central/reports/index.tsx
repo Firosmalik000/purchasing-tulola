@@ -393,7 +393,7 @@ export default function ReportIndex({
                                         <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                             Otorisasi & Pengesahan
                                         </p>
-                                        <div className="grid grid-cols-3 gap-2.5">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                             {Object.entries(
                                                 report.signatures,
                                             ).map(([label, name]) => (
@@ -459,13 +459,12 @@ function formatCell(value: string | number | null | undefined, format: string) {
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
             currency: 'IDR',
-            minimumFractionDigits: 2,
+            maximumFractionDigits: 0,
         }).format(Number(value));
     }
     if (format === 'quantity' && !Number.isNaN(Number(value))) {
         return new Intl.NumberFormat('id-ID', {
-            minimumFractionDigits: 3,
-            maximumFractionDigits: 3,
+            maximumFractionDigits: 0,
         }).format(Number(value));
     }
     return String(value);

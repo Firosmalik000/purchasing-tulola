@@ -8,7 +8,6 @@ use App\Models\StockMovement;
 use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\User;
-use App\Support\Decimal;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -32,35 +31,40 @@ class UpdateStoreStock
                 'quantity' => 0, 'average_unit_cost' => 0, 'total_value' => 0,
             ]);
             $stock = StoreStock::query()->whereBelongsTo($store)->whereBelongsTo($item)->lockForUpdate()->firstOrFail();
-            $previous = (string) $stock->quantity;
-            $previousValueCents = Decimal::moneyCents((string) $stock->total_value);
-            $previousAverageCents = Decimal::moneyCents((string) $stock->average_unit_cost);
-            $newQuantity = $increment
-                ? Decimal::quantity(Decimal::quantityMills($previous) + Decimal::quantityMills($quantity))
-                : Decimal::quantity(Decimal::quantityMills($quantity));
-            $newQuantityMills = Decimal::quantityMills($newQuantity);
-            $inputCostCents = $unitCost === null ? null : Decimal::moneyCents($unitCost);
-            $effectiveCostCents = $inputCostCents ?? $previousAverageCents;
-            $newValueCents = $increment
-                ? $previousValueCents + Decimal::moneyCents(Decimal::moneyTotal($quantity, Decimal::money($effectiveCostCents)))
-                : Decimal::moneyCents(Decimal::moneyTotal($newQuantity, Decimal::money($effectiveCostCents)));
-            $newAverageCents = $newQuantityMills > 0
-                ? (int) round(($newValueCents * 1000) / $newQuantityMills)
+            $previous = (int) $stock->quantity;
+            $previousValue = (int) $stock->total_value;
+            $previousAverage = (int) $stock->average_unit_cost;
+            $newQuantity = $increment ? $previous + (int) $quantity : (int) $quantity;
+            $inputCost = $unitCost === null ? null : (int) $unitCost;
+            $masterCost = $item->cost_price !== null && (int) $item->cost_price > 0
+                ? (int) $item->cost_price
+                : 0;
+            $effectiveCost = $inputCost ?? ($previousAverage > 0 ? $previousAverage : $masterCost);
+            $newValue = $increment
+                ? $previousValue + ((int) $quantity * $effectiveCost)
+                : $newQuantity * $effectiveCost;
+            $newAverage = $newQuantity > 0
+                ? (int) round($newValue / $newQuantity)
                 : 0;
 
             $stock->update([
                 'quantity' => $newQuantity,
-                'average_unit_cost' => Decimal::money($newAverageCents),
-                'total_value' => Decimal::money($newValueCents),
+                'average_unit_cost' => $newAverage,
+                'total_value' => $newValue,
             ]);
+
+            $recordedCost = $unitCost !== null
+                ? (int) $unitCost
+                : ($masterCost > 0 ? $masterCost : null);
+
             StockMovement::create([
                 'store_id' => $store->id, 'item_id' => $item->id, 'supplier_id' => $supplierId,
                 'previous_quantity' => $previous, 'new_quantity' => $newQuantity,
-                'quantity_difference' => Decimal::quantity(Decimal::quantityMills($newQuantity) - Decimal::quantityMills($previous)),
-                'unit_cost' => $unitCost,
-                'movement_value' => Decimal::money($newValueCents - $previousValueCents),
-                'previous_value' => Decimal::money($previousValueCents),
-                'new_value' => Decimal::money($newValueCents),
+                'quantity_difference' => $newQuantity - $previous,
+                'unit_cost' => $recordedCost,
+                'movement_value' => $newValue - $previousValue,
+                'previous_value' => $previousValue,
+                'new_value' => $newValue,
                 'movement_type' => $type, 'reason' => $reason, 'notes' => $notes,
                 'reference_type' => $reference?->getMorphClass(), 'reference_id' => $reference?->getKey(),
                 'created_by' => $actor instanceof User ? $actor->id : auth()->id(),

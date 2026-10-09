@@ -45,7 +45,7 @@ class PurchasingNotificationServiceTest extends TestCase
             'type' => PurchaseRequestItemType::SPECIAL,
             'name' => 'Kotak Cincin Beludru',
             'unit_id' => $unit->id,
-            'requested_quantity' => '10.000',
+            'requested_quantity' => 10,
         ]);
 
         $service = app(PurchasingNotificationService::class);
@@ -73,7 +73,7 @@ class PurchasingNotificationServiceTest extends TestCase
             'type' => PurchaseRequestItemType::SPECIAL,
             'name' => 'Pouch Beludru Luxury',
             'unit_id' => $unit->id,
-            'requested_quantity' => '50.000',
+            'requested_quantity' => 50,
         ]);
 
         $po = PurchaseOrder::factory()->create([
@@ -87,13 +87,13 @@ class PurchasingNotificationServiceTest extends TestCase
             'item_type' => PurchaseRequestItemType::SPECIAL,
             'name' => 'Pouch Beludru Luxury',
             'unit_id' => $unit->id,
-            'quantity' => '50.000',
+            'quantity' => 50,
         ]);
 
         PurchaseOrderRequestItem::create([
             'purchase_order_item_id' => $poItem->id,
             'purchase_request_item_id' => $prItem->id,
-            'allocated_quantity' => '50.000',
+            'allocated_quantity' => 50,
         ]);
 
         $service = app(PurchasingNotificationService::class);

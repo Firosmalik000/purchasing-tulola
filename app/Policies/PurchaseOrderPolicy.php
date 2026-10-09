@@ -41,6 +41,6 @@ class PurchaseOrderPolicy
 
     private function canManage(User $user): bool
     {
-        return in_array($user->role, [UserRole::CENTRAL_ADMIN, UserRole::PURCHASING], true);
+        return in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::CENTRAL_ADMIN, UserRole::PURCHASING], true);
     }
 }

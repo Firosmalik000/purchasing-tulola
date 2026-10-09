@@ -52,10 +52,10 @@
                     <strong>{{ $item->purchaseOrderItem->name ?? ($item->purchaseOrderItem->item->name ?? 'Item') }}</strong>
                 </td>
                 <td style="text-align: right; color: #71717a;">
-                    {{ rtrim(rtrim(number_format((float)$item->ordered_quantity, 3, '.', ''), '0'), '.') }}
+                    {{ number_format((int) $item->ordered_quantity, 0, ',', '.') }}
                 </td>
                 <td style="text-align: right; font-weight: 700; color: #047857;">
-                    {{ rtrim(rtrim(number_format((float)$item->received_quantity, 3, '.', ''), '0'), '.') }} {{ $item->purchaseOrderItem->unit->symbol ?? '' }}
+                    {{ number_format((int) $item->received_quantity, 0, ',', '.') }} {{ $item->purchaseOrderItem->unit->symbol ?? '' }}
                 </td>
             </tr>
             @endforeach

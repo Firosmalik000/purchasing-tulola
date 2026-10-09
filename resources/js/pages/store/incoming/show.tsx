@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatQuantity } from '@/lib/utils';
 
 type Store = { id: number; code: string; name: string };
 type Line = {
@@ -28,9 +29,17 @@ type Line = {
     sku: string | null;
     unit: { name: string; symbol: string };
     request_number: string;
-    ordered_quantity: string;
-    received_quantity: string;
-    outstanding_quantity: string;
+    ordered_quantity: number;
+    received_quantity: number;
+    outstanding_quantity: number;
+};
+type ReceiptItemDetail = {
+    id: number;
+    name: string;
+    sku: string | null;
+    unit: string;
+    received_quantity: number;
+    ordered_quantity: number;
 };
 type Receipt = {
     id: number;
@@ -39,7 +48,9 @@ type Receipt = {
     notes: string | null;
     status: string;
     receiver: { name: string };
-    items: { id: number; received_quantity: string }[];
+    is_partial: boolean;
+    total_quantity: number;
+    items: ReceiptItemDetail[];
 };
 type Order = {
     id: number;
@@ -94,13 +105,15 @@ export default function IncomingShow({
     }
 
     const allReceived = receivableLines.length === 0;
+    const isCancelled = purchaseOrder.status === 'CANCELLED';
+    const isCompleted = purchaseOrder.status === 'COMPLETED';
 
     return (
         <>
-            <Head title={`Penerimaan ${purchaseOrder.number}`} />
+            <Head title={`Order ${purchaseOrder.number}`} />
             <main className="flex flex-1 flex-col gap-6 p-4 md:p-8">
                 <PageHeader
-                    badge="Penerimaan"
+                    badge="Order Toko"
                     title={purchaseOrder.number}
                     actions={
                         <div className="flex flex-wrap items-center gap-2.5">
@@ -116,46 +129,73 @@ export default function IncomingShow({
                     }
                 />
 
+                {!purchaseOrder.can_receive && (
+                    <div
+                        className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
+                            isCancelled
+                                ? 'border-rose-500/25 bg-rose-500/10 text-rose-800 dark:text-rose-200'
+                                : isCompleted
+                                  ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200'
+                                  : 'border-blue-500/25 bg-blue-500/10 text-blue-800 dark:text-blue-200'
+                        }`}
+                    >
+                        {isCancelled ? (
+                            <AlertCircle className="size-4 shrink-0" />
+                        ) : isCompleted ? (
+                            <CheckCircle2 className="size-4 shrink-0" />
+                        ) : (
+                            <Clock className="size-4 shrink-0" />
+                        )}
+                        <p className="font-medium">
+                            {isCancelled
+                                ? 'Order ini dibatalkan oleh purchasing pusat.'
+                                : isCompleted
+                                  ? 'Seluruh barang pesanan ini telah diterima lengkap.'
+                                  : 'Order sedang diproses pusat. Penerimaan dapat dikonfirmasi setelah barang dikirim.'}
+                        </p>
+                    </div>
+                )}
+
                 {/* Information Header Card */}
                 <Card className="border-border/70 shadow-xs">
-                    <CardContent className="grid gap-5 p-5 sm:grid-cols-2 xl:grid-cols-4">
-                        <div className="flex items-start gap-3">
+                    <CardContent className="grid gap-4 p-4 sm:grid-cols-2 xl:grid-cols-4">
+                        <div className="flex items-center gap-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <Truck className="size-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">
-                                    Sumber Pengiriman
+                                <p className="text-xs text-muted-foreground">
+                                    Pengiriman
                                 </p>
-                                <p className="mt-0.5 font-medium text-foreground">
-                                    Internal / Purchasing Pusat
+                                <p className="text-sm font-semibold text-foreground">
+                                    Purchasing Pusat
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <Calendar className="size-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">
+                                <p className="text-xs text-muted-foreground">
                                     Tanggal Order
                                 </p>
-                                <p className="mt-0.5 font-medium text-foreground">
+                                <p className="text-sm font-semibold text-foreground">
                                     {purchaseOrder.order_date.slice(0, 10)}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <Clock className="size-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">
+                                <p className="text-xs text-muted-foreground">
                                     Estimasi Tiba
                                 </p>
-                                <p className="mt-0.5 font-medium text-foreground">
+                                <p className="text-sm font-semibold text-foreground">
                                     {purchaseOrder.expected_date?.slice(
                                         0,
                                         10,
@@ -164,15 +204,15 @@ export default function IncomingShow({
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-3">
                             <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <FileText className="size-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground">
-                                    Instruksi / Catatan Pusat
+                                <p className="text-xs text-muted-foreground">
+                                    Catatan Pusat
                                 </p>
-                                <p className="mt-0.5 font-medium text-foreground">
+                                <p className="text-sm font-semibold text-foreground truncate max-w-[200px]" title={purchaseOrder.notes ?? undefined}>
                                     {purchaseOrder.notes || '—'}
                                 </p>
                             </div>
@@ -182,21 +222,14 @@ export default function IncomingShow({
 
                 {/* Store Allocations Card */}
                 <Card className="border-border/70 shadow-xs">
-                    <CardHeader className="border-b border-border/50 pb-4">
+                    <CardHeader className="border-b border-border/50 py-3.5 px-5">
                         <div className="flex items-center gap-2.5">
-                            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                <Package className="size-4" />
+                            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <Package className="size-3.5" />
                             </div>
-                            <div>
-                                <CardTitle className="text-base font-semibold">
-                                    Daftar Alokasi Barang untuk Toko
-                                </CardTitle>
-                                <p className="text-xs text-muted-foreground">
-                                    Rincian barang yang dialokasikan, total yang
-                                    telah diterima sebelumnya, dan sisa
-                                    outstanding
-                                </p>
-                            </div>
+                            <CardTitle className="text-sm font-semibold">
+                                Alokasi Barang Pesanan
+                            </CardTitle>
                         </div>
                     </CardHeader>
 
@@ -221,14 +254,14 @@ export default function IncomingShow({
                                             </span>
                                         </div>
                                         <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                                            {line.sku ?? 'Custom / Non-SKU'} ·
+                                            {line.sku ?? 'Non-SKU'} ·
                                             Satuan: {line.unit.symbol}
                                         </p>
                                     </div>
 
                                     <div>
                                         <p className="text-[11px] text-muted-foreground">
-                                            Asal Permintaan (PR)
+                                            No. Permintaan
                                         </p>
                                         <p className="mt-0.5 font-mono text-xs font-semibold text-primary">
                                             {line.request_number}
@@ -240,17 +273,21 @@ export default function IncomingShow({
                                             Dialokasikan
                                         </p>
                                         <p className="mt-0.5 font-mono text-sm font-medium tabular-nums">
-                                            {line.ordered_quantity}{' '}
+                                            {formatQuantity(
+                                                line.ordered_quantity,
+                                            )}{' '}
                                             {line.unit.symbol}
                                         </p>
                                     </div>
 
                                     <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2 text-center">
                                         <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                                            Sudah Diterima
+                                            Diterima
                                         </p>
                                         <p className="mt-0.5 font-mono text-sm font-bold text-emerald-700 tabular-nums dark:text-emerald-300">
-                                            {line.received_quantity}{' '}
+                                            {formatQuantity(
+                                                line.received_quantity,
+                                            )}{' '}
                                             {line.unit.symbol}
                                         </p>
                                     </div>
@@ -265,10 +302,12 @@ export default function IncomingShow({
                                         <p className="text-[11px] font-semibold">
                                             {isFulfilled
                                                 ? 'Selesai'
-                                                : 'Outstanding Sisa'}
+                                                : 'Sisa'}
                                         </p>
                                         <p className="mt-0.5 font-mono text-sm font-bold tabular-nums">
-                                            {line.outstanding_quantity}{' '}
+                                            {formatQuantity(
+                                                line.outstanding_quantity,
+                                            )}{' '}
                                             {line.unit.symbol}
                                         </p>
                                     </div>
@@ -281,20 +320,14 @@ export default function IncomingShow({
                 {/* Receiving Confirmation Form */}
                 {purchaseOrder.can_receive && (
                     <Card className="border-border/70 shadow-xs">
-                        <CardHeader className="border-b border-border/50 pb-4">
+                        <CardHeader className="border-b border-border/50 py-3.5 px-5">
                             <div className="flex items-center gap-2.5">
-                                <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                    <PackageCheck className="size-4" />
+                                <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                    <PackageCheck className="size-3.5" />
                                 </div>
-                                <div>
-                                    <CardTitle className="text-base font-semibold">
-                                        Form Konfirmasi Penerimaan Fisik
-                                    </CardTitle>
-                                    <p className="text-xs text-muted-foreground">
-                                        Input jumlah fisik yang benar-benar
-                                        diperiksa dan diterima di toko saat ini
-                                    </p>
-                                </div>
+                                <CardTitle className="text-sm font-semibold">
+                                    Konfirmasi Penerimaan Fisik
+                                </CardTitle>
                             </div>
                         </CardHeader>
 
@@ -303,19 +336,18 @@ export default function IncomingShow({
                                 <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-700 dark:text-emerald-300">
                                     <CheckCircle2 className="size-5 shrink-0" />
                                     <p className="text-sm font-medium">
-                                        Semua alokasi barang untuk pesanan ini
-                                        telah diterima lengkap (outstanding 0).
+                                        Semua alokasi barang untuk pesanan ini telah diterima lengkap.
                                     </p>
                                 </div>
                             ) : (
-                                <form onSubmit={submit} className="space-y-6">
+                                <form onSubmit={submit} className="space-y-5">
                                     <div className="grid gap-4 sm:grid-cols-2">
                                         <div className="space-y-1.5">
                                             <Label
                                                 htmlFor="received_at"
                                                 className="text-xs font-semibold"
                                             >
-                                                Waktu Fisik Diterima *
+                                                Waktu Diterima *
                                             </Label>
                                             <Input
                                                 id="received_at"
@@ -330,6 +362,11 @@ export default function IncomingShow({
                                                 }
                                                 required
                                             />
+                                            {form.errors.received_at && (
+                                                <p className="text-xs text-destructive font-medium">
+                                                    {form.errors.received_at}
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div className="space-y-1.5">
@@ -337,8 +374,7 @@ export default function IncomingShow({
                                                 htmlFor="notes"
                                                 className="text-xs font-semibold"
                                             >
-                                                Catatan Kondisi Barang
-                                                (Opsional)
+                                                Catatan (Opsional)
                                             </Label>
                                             <Input
                                                 id="notes"
@@ -350,15 +386,12 @@ export default function IncomingShow({
                                                         event.target.value,
                                                     )
                                                 }
-                                                placeholder="Contoh: Paket diterima utuh dan tersegel rapi"
+                                                placeholder="Catatan kondisi barang jika ada..."
                                             />
                                         </div>
                                     </div>
 
-                                    <div className="space-y-3">
-                                        <Label className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                                            Daftar Barang yang Siap Diterima
-                                        </Label>
+                                    <div className="space-y-2.5">
                                         {receivableLines.map((line, index) => (
                                             <div
                                                 key={line.allocation_id}
@@ -369,12 +402,11 @@ export default function IncomingShow({
                                                         {line.name}
                                                     </p>
                                                     <p className="mt-0.5 text-xs text-muted-foreground">
-                                                        {line.sku ?? 'Custom'} ·
-                                                        Sisa belum diterima:{' '}
+                                                        {line.sku ?? 'Non-SKU'} · Sisa:{' '}
                                                         <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                                                            {
-                                                                line.outstanding_quantity
-                                                            }{' '}
+                                                            {formatQuantity(
+                                                                line.outstanding_quantity,
+                                                            )}{' '}
                                                             {line.unit.symbol}
                                                         </span>
                                                     </p>
@@ -386,7 +418,7 @@ export default function IncomingShow({
                                                             htmlFor={`quantity-${line.allocation_id}`}
                                                             className="text-xs font-medium"
                                                         >
-                                                            Kuantitas Diterima
+                                                            Jumlah Diterima
                                                         </Label>
                                                         <Button
                                                             type="button"
@@ -403,7 +435,11 @@ export default function IncomingShow({
                                                                         index
                                                                     ],
                                                                     received_quantity:
-                                                                        line.outstanding_quantity,
+                                                                        String(
+                                                                            Number(
+                                                                                line.outstanding_quantity,
+                                                                            ),
+                                                                        ),
                                                                 };
                                                                 form.setData(
                                                                     'items',
@@ -412,9 +448,9 @@ export default function IncomingShow({
                                                             }}
                                                         >
                                                             Terima Semua (
-                                                            {
-                                                                line.outstanding_quantity
-                                                            }
+                                                            {formatQuantity(
+                                                                line.outstanding_quantity,
+                                                            )}
                                                             )
                                                         </Button>
                                                     </div>
@@ -422,11 +458,11 @@ export default function IncomingShow({
                                                         <Input
                                                             id={`quantity-${line.allocation_id}`}
                                                             type="number"
-                                                            min="0"
+                                                            min="1"
                                                             max={
                                                                 line.outstanding_quantity
                                                             }
-                                                            step="0.001"
+                                                            step="1"
                                                             className="h-10 pr-12 text-right font-medium tabular-nums"
                                                             value={
                                                                 form.data.items[
@@ -456,25 +492,37 @@ export default function IncomingShow({
                                                                     items,
                                                                 );
                                                             }}
-                                                            placeholder="0.000"
+                                                            placeholder="0"
                                                         />
                                                         <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-medium text-muted-foreground">
                                                             {line.unit.symbol}
                                                         </span>
                                                     </div>
+                                                    {(form.errors[`items.${index}.received_quantity`] ||
+                                                        form.errors[`items.${line.allocation_id}.received_quantity`]) && (
+                                                        <p className="text-xs text-destructive font-medium">
+                                                            {form.errors[`items.${index}.received_quantity`] ||
+                                                                form.errors[`items.${line.allocation_id}.received_quantity`]}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
 
                                     {Object.keys(form.errors).length > 0 && (
-                                        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs font-medium text-destructive">
-                                            <AlertCircle className="size-4 shrink-0" />
-                                            <span>
-                                                Periksa jumlah penerimaan. Nilai
-                                                harus lebih dari 0 dan tidak
-                                                boleh melebihi sisa outstanding.
-                                            </span>
+                                        <div className="flex flex-col gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                                            <div className="flex items-center gap-2 font-semibold">
+                                                <AlertCircle className="size-4 shrink-0" />
+                                                <span>
+                                                    Gagal memproses konfirmasi penerimaan:
+                                                </span>
+                                            </div>
+                                            <ul className="list-disc pl-6 space-y-0.5">
+                                                {Object.entries(form.errors).map(([key, error]) => (
+                                                    <li key={key}>{error}</li>
+                                                ))}
+                                            </ul>
                                         </div>
                                     )}
 
@@ -497,65 +545,82 @@ export default function IncomingShow({
 
                 {/* Receiving Receipts History */}
                 <Card className="border-border/70 shadow-xs">
-                    <CardHeader className="border-b border-border/50 pb-4">
+                    <CardHeader className="border-b border-border/50 py-3.5 px-5">
                         <div className="flex items-center gap-2.5">
-                            <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                                <HistoryIcon className="size-4" />
+                            <div className="flex size-7 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                                <HistoryIcon className="size-3.5" />
                             </div>
-                            <div>
-                                <CardTitle className="text-base font-semibold">
-                                    Riwayat Tanda Terima Toko (Goods Receipts)
-                                </CardTitle>
-                                <p className="text-xs text-muted-foreground">
-                                    Bukti penerimaan fisik yang telah dibuat dan
-                                    diverifikasi oleh staf toko
-                                </p>
-                            </div>
+                            <CardTitle className="text-sm font-semibold">
+                                Riwayat Tanda Terima (Goods Receipts)
+                            </CardTitle>
                         </div>
                     </CardHeader>
 
                     <CardContent className="space-y-3 p-5">
                         {purchaseOrder.receipts.length === 0 ? (
                             <p className="text-xs text-muted-foreground">
-                                Belum ada bukti tanda terima yang dikonfirmasi
-                                untuk pesanan ini.
+                                Belum ada tanda terima untuk pesanan ini.
                             </p>
                         ) : (
                             purchaseOrder.receipts.map((receipt) => (
                                 <article
                                     key={receipt.id}
-                                    className="flex flex-col justify-between gap-3 rounded-xl border border-border/70 bg-card p-4 transition-colors hover:border-border sm:flex-row sm:items-center"
+                                    className="space-y-3 rounded-xl border border-border/70 bg-card p-4 transition-colors hover:border-border"
                                 >
-                                    <div className="space-y-1">
-                                        <div className="flex items-center gap-2">
+                                    <div className="flex flex-col justify-between gap-2 border-b border-border/40 pb-3 sm:flex-row sm:items-center">
+                                        <div className="flex flex-wrap items-center gap-2.5">
                                             <p className="font-mono text-sm font-bold text-foreground">
                                                 {receipt.number}
                                             </p>
-                                            <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                                                Diterima
-                                            </span>
+                                            {receipt.is_partial ? (
+                                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                                                    <Clock className="size-3" />
+                                                    Penerimaan Sebagian (Parsial)
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                                                    <CheckCircle2 className="size-3" />
+                                                    Penerimaan Lengkap (Selesai)
+                                                </span>
+                                            )}
                                         </div>
-                                        <p className="text-xs text-muted-foreground">
+
+                                        <time className="font-mono text-xs text-muted-foreground">
+                                            {new Date(
+                                                receipt.received_at,
+                                            ).toLocaleString('id-ID', {
+                                                dateStyle: 'medium',
+                                                timeStyle: 'short',
+                                            })}
+                                        </time>
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                                        <p>
                                             Diverifikasi oleh:{' '}
                                             <span className="font-medium text-foreground">
                                                 {receipt.receiver.name}
+                                            </span>
+                                            {receipt.notes ? (
+                                                <span>
+                                                    {' '}
+                                                    · Catatan:{' '}
+                                                    <em className="text-foreground">
+                                                        "{receipt.notes}"
+                                                    </em>
+                                                </span>
+                                            ) : null}
+                                        </p>
+                                        <p className="font-medium text-foreground">
+                                            Total Diterima:{' '}
+                                            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                                {formatQuantity(
+                                                    receipt.total_quantity,
+                                                )}
                                             </span>{' '}
-                                            · {receipt.items.length} item
-                                            diterima
-                                            {receipt.notes
-                                                ? ` · Catatan: "${receipt.notes}"`
-                                                : ''}
+                                            unit
                                         </p>
                                     </div>
-
-                                    <time className="font-mono text-xs text-muted-foreground">
-                                        {new Date(
-                                            receipt.received_at,
-                                        ).toLocaleString('id-ID', {
-                                            dateStyle: 'medium',
-                                            timeStyle: 'short',
-                                        })}
-                                    </time>
                                 </article>
                             ))
                         )}
@@ -569,7 +634,7 @@ export default function IncomingShow({
 IncomingShow.layout = {
     breadcrumbs: [
         { title: 'Portal Toko', href: '/store/dashboard' },
-        { title: 'Barang Masuk', href: '/store/incoming' },
+        { title: 'Order Toko', href: '/store/incoming' },
         { title: 'Detail', href: '#' },
     ],
 };

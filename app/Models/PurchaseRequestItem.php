@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $item_id
  * @property string|null $name
  * @property string|null $description
+ * @property string|null $sample_image_path
  * @property int $unit_id
  * @property string|null $current_stock_snapshot
  * @property string|null $standard_stock_snapshot
@@ -27,12 +28,25 @@ use Illuminate\Support\Carbon;
  * @property string|null $reason
  * @property PurchaseRequestItemStatus|null $status
  */
-#[Fillable(['purchase_request_id', 'type', 'item_id', 'name', 'description', 'unit_id', 'current_stock_snapshot', 'standard_stock_snapshot', 'suggested_quantity', 'requested_quantity', 'approved_quantity', 'required_date', 'reason', 'status'])]
+#[Fillable(['purchase_request_id', 'type', 'item_id', 'name', 'description', 'sample_image_path', 'unit_id', 'current_stock_snapshot', 'standard_stock_snapshot', 'suggested_quantity', 'requested_quantity', 'approved_quantity', 'required_date', 'reason', 'status'])]
 class PurchaseRequestItem extends Model
 {
+    protected $appends = ['sample_image_url'];
+
+    protected $hidden = ['sample_image_path'];
+
     protected function casts(): array
     {
-        return ['type' => PurchaseRequestItemType::class, 'current_stock_snapshot' => 'decimal:3', 'standard_stock_snapshot' => 'decimal:3', 'suggested_quantity' => 'decimal:3', 'requested_quantity' => 'decimal:3', 'approved_quantity' => 'decimal:3', 'required_date' => 'date', 'status' => PurchaseRequestItemStatus::class];
+        return ['type' => PurchaseRequestItemType::class, 'current_stock_snapshot' => 'integer', 'standard_stock_snapshot' => 'integer', 'suggested_quantity' => 'integer', 'requested_quantity' => 'integer', 'approved_quantity' => 'integer', 'required_date' => 'date', 'status' => PurchaseRequestItemStatus::class];
+    }
+
+    public function getSampleImageUrlAttribute(): ?string
+    {
+        if (! $this->sample_image_path) {
+            return null;
+        }
+
+        return route('request-items.sample-image', $this);
     }
 
     /** @return BelongsTo<PurchaseRequest, $this> */

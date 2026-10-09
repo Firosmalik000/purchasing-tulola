@@ -2,7 +2,6 @@
 
 namespace App\Actions\Receipts;
 
-use App\Actions\Inventory\SynchronizeCompletedPurchaseRequests;
 use App\Actions\Inventory\UpdateStoreStock;
 use App\Actions\Orders\TransitionPurchaseOrderStatus;
 use App\Enums\PurchaseOrderStatus;
@@ -16,7 +15,6 @@ use App\Models\ReceiptItem;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\ActivityLogger;
-use App\Support\Decimal;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +25,6 @@ class ConfirmReceipt
         private GenerateReceiptNumber $numbers,
         private TransitionPurchaseOrderStatus $transition,
         private UpdateStoreStock $stocks,
-        private SynchronizeCompletedPurchaseRequests $requestCompletion,
         private ActivityLogger $logger,
     ) {}
 
@@ -52,7 +49,7 @@ class ConfirmReceipt
                 throw ValidationException::withMessages(['items' => 'Alokasi penerimaan tidak valid.']);
             }
 
-            $receivedMills = $this->validateQuantities($selected, $input, $store);
+            $receivedQuantities = $this->validateQuantities($selected, $input, $store);
             $receipt = Receipt::create([
                 'number' => $this->numbers->handle($store),
                 'purchase_order_id' => $purchaseOrder->id,
@@ -68,20 +65,20 @@ class ConfirmReceipt
                     'purchase_order_item_id' => $allocation->purchase_order_item_id,
                     'purchase_request_item_id' => $allocation->purchase_request_item_id,
                     'ordered_quantity' => $allocation->allocated_quantity,
-                    'received_quantity' => Decimal::quantity($receivedMills[$allocation->id]),
+                    'received_quantity' => $receivedQuantities[$allocation->id],
                 ]);
             }
 
             $receipt->update(['stock_applied_at' => now(), 'stock_applied_by' => $actor->id]);
             $selected->filter(fn (PurchaseOrderRequestItem $allocation) => $allocation->purchaseOrderItem->item_type === PurchaseRequestItemType::STOCK)
                 ->groupBy(fn (PurchaseOrderRequestItem $allocation): int => $allocation->purchaseOrderItem->item->id)
-                ->each(function (Collection $allocations) use ($receipt, $store, $actor, $receivedMills): void {
+                ->each(function (Collection $allocations) use ($receipt, $store, $actor, $receivedQuantities): void {
                     $first = $allocations->first();
-                    $quantityMills = $allocations->sum(fn (PurchaseOrderRequestItem $allocation) => $receivedMills[$allocation->id]);
+                    $quantity = $allocations->sum(fn (PurchaseOrderRequestItem $allocation) => $receivedQuantities[$allocation->id]);
                     $this->stocks->handle(
                         $store,
                         $first->purchaseOrderItem->item,
-                        Decimal::quantity($quantityMills),
+                        (string) $quantity,
                         StockMovementType::ORDER_RECEIVED,
                         "Penerimaan {$receipt->number}",
                         $receipt->notes,
@@ -92,10 +89,6 @@ class ConfirmReceipt
                 });
 
             $this->synchronizeOrderStatus($purchaseOrder, $allAllocations);
-            if ($purchaseOrder->fresh()->status === PurchaseOrderStatus::COMPLETED) {
-                $requestIds = $allAllocations->pluck('purchaseRequestItem.purchase_request_id')->unique()->values()->all();
-                $this->requestCompletion->handle($requestIds, $actor);
-            }
             $this->logger->log('receipt.confirmed', $receipt, newValues: [
                 'number' => $receipt->number,
                 'purchase_order_id' => $purchaseOrder->id,
@@ -134,8 +127,8 @@ class ConfirmReceipt
                 ->where('purchase_request_item_id', $allocation->purchase_request_item_id)
                 ->whereHas('receipt', fn ($query) => $query->where('status', ReceiptStatus::CONFIRMED))
                 ->sum('received_quantity');
-            $outstanding = Decimal::quantityMills($allocation->allocated_quantity) - Decimal::quantityMills((string) $alreadyReceived);
-            $quantity = Decimal::quantityMills($input[$allocation->id]['received_quantity']);
+            $outstanding = $allocation->allocated_quantity - (int) $alreadyReceived;
+            $quantity = (int) $input[$allocation->id]['received_quantity'];
             if ($quantity <= 0 || $quantity > $outstanding) {
                 throw ValidationException::withMessages([
                     "items.{$allocation->id}.received_quantity" => 'Jumlah diterima wajib lebih dari 0 dan tidak boleh melebihi outstanding.',
@@ -150,11 +143,11 @@ class ConfirmReceipt
     /** @param Collection<int, PurchaseOrderRequestItem> $allocations */
     private function synchronizeOrderStatus(PurchaseOrder $purchaseOrder, Collection $allocations): void
     {
-        $ordered = $allocations->sum(fn (PurchaseOrderRequestItem $allocation) => Decimal::quantityMills($allocation->allocated_quantity));
+        $ordered = $allocations->sum(fn (PurchaseOrderRequestItem $allocation) => $allocation->allocated_quantity);
         $received = ReceiptItem::query()
             ->whereIn('purchase_order_item_id', $purchaseOrder->items()->pluck('id'))
             ->whereHas('receipt', fn ($query) => $query->where('status', ReceiptStatus::CONFIRMED))
-            ->get()->sum(fn (ReceiptItem $item) => Decimal::quantityMills($item->received_quantity));
+            ->get()->sum(fn (ReceiptItem $item) => $item->received_quantity);
         $next = $received >= $ordered ? PurchaseOrderStatus::COMPLETED : PurchaseOrderStatus::PARTIALLY_RECEIVED;
 
         if ($purchaseOrder->status !== $next) {

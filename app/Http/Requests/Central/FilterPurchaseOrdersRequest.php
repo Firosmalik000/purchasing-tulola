@@ -19,6 +19,8 @@ class FilterPurchaseOrdersRequest extends FormRequest
     {
         return [
             'status' => ['nullable', Rule::enum(PurchaseOrderStatus::class)],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
             'keyword' => ['nullable', 'string', 'max:100'],
         ];
     }

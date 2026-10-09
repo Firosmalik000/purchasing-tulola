@@ -10,10 +10,15 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/page-header';
 import { StatCard } from '@/components/common/stat-card';
+import { DashboardPeriodFilter } from '@/components/dashboard/dashboard-period-filter';
 import {
     PurchasingBarChart,
     StatusProgressChart,
 } from '@/components/dashboard/purchasing-charts';
+import {
+    TopRequestedItemsCard,
+    type TopRequestedItem,
+} from '@/components/dashboard/top-requested-items-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,11 +31,16 @@ type Props = {
         completedOrders: number;
         stockAlerts: number;
     };
+    selectedPeriod: {
+        month: number;
+        year: number;
+    };
     monthlyTrend: {
         month: string;
         requests: number;
         orders: number;
     }[];
+    topRequestedItems: TopRequestedItem[];
     requestStatusDist: {
         name: string;
         count: number;
@@ -59,7 +69,9 @@ type Props = {
 
 export default function CentralDashboard({
     metrics,
+    selectedPeriod,
     monthlyTrend,
+    topRequestedItems,
     requestStatusDist,
     recentRequests,
     recentOrders,
@@ -72,7 +84,11 @@ export default function CentralDashboard({
                     badge="Pusat"
                     title="Dashboard Purchasing"
                     actions={
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <DashboardPeriodFilter
+                                selectedMonth={selectedPeriod.month}
+                                selectedYear={selectedPeriod.year}
+                            />
                             <Button size="sm" asChild className="h-8 shadow-xs">
                                 <Link href="/central/requests">
                                     <ClipboardList className="mr-1.5 size-3.5" />
@@ -102,28 +118,24 @@ export default function CentralDashboard({
                     <StatCard
                         label="Antrean Menunggu Review"
                         value={metrics.pendingRequests}
-                        helper="Permintaan toko cabang aktif"
                         icon={ClipboardList}
                         tone="warning"
                     />
                     <StatCard
                         label="Permintaan Siap Dipesan"
                         value={metrics.processedRequests}
-                        helper="Order Proses otomatis dibuat"
                         icon={ListChecks}
                         tone="info"
                     />
                     <StatCard
                         label="Order Internal Berjalan"
                         value={metrics.activeOrders}
-                        helper="Menunggu penerimaan toko"
                         icon={ShoppingCart}
                         tone="neutral"
                     />
                     <StatCard
                         label="Stok di Bawah Standar"
                         value={metrics.stockAlerts}
-                        helper="Perlu restock cabang"
                         icon={AlertTriangle}
                         tone={metrics.stockAlerts > 0 ? 'warning' : 'success'}
                     />
@@ -183,8 +195,16 @@ export default function CentralDashboard({
                     </Card>
                 </section>
 
-                {/* Recent Activities Section */}
-                <section className="grid gap-5 lg:grid-cols-2">
+                {/* Highlights & Recent Activities Section */}
+                <section className="grid gap-5 lg:grid-cols-3">
+                    {/* Top 3 Requested Items Card */}
+                    <TopRequestedItemsCard
+                        items={topRequestedItems}
+                        title="Top 3 Item Sering Diminta"
+                        subtitle="Akumulasi seluruh toko cabang"
+                        detailHref="/central/requests"
+                    />
+
                     {/* Recent Requests Table */}
                     <Card className="border-border/70 shadow-2xs">
                         <CardHeader className="flex flex-row items-center justify-between border-b border-border/40 pb-3">

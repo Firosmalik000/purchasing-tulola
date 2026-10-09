@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum StockMovementType: string
 {
+    case STOCK_IN = 'STOCK_IN';
     case MANUAL_UPDATE = 'MANUAL_UPDATE';
     case ORDER_RECEIVED = 'ORDER_RECEIVED';
     case OPENING_BALANCE = 'OPENING_BALANCE';
@@ -13,8 +14,12 @@ enum StockMovementType: string
     public function label(): string
     {
         return match ($this) {
-            self::MANUAL_UPDATE => 'Pembaruan Manual', self::ORDER_RECEIVED => 'Penerimaan Pesanan',
-            self::OPENING_BALANCE => 'Saldo Awal', self::CORRECTION => 'Koreksi', self::OTHER => 'Lainnya',
+            self::STOCK_IN => 'Tambah Stok',
+            self::MANUAL_UPDATE => 'Pembaruan Manual',
+            self::ORDER_RECEIVED => 'Penerimaan Pesanan',
+            self::OPENING_BALANCE => 'Saldo Awal',
+            self::CORRECTION => 'Koreksi',
+            self::OTHER => 'Lainnya',
         };
     }
 }

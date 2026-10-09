@@ -13,6 +13,8 @@ use App\Models\StoreStockStandard;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
@@ -57,6 +59,98 @@ class PurchaseRequestManagementTest extends TestCase
         $this->assertDatabaseCount('purchase_request_status_histories', 3);
     }
 
+    public function test_special_item_sample_image_is_stored_preserved_replaced_and_authorized(): void
+    {
+        Storage::fake('local');
+        [$pic, $store, , $unit] = $this->fixtures();
+
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'special_items' => [[
+                'name' => 'Display custom',
+                'unit_id' => $unit->id,
+                'requested_quantity' => 1,
+                'reason' => 'Referensi bentuk display',
+                'sample_image' => UploadedFile::fake()->image('sample-awal.jpg', 600, 600)->size(800),
+            ]],
+        ])->assertSessionHasNoErrors();
+
+        $purchaseRequest = PurchaseRequest::firstOrFail();
+        $line = $purchaseRequest->items()->firstOrFail();
+        $originalPath = $line->sample_image_path;
+        $this->assertNotNull($originalPath);
+        Storage::disk('local')->assertExists($originalPath);
+
+        $this->actingAs($pic)->get(route('request-items.sample-image', $line))->assertOk();
+        $this->actingAs(User::factory()->centralAdmin()->create())->get(route('request-items.sample-image', $line))->assertOk();
+        $this->actingAs(User::factory()->create())->get(route('request-items.sample-image', $line))->assertForbidden();
+        $this->actingAs($pic)->get(route('store.requests.show', $purchaseRequest))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('purchaseRequest.items.0.sample_image_url', route('request-items.sample-image', $line)));
+
+        $this->actingAs($pic)->put(route('store.requests.update', $purchaseRequest), [
+            'store_id' => $store->id,
+            'special_items' => [[
+                'existing_item_id' => $line->id,
+                'name' => 'Display custom',
+                'unit_id' => $unit->id,
+                'requested_quantity' => 1,
+                'reason' => 'Referensi bentuk display',
+            ]],
+        ])->assertSessionHasNoErrors();
+
+        $line = $purchaseRequest->items()->firstOrFail();
+        $this->assertSame($originalPath, $line->sample_image_path);
+        Storage::disk('local')->assertExists($originalPath);
+
+        $this->actingAs($pic)->put(route('store.requests.update', $purchaseRequest), [
+            'store_id' => $store->id,
+            'special_items' => [[
+                'existing_item_id' => $line->id,
+                'name' => 'Display custom',
+                'unit_id' => $unit->id,
+                'requested_quantity' => 1,
+                'reason' => 'Referensi bentuk display',
+                'sample_image' => UploadedFile::fake()->image('sample-baru.jpg', 800, 600)->size(900),
+            ]],
+        ])->assertSessionHasNoErrors();
+
+        $replacementPath = $purchaseRequest->items()->firstOrFail()->sample_image_path;
+        $this->assertNotSame($originalPath, $replacementPath);
+        Storage::disk('local')->assertMissing($originalPath);
+        Storage::disk('local')->assertExists($replacementPath);
+    }
+
+    public function test_special_item_sample_image_must_be_a_supported_image_under_five_megabytes(): void
+    {
+        Storage::fake('local');
+        [$pic, $store, , $unit] = $this->fixtures();
+
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'special_items' => [[
+                'name' => 'Display custom',
+                'unit_id' => $unit->id,
+                'requested_quantity' => 1,
+                'reason' => 'Referensi bentuk display',
+                'sample_image' => UploadedFile::fake()->create('sample.pdf', 100, 'application/pdf'),
+            ]],
+        ])->assertSessionHasErrors('special_items.0.sample_image');
+
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'special_items' => [[
+                'name' => 'Display custom',
+                'unit_id' => $unit->id,
+                'requested_quantity' => 1,
+                'reason' => 'Referensi bentuk display',
+                'sample_image' => UploadedFile::fake()->image('sample-besar.jpg')->size(6000),
+            ]],
+        ])->assertSessionHasErrors('special_items.0.sample_image');
+
+        $this->assertDatabaseCount('purchase_requests', 0);
+    }
+
     public function test_store_pic_can_open_request_list_form_and_detail_for_assigned_store(): void
     {
         [$pic, $store, $item] = $this->fixtures();
@@ -69,7 +163,16 @@ class PurchaseRequestManagementTest extends TestCase
                 ->has('requests.data', 1)
                 ->has('stores', 1)
                 ->where('selectedStoreId', $store->id)
-                ->where('filters.store_id', (string) $store->id));
+                ->where('statuses', [
+                    ['value' => 'DRAFT', 'label' => 'Draft'],
+                    ['value' => 'SUBMITTED', 'label' => 'Diajukan'],
+                    ['value' => 'PROCESSED', 'label' => 'Disetujui'],
+                    ['value' => 'REJECTED', 'label' => 'Ditolak'],
+                    ['value' => 'CANCELLED', 'label' => 'Dibatalkan'],
+                ])
+                ->where('filters.store_id', (string) $store->id)
+                ->where('filters.date_from', now()->startOfMonth()->toDateString())
+                ->where('filters.date_to', now()->endOfMonth()->toDateString()));
         $this->actingAs($pic)->get(route('store.requests.create'))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
@@ -106,13 +209,13 @@ class PurchaseRequestManagementTest extends TestCase
         $line = $purchaseRequest->fresh()->items()->firstOrFail();
         $this->assertSame(PurchaseRequestStatus::SUBMITTED, $purchaseRequest->fresh()->status);
         $this->assertSame(PurchaseRequestItemType::STOCK, $line->type);
-        $this->assertSame('19.000', $line->current_stock_snapshot);
-        $this->assertSame('68.000', $line->standard_stock_snapshot);
-        $this->assertSame('49.000', $line->suggested_quantity);
-        $this->assertSame('49.000', $line->requested_quantity);
+        $this->assertSame(19, $line->current_stock_snapshot);
+        $this->assertSame(68, $line->standard_stock_snapshot);
+        $this->assertSame(49, $line->suggested_quantity);
+        $this->assertSame(49, $line->requested_quantity);
 
         StoreStock::where('store_id', $store->id)->where('item_id', $item->id)->update(['quantity' => 45]);
-        $this->assertSame('19.000', $line->fresh()->current_stock_snapshot);
+        $this->assertSame(19, $line->fresh()->current_stock_snapshot);
         $this->assertDatabaseHas('purchase_request_status_histories', [
             'purchase_request_id' => $purchaseRequest->id,
             'from_status' => PurchaseRequestStatus::DRAFT->value,
@@ -129,7 +232,7 @@ class PurchaseRequestManagementTest extends TestCase
 
         $this->actingAs($pic)->post(route('store.requests.submit', $request))->assertSessionHasNoErrors();
 
-        $this->assertSame('0.000', $request->items()->firstOrFail()->suggested_quantity);
+        $this->assertSame(0, $request->items()->firstOrFail()->suggested_quantity);
     }
 
     public function test_store_pic_cannot_access_another_store_request(): void
@@ -175,6 +278,27 @@ class PurchaseRequestManagementTest extends TestCase
             'store_id' => $unassignedStore->id,
             'special_items' => [['name' => 'Blocked', 'unit_id' => Unit::firstOrFail()->id, 'requested_quantity' => 1, 'reason' => 'Blocked']],
         ])->assertSessionHasErrors('store_id');
+    }
+
+    public function test_requested_quantities_must_be_whole_numbers(): void
+    {
+        [$pic, $store, $item, $unit] = $this->fixtures();
+
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => '2.99']],
+            'special_items' => [[
+                'name' => 'Kemasan khusus',
+                'unit_id' => $unit->id,
+                'requested_quantity' => '1.5',
+                'reason' => 'Kebutuhan promosi',
+            ]],
+        ])->assertSessionHasErrors([
+            'stock_items.0.requested_quantity',
+            'special_items.0.requested_quantity',
+        ]);
+
+        $this->assertDatabaseCount('purchase_requests', 0);
     }
 
     /** @return array{User, Store, Item, Unit} */

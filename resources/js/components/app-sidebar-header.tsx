@@ -22,10 +22,12 @@ export function AppSidebarHeader({
 
     return (
         <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/70 bg-card/80 px-4 backdrop-blur-xs transition-[width,height] ease-linear md:px-5">
-            <div className="flex items-center gap-3">
-                <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
-                <div className="h-3.5 w-px bg-border/80" />
-                <Breadcrumbs breadcrumbs={breadcrumbs} />
+            <div className="flex min-w-0 flex-1 items-center gap-3 pr-2">
+                <SidebarTrigger className="-ml-1 shrink-0 text-muted-foreground hover:text-foreground" />
+                <div className="h-3.5 w-px shrink-0 bg-border/80" />
+                <div className="min-w-0 flex-1 overflow-hidden">
+                    <Breadcrumbs breadcrumbs={breadcrumbs} />
+                </div>
             </div>
 
             <div className="flex items-center gap-2">

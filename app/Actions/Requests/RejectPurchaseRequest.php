@@ -7,6 +7,7 @@ use App\Enums\PurchaseRequestStatus;
 use App\Models\PurchaseRequest;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class RejectPurchaseRequest
 {
@@ -16,6 +17,13 @@ class RejectPurchaseRequest
     {
         return DB::transaction(function () use ($purchaseRequest, $actor, $reason): PurchaseRequest {
             $purchaseRequest = PurchaseRequest::query()->with('items')->lockForUpdate()->findOrFail($purchaseRequest->id);
+
+            if ($purchaseRequest->status !== PurchaseRequestStatus::SUBMITTED) {
+                throw ValidationException::withMessages([
+                    'status' => 'Hanya permintaan berstatus Diajukan yang dapat ditolak.',
+                ]);
+            }
+
             $purchaseRequest->items()->update(['approved_quantity' => 0, 'status' => PurchaseRequestItemStatus::REJECTED->value]);
             $this->transition->handle(
                 $purchaseRequest,

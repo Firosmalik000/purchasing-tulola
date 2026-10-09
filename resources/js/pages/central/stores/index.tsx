@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { formatQuantity } from '@/lib/utils';
 import {
     Dialog,
     DialogContent,
@@ -694,7 +695,7 @@ export default function StoreIndex({
                                     )}
 
                                     {/* Tab Navigation: PIC & Staf vs Riwayat Permintaan (PR) */}
-                                    <div className="flex border-b border-border/80 text-xs">
+                                    <div className="flex overflow-x-auto whitespace-nowrap border-b border-border/80 text-xs scrollbar-none">
                                         <button
                                             type="button"
                                             onClick={() => setDetailTab('pic')}
@@ -1170,14 +1171,7 @@ export default function StoreIndex({
                                                     PROCESSED: allPRs.filter(
                                                         (r) =>
                                                             r.status ===
-                                                                'PROCESSED' ||
-                                                            r.status ===
-                                                                'ORDERED',
-                                                    ).length,
-                                                    COMPLETED: allPRs.filter(
-                                                        (r) =>
-                                                            r.status ===
-                                                            'COMPLETED',
+                                                            'PROCESSED',
                                                     ).length,
                                                     REJECTED: allPRs.filter(
                                                         (r) =>
@@ -1193,17 +1187,6 @@ export default function StoreIndex({
                                                             'ALL'
                                                         )
                                                             return true;
-                                                        if (
-                                                            requestStatusFilter ===
-                                                            'PROCESSED'
-                                                        ) {
-                                                            return (
-                                                                r.status ===
-                                                                    'PROCESSED' ||
-                                                                r.status ===
-                                                                    'ORDERED'
-                                                            );
-                                                        }
                                                         return (
                                                             r.status ===
                                                             requestStatusFilter
@@ -1227,13 +1210,8 @@ export default function StoreIndex({
                                                                 },
                                                                 {
                                                                     key: 'PROCESSED',
-                                                                    label: 'Diproses / PO',
+                                                                    label: 'Disetujui',
                                                                     count: statusCounts.PROCESSED,
-                                                                },
-                                                                {
-                                                                    key: 'COMPLETED',
-                                                                    label: 'Selesai',
-                                                                    count: statusCounts.COMPLETED,
                                                                 },
                                                                 {
                                                                     key: 'REJECTED',
@@ -1400,7 +1378,9 @@ export default function StoreIndex({
                                                                                                             }{' '}
                                                                                                             (
                                                                                                             {
-                                                                                                                item.requested_quantity
+                                                                                                                formatQuantity(
+                                                                                                                    item.requested_quantity,
+                                                                                                                )
                                                                                                             }
                                                                                                             )
                                                                                                         </span>

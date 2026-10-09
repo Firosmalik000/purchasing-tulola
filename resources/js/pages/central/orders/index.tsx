@@ -38,11 +38,21 @@ type Props = {
         per_page?: number;
     };
     statuses: { value: string; label: string }[];
-    filters: { status: string; keyword: string };
+    filters: {
+        status: string;
+        keyword: string;
+        date_from?: string;
+        date_to?: string;
+    };
 };
 
 export default function OrderIndex({ orders, statuses, filters }: Props) {
-    const hasActiveFilters = Boolean(filters.status || filters.keyword);
+    const hasActiveFilters = Boolean(
+        filters.status ||
+        filters.keyword ||
+        filters.date_from ||
+        filters.date_to,
+    );
 
     const selectClass =
         'h-8.5 w-full rounded-md border border-input bg-background px-3 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
@@ -65,7 +75,7 @@ export default function OrderIndex({ orders, statuses, filters }: Props) {
                         <Form
                             action="/central/orders"
                             method="get"
-                            className="grid gap-2.5 sm:grid-cols-[1fr_180px_auto_auto]"
+                            className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-[1fr_160px_135px_135px_auto]"
                         >
                             <div className="relative">
                                 <Search className="absolute top-2.5 left-2.5 size-3.5 text-muted-foreground" />
@@ -91,22 +101,44 @@ export default function OrderIndex({ orders, statuses, filters }: Props) {
                                     ))}
                                 </select>
                             </div>
-                            <Button
-                                size="sm"
-                                className="h-8.5 px-3 text-xs font-medium shadow-xs"
-                            >
-                                Filter
-                            </Button>
-                            {hasActiveFilters && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
+                            <div>
+                                <Input
+                                    type="date"
+                                    name="date_from"
+                                    defaultValue={filters.date_from}
                                     className="h-8.5 text-xs"
-                                    asChild
+                                    aria-label="Tanggal mulai"
+                                    title="Tanggal mulai"
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    type="date"
+                                    name="date_to"
+                                    defaultValue={filters.date_to}
+                                    className="h-8.5 text-xs"
+                                    aria-label="Tanggal akhir"
+                                    title="Tanggal akhir"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2 sm:col-span-2 md:col-span-1">
+                                <Button
+                                    size="sm"
+                                    className="h-8.5 px-3 text-xs font-medium shadow-xs"
                                 >
-                                    <Link href="/central/orders">Reset</Link>
+                                    Filter
                                 </Button>
-                            )}
+                                {hasActiveFilters && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8.5 text-xs"
+                                        asChild
+                                    >
+                                        <Link href="/central/orders">Reset</Link>
+                                    </Button>
+                                )}
+                            </div>
                         </Form>
                     </CardContent>
                 </Card>

@@ -101,7 +101,7 @@ class PurchasingNotificationService
                     $storesMap[$storeId]['items'][] = [
                         'name' => $itemName,
                         'sku' => $orderItem->item?->sku,
-                        'quantity' => rtrim(rtrim(number_format((float) $allocation->allocated_quantity, 3, '.', ''), '0'), '.'),
+                        'quantity' => (string) $allocation->allocated_quantity,
                         'unit' => $orderItem->unit->symbol ?? $orderItem->unit->name ?? '',
                     ];
                 }

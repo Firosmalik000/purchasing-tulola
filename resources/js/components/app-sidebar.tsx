@@ -6,7 +6,6 @@ import {
     ChevronDown,
     ClipboardList,
     LayoutDashboard,
-    PackageCheck,
     ShoppingCart,
     Store,
     Truck,
@@ -175,7 +174,7 @@ export function AppSidebar() {
             href: '/store/requests',
             icon: ClipboardList,
         },
-        { title: 'Barang Masuk', href: '/store/incoming', icon: PackageCheck },
+        { title: 'Order Toko', href: '/store/incoming', icon: Truck },
     ];
 
     return (

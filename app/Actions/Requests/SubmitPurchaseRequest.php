@@ -32,7 +32,7 @@ class SubmitPurchaseRequest
                 $line->update([
                     'current_stock_snapshot' => $current,
                     'standard_stock_snapshot' => $standard,
-                    'suggested_quantity' => number_format(max((float) $standard - (float) $current, 0), 3, '.', ''),
+                    'suggested_quantity' => max((int) $standard - (int) $current, 0),
                 ]);
             }
 

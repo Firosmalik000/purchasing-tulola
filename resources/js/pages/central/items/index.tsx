@@ -49,6 +49,8 @@ type Item = {
     id: number;
     sku: string;
     name: string;
+    cost_price?: number | null;
+    min_stock?: number | null;
     is_active: boolean;
     category: Option;
     unit: Option;
@@ -161,6 +163,8 @@ export default function ItemIndex({
                                             <th className="py-2.5 px-3">Nama Item / Perhiasan</th>
                                             <th className="py-2.5 px-3">Kategori</th>
                                             <th className="py-2.5 px-3">Satuan</th>
+                                            <th className="py-2.5 px-3 text-right">Harga Pokok Acuan</th>
+                                            <th className="py-2.5 px-3 text-right">Min. Stok</th>
                                             <th className="py-2.5 px-3 text-center">Status</th>
                                             <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
                                         </tr>
@@ -184,6 +188,12 @@ export default function ItemIndex({
                                                 </td>
                                                 <td className="py-2.5 px-3 font-mono text-muted-foreground">
                                                     {item.unit.symbol ?? item.unit.name}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-right font-mono text-[11px] tabular-nums text-foreground">
+                                                    Rp {Number(item.cost_price || 0).toLocaleString('id-ID')}
+                                                </td>
+                                                <td className="py-2.5 px-3 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+                                                    {Number(item.min_stock || 0).toLocaleString('id-ID')}
                                                 </td>
                                                 <td className="py-2.5 px-3 text-center">
                                                     <Badge
@@ -270,7 +280,7 @@ export default function ItemIndex({
                                         <InputError message={errors.name} />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         <div className="space-y-1">
                                             <Label className="text-xs font-medium">Kategori *</Label>
                                             <select
@@ -303,6 +313,34 @@ export default function ItemIndex({
                                                 ))}
                                             </select>
                                             <InputError message={errors.unit_id} />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">Harga Pokok Acuan (Rp)</Label>
+                                            <Input
+                                                name="cost_price"
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                placeholder="0"
+                                                className="h-8.5 font-mono text-xs"
+                                            />
+                                            <InputError message={errors.cost_price} />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">Standar Min. Stok Global</Label>
+                                            <Input
+                                                name="min_stock"
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                placeholder="0"
+                                                className="h-8.5 font-mono text-xs"
+                                            />
+                                            <InputError message={errors.min_stock} />
                                         </div>
                                     </div>
 
@@ -376,7 +414,7 @@ export default function ItemIndex({
                                             <InputError message={errors.name} />
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div className="space-y-1">
                                                 <Label className="text-xs font-medium">Kategori *</Label>
                                                 <select
@@ -407,6 +445,34 @@ export default function ItemIndex({
                                                     ))}
                                                 </select>
                                                 <InputError message={errors.unit_id} />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs font-medium">Harga Pokok Acuan (Rp)</Label>
+                                                <Input
+                                                    name="cost_price"
+                                                    type="number"
+                                                    min="0"
+                                                    step="1"
+                                                    defaultValue={editingItem.cost_price ? Number(editingItem.cost_price) : 0}
+                                                    className="h-8.5 font-mono text-xs"
+                                                />
+                                                <InputError message={errors.cost_price} />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label className="text-xs font-medium">Standar Min. Stok Global</Label>
+                                                <Input
+                                                    name="min_stock"
+                                                    type="number"
+                                                    min="0"
+                                                    step="1"
+                                                    defaultValue={editingItem.min_stock ? Number(editingItem.min_stock) : 0}
+                                                    className="h-8.5 font-mono text-xs"
+                                                />
+                                                <InputError message={errors.min_stock} />
                                             </div>
                                         </div>
 
@@ -464,7 +530,7 @@ export default function ItemIndex({
                                 {({ processing }) => (
                                     <>
                                         <p className="text-xs font-semibold">Tambah Kategori Baru</p>
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             <Input
                                                 name="name"
                                                 placeholder="Nama Kategori *"
@@ -519,7 +585,7 @@ export default function ItemIndex({
                                 {({ processing }) => (
                                     <>
                                         <p className="text-xs font-semibold">Tambah Satuan Baru</p>
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                             <Input
                                                 name="name"
                                                 placeholder="Nama Satuan *"

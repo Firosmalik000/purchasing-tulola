@@ -23,6 +23,43 @@ class IncomingOrderReceivingTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_store_can_track_a_draft_order_from_its_approved_request(): void
+    {
+        [$order, $pic, $store, , $allocation] = $this->singleStoreOrder();
+        $purchaseRequest = $allocation->purchaseRequestItem()->firstOrFail()->purchaseRequest;
+        $order->update([
+            'purchase_request_id' => $purchaseRequest->id,
+            'status' => PurchaseOrderStatus::DRAFT,
+        ]);
+
+        $this->actingAs($pic)->get(route('store.incoming.index', [
+            'store_id' => $store->id,
+            'status' => PurchaseOrderStatus::DRAFT->value,
+        ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('store/incoming/index')
+            ->has('orders.data', 1)
+            ->where('orders.data.0.id', $order->id)
+            ->where('orders.data.0.status', PurchaseOrderStatus::DRAFT->value)
+            ->where('filters.date_from', now()->startOfMonth()->toDateString())
+            ->where('filters.date_to', now()->endOfMonth()->toDateString()));
+
+        $this->actingAs($pic)->get(route('store.incoming.show', [
+            'purchase_order' => $order,
+            'store_id' => $store->id,
+        ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('store/incoming/show')
+            ->where('purchaseOrder.id', $order->id)
+            ->where('purchaseOrder.status', PurchaseOrderStatus::DRAFT->value)
+            ->where('purchaseOrder.can_receive', false));
+
+        $this->actingAs($pic)->get(route('store.requests.show', $purchaseRequest))
+            ->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('store/requests/show')
+            ->where('purchaseRequest.purchase_order.id', $order->id)
+            ->where('purchaseRequest.purchase_order.number', $order->number)
+            ->where('purchaseRequest.purchase_order.status', PurchaseOrderStatus::DRAFT->value));
+    }
+
     public function test_store_only_sees_its_own_allocations_from_a_shared_order(): void
     {
         [$order, $firstPic, $firstStore, , $firstAllocation, $secondRequestNumber] = $this->sharedOrder();
@@ -33,7 +70,7 @@ class IncomingOrderReceivingTest extends TestCase
             ->has('orders.data', 1)
             ->where('orders.data.0.id', $order->id)
             ->where('orders.data.0.line_count', 1)
-            ->where('orders.data.0.ordered_quantity', '10.000'));
+            ->where('orders.data.0.ordered_quantity', 10));
 
         $response = $this->actingAs($firstPic)->get(route('store.incoming.show', [
             'purchase_order' => $order, 'store_id' => $firstStore->id,
@@ -42,7 +79,7 @@ class IncomingOrderReceivingTest extends TestCase
             ->component('store/incoming/show')
             ->has('purchaseOrder.lines', 1)
             ->where('purchaseOrder.lines.0.allocation_id', $firstAllocation->id)
-            ->where('purchaseOrder.lines.0.ordered_quantity', '10.000'));
+            ->where('purchaseOrder.lines.0.ordered_quantity', 10));
         $this->assertStringNotContainsString($secondRequestNumber, $response->getContent());
     }
 
@@ -65,7 +102,7 @@ class IncomingOrderReceivingTest extends TestCase
             'ordered_quantity' => 10, 'received_quantity' => 4,
         ]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'receipt.confirmed']);
-        $this->assertSame('23.000', StoreStock::firstOrFail()->quantity);
+        $this->assertSame(23, StoreStock::firstOrFail()->quantity);
         $this->assertDatabaseCount('stock_movements', 1);
     }
 
@@ -109,6 +146,59 @@ class IncomingOrderReceivingTest extends TestCase
         $this->assertDatabaseCount('receipts', 0);
         $this->assertDatabaseCount('receipt_items', 0);
         $this->assertSame(PurchaseOrderStatus::ORDERED, $order->fresh()->status);
+    }
+
+    public function test_received_quantity_must_be_a_whole_number(): void
+    {
+        [$order, $pic, $store, , $allocation] = $this->singleStoreOrder();
+
+        $this->actingAs($pic)->post(
+            route('store.incoming.receipts.store', $order),
+            $this->payload($store, $allocation->id, '2.99'),
+        )->assertSessionHasErrors('items.0.received_quantity');
+
+        $this->assertDatabaseCount('receipts', 0);
+    }
+
+    public function test_receiving_accepts_browser_local_datetime_and_tolerates_minor_clock_skew(): void
+    {
+        [$order, $pic, $store, , $allocation] = $this->singleStoreOrder();
+
+        $this->actingAs($pic)->post(
+            route('store.incoming.receipts.store', $order),
+            [
+                'store_id' => $store->id,
+                'received_at' => now()->addMinutes(2)->format('Y-m-d\TH:i'),
+                'notes' => 'Penerimaan sebagian fisik',
+                'items' => [['allocation_id' => $allocation->id, 'received_quantity' => '10']],
+            ],
+        )->assertSessionHasNoErrors();
+
+        $this->assertSame(PurchaseOrderStatus::COMPLETED, $order->fresh()->status);
+        $this->assertDatabaseHas('receipts', [
+            'purchase_order_id' => $order->id,
+            'store_id' => $store->id,
+        ]);
+        $this->assertDatabaseHas('receipt_items', [
+            'received_quantity' => 10,
+        ]);
+    }
+
+    public function test_receiving_rejects_dates_in_the_future(): void
+    {
+        [$order, $pic, $store, , $allocation] = $this->singleStoreOrder();
+
+        $this->actingAs($pic)->post(
+            route('store.incoming.receipts.store', $order),
+            [
+                'store_id' => $store->id,
+                'received_at' => now()->addHours(2)->format('Y-m-d\TH:i'),
+                'notes' => 'Tanggal masa depan',
+                'items' => [['allocation_id' => $allocation->id, 'received_quantity' => '10']],
+            ],
+        )->assertSessionHasErrors('received_at');
+
+        $this->assertDatabaseCount('receipts', 0);
     }
 
     public function test_store_cannot_view_or_receive_another_store_allocation(): void
@@ -191,7 +281,7 @@ class IncomingOrderReceivingTest extends TestCase
     {
         $request = PurchaseRequest::factory()->create([
             'store_id' => $store->id, 'requested_by' => $pic->id,
-            'status' => PurchaseRequestStatus::ORDERED, 'ordered_at' => now(),
+            'status' => PurchaseRequestStatus::PROCESSED, 'processed_at' => now(),
         ]);
         $request->items()->create([
             'type' => PurchaseRequestItemType::STOCK, 'item_id' => $item->id, 'unit_id' => $unit->id,

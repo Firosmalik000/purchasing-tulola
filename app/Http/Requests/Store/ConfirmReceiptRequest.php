@@ -20,11 +20,11 @@ class ConfirmReceiptRequest extends FormRequest
     {
         return [
             'store_id' => ['required', 'integer', 'exists:stores,id'],
-            'received_at' => ['required', 'date', 'before_or_equal:now'],
+            'received_at' => ['required', 'date', 'before_or_equal:'.now()->addMinutes(5)->toDateTimeString()],
             'notes' => ['nullable', 'string', 'max:2000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.allocation_id' => ['required', 'integer', 'distinct', 'exists:purchase_order_request_items,id'],
-            'items.*.received_quantity' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
+            'items.*.received_quantity' => ['required', 'integer', 'gt:0'],
         ];
     }
 
@@ -34,6 +34,7 @@ class ConfirmReceiptRequest extends FormRequest
             'items.required' => 'Isi minimal satu jumlah penerimaan.',
             'items.min' => 'Isi minimal satu jumlah penerimaan.',
             'items.*.received_quantity.gt' => 'Jumlah diterima wajib lebih dari 0.',
+            'items.*.received_quantity.integer' => 'Jumlah diterima wajib berupa bilangan bulat.',
             'received_at.before_or_equal' => 'Waktu penerimaan tidak boleh di masa depan.',
         ];
     }

@@ -39,7 +39,45 @@ class PurchaseRequestProcessingTest extends TestCase
         ]))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('central/requests/index')
             ->has('requests.data', 1)
-            ->where('requests.data.0.id', $matchingRequest->id));
+            ->where('requests.data.0.id', $matchingRequest->id)
+            ->where('statuses', [
+                ['value' => 'SUBMITTED', 'label' => 'Diajukan'],
+                ['value' => 'PROCESSED', 'label' => 'Disetujui'],
+                ['value' => 'REJECTED', 'label' => 'Ditolak'],
+                ['value' => 'CANCELLED', 'label' => 'Dibatalkan'],
+            ])
+            ->where('filters.date_from', now()->subDay()->toDateString())
+            ->where('filters.date_to', now()->addDay()->toDateString()));
+    }
+
+    public function test_request_detail_hides_legacy_order_lifecycle_history(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        [$request] = $this->submittedRequest();
+        $request->update(['status' => PurchaseRequestStatus::PROCESSED, 'processed_at' => now()]);
+        $request->statusHistories()->create([
+            'from_status' => PurchaseRequestStatus::SUBMITTED->value,
+            'to_status' => PurchaseRequestStatus::PROCESSED->value,
+            'changed_by' => $admin->id,
+        ]);
+        $request->statusHistories()->create([
+            'from_status' => 'PROCESSED',
+            'to_status' => 'ORDERED',
+            'changed_by' => $admin->id,
+        ]);
+        $request->statusHistories()->create([
+            'from_status' => 'ORDERED',
+            'to_status' => 'COMPLETED',
+            'changed_by' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)->get(route('central.requests.show', $request))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('central/requests/show')
+                ->where('purchaseRequest.status', PurchaseRequestStatus::PROCESSED->value)
+                ->has('purchaseRequest.status_histories', 1)
+                ->where('purchaseRequest.status_histories.0.to_status', PurchaseRequestStatus::PROCESSED->value));
     }
 
     public function test_central_admin_can_process_mixed_request_with_reduced_and_rejected_lines(): void
@@ -84,7 +122,7 @@ class PurchaseRequestProcessingTest extends TestCase
             'purchase_request_item_id' => $specialLine->id,
         ]);
         $audit = ActivityLog::query()->where('action', 'purchase_request.processed')->where('entity_id', $request->id)->firstOrFail();
-        $this->assertSame('3.000', $audit->new_values['approved_quantities'][(string) $stockLine->id]);
+        $this->assertSame(3, $audit->new_values['approved_quantities'][(string) $stockLine->id]);
     }
 
     public function test_approval_cannot_exceed_requested_quantity_or_omit_lines(): void
@@ -121,6 +159,22 @@ class PurchaseRequestProcessingTest extends TestCase
         ])->assertSessionHasErrors('items');
 
         $this->assertSame(PurchaseRequestStatus::SUBMITTED, $request->fresh()->status);
+    }
+
+    public function test_approved_quantity_must_be_a_whole_number(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        [$request, $stockLine, $specialLine] = $this->submittedRequest();
+
+        $this->actingAs($admin)->post(route('central.requests.process', $request), [
+            'items' => [
+                $stockLine->id => ['id' => $stockLine->id, 'approved_quantity' => '2.99'],
+                $specialLine->id => ['id' => $specialLine->id, 'approved_quantity' => 1],
+            ],
+        ])->assertSessionHasErrors("items.{$stockLine->id}.approved_quantity");
+
+        $this->assertSame(PurchaseRequestStatus::SUBMITTED, $request->fresh()->status);
+        $this->assertNull($stockLine->fresh()->approved_quantity);
     }
 
     public function test_central_admin_can_reject_entire_request_with_reason(): void

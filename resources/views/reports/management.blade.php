@@ -55,9 +55,9 @@
                 @foreach ($report['columns'] as $column)
                     <td class="{{ $column['align'] }}">
                         @if ($column['format'] === 'currency' && is_numeric($row[$column['key']] ?? null))
-                            Rp {{ number_format((float) $row[$column['key']], 2, ',', '.') }}
+                            Rp {{ number_format((int) $row[$column['key']], 0, ',', '.') }}
                         @elseif ($column['format'] === 'quantity' && is_numeric($row[$column['key']] ?? null))
-                            {{ number_format((float) $row[$column['key']], 3, ',', '.') }}
+                            {{ number_format((int) $row[$column['key']], 0, ',', '.') }}
                         @else
                             {{ $row[$column['key']] ?? '—' }}
                         @endif
@@ -72,7 +72,7 @@
     @if (count($report['summary']))
         <table class="summary">
             @foreach ($report['summary'] as $item)
-                <tr><td>{{ $item['label'] }}</td><td class="right">{{ $item['format'] === 'currency' ? 'Rp '.number_format((float) $item['value'], 2, ',', '.') : $item['value'] }}</td></tr>
+                <tr><td>{{ $item['label'] }}</td><td class="right">{{ $item['format'] === 'currency' ? 'Rp '.number_format((int) $item['value'], 0, ',', '.') : $item['value'] }}</td></tr>
             @endforeach
         </table>
     @endif

@@ -17,6 +17,7 @@ use App\Models\StoreStock;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -38,19 +39,19 @@ class InternalPurchasingWorkflowTest extends TestCase
             'item_category_id' => $category->id, 'unit_id' => $unit->id, 'is_active' => true,
         ]);
         StoreStock::create([
-            'store_id' => $store->id, 'item_id' => $item->id, 'quantity' => '1.000',
-            'average_unit_cost' => '100.00', 'total_value' => '100.00',
+            'store_id' => $store->id, 'item_id' => $item->id, 'quantity' => 1,
+            'average_unit_cost' => 100, 'total_value' => 100,
         ]);
         $request = PurchaseRequest::factory()->submitted()->create([
             'number' => 'REQ/FLOW/2026/10/0001', 'store_id' => $store->id, 'requested_by' => $pic->id,
         ]);
         $line = $request->items()->create([
             'type' => PurchaseRequestItemType::STOCK, 'item_id' => $item->id, 'unit_id' => $unit->id,
-            'current_stock_snapshot' => '1.000', 'requested_quantity' => '2.500',
+            'current_stock_snapshot' => 1, 'requested_quantity' => 2,
         ]);
 
         $this->actingAs($admin)->post(route('central.requests.process', $request), [
-            'items' => [$line->id => ['id' => $line->id, 'approved_quantity' => '2.500']],
+            'items' => [$line->id => ['id' => $line->id, 'approved_quantity' => '2']],
             'notes' => 'Disetujui untuk kebutuhan toko.',
         ])->assertSessionHasNoErrors();
 
@@ -63,7 +64,7 @@ class InternalPurchasingWorkflowTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame(PurchaseOrderStatus::ORDERED, $order->fresh()->status);
-        $this->assertSame(PurchaseRequestStatus::ORDERED, $request->fresh()->status);
+        $this->assertSame(PurchaseRequestStatus::PROCESSED, $request->fresh()->status);
 
         $this->actingAs($pic)->post(route('store.incoming.receipts.store', $order), [
             'store_id' => $store->id,
@@ -71,7 +72,7 @@ class InternalPurchasingWorkflowTest extends TestCase
             'notes' => 'Barang diterima lengkap.',
             'items' => [[
                 'allocation_id' => $allocation->id,
-                'received_quantity' => '2.500',
+                'received_quantity' => '2',
             ]],
         ])->assertSessionHasNoErrors();
 
@@ -79,20 +80,28 @@ class InternalPurchasingWorkflowTest extends TestCase
         $this->assertNotNull($receipt->stock_applied_at);
         $this->assertSame($pic->id, $receipt->stock_applied_by);
         $this->assertSame(PurchaseOrderStatus::COMPLETED, $order->fresh()->status);
-        $this->assertSame(PurchaseRequestStatus::COMPLETED, $request->fresh()->status);
+        $this->assertSame(PurchaseRequestStatus::PROCESSED, $request->fresh()->status);
+        $this->assertDatabaseMissing('purchase_request_status_histories', [
+            'purchase_request_id' => $request->id,
+            'to_status' => 'ORDERED',
+        ]);
+        $this->assertDatabaseMissing('purchase_request_status_histories', [
+            'purchase_request_id' => $request->id,
+            'to_status' => 'COMPLETED',
+        ]);
         $this->assertDatabaseHas('store_stocks', [
             'store_id' => $store->id, 'item_id' => $item->id,
-            'quantity' => 3.5, 'average_unit_cost' => 100, 'total_value' => 350,
+            'quantity' => 3, 'average_unit_cost' => 100, 'total_value' => 300,
         ]);
         $this->assertDatabaseHas('stock_movements', [
             'store_id' => $store->id, 'item_id' => $item->id,
             'movement_type' => StockMovementType::ORDER_RECEIVED->value,
-            'quantity_difference' => 2.5, 'movement_value' => 250, 'new_value' => 350,
+            'quantity_difference' => 2, 'movement_value' => 200, 'new_value' => 300,
             'reference_type' => $receipt->getMorphClass(), 'reference_id' => $receipt->id,
         ]);
     }
 
-    public function test_cancelling_process_order_also_cancels_its_request(): void
+    public function test_cancelling_draft_order_does_not_change_approved_request(): void
     {
         Mail::fake();
         $store = Store::factory()->create(['code' => 'CANCEL']);
@@ -109,11 +118,11 @@ class InternalPurchasingWorkflowTest extends TestCase
         ]);
         $line = $request->items()->create([
             'type' => PurchaseRequestItemType::STOCK, 'item_id' => $item->id,
-            'unit_id' => $unit->id, 'requested_quantity' => '1.000',
+            'unit_id' => $unit->id, 'requested_quantity' => 1,
         ]);
 
         $this->actingAs($admin)->post(route('central.requests.process', $request), [
-            'items' => [$line->id => ['id' => $line->id, 'approved_quantity' => '1.000']],
+            'items' => [$line->id => ['id' => $line->id, 'approved_quantity' => '1']],
         ])->assertSessionHasNoErrors();
         $order = PurchaseOrder::query()->whereBelongsTo($request)->firstOrFail();
 
@@ -121,13 +130,43 @@ class InternalPurchasingWorkflowTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertSame(PurchaseOrderStatus::CANCELLED, $order->fresh()->status);
-        $this->assertSame(PurchaseRequestStatus::CANCELLED, $request->fresh()->status);
-        $this->assertDatabaseHas('purchase_request_status_histories', [
+        $this->assertSame(PurchaseRequestStatus::PROCESSED, $request->fresh()->status);
+        $this->assertDatabaseMissing('purchase_request_status_histories', [
             'purchase_request_id' => $request->id,
             'from_status' => PurchaseRequestStatus::PROCESSED->value,
             'to_status' => PurchaseRequestStatus::CANCELLED->value,
-            'changed_by' => $admin->id,
             'notes' => 'Order internal dibatalkan.',
+        ]);
+    }
+
+    public function test_legacy_order_lifecycle_statuses_are_normalized_to_approved_without_deleting_audit(): void
+    {
+        $request = PurchaseRequest::factory()->create();
+        DB::table('purchase_requests')->where('id', $request->id)->update([
+            'status' => 'COMPLETED',
+            'ordered_at' => now()->subDay(),
+            'completed_at' => now(),
+        ]);
+        DB::table('purchase_request_status_histories')->insert([
+            'purchase_request_id' => $request->id,
+            'from_status' => 'ORDERED',
+            'to_status' => 'COMPLETED',
+            'changed_by' => null,
+            'notes' => 'Legacy order lifecycle',
+            'created_at' => now(),
+        ]);
+
+        $migration = require database_path('migrations/2026_10_10_010000_end_purchase_requests_at_approval.php');
+        $migration->up();
+
+        $this->assertDatabaseHas('purchase_requests', [
+            'id' => $request->id,
+            'status' => PurchaseRequestStatus::PROCESSED->value,
+        ]);
+        $this->assertDatabaseHas('purchase_request_status_histories', [
+            'purchase_request_id' => $request->id,
+            'from_status' => 'ORDERED',
+            'to_status' => 'COMPLETED',
         ]);
     }
 }

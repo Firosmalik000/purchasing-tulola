@@ -11,7 +11,7 @@ class StoreStockStandard extends Model
 {
     protected function casts(): array
     {
-        return ['standard_quantity' => 'decimal:3'];
+        return ['standard_quantity' => 'integer'];
     }
 
     /** @return BelongsTo<Store, $this> */

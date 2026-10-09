@@ -6,6 +6,7 @@ import {
     type PaginationLink,
 } from '@/components/common/pagination-links';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatQuantity } from '@/lib/utils';
 
 type StoreType = { id: number; code: string; name: string };
 type Item = {
@@ -13,8 +14,8 @@ type Item = {
     sku: string;
     name: string;
     unit: { symbol: string };
-    stocks: { quantity: string }[];
-    stock_standards: { standard_quantity: string }[];
+    stocks: { quantity: number }[];
+    stock_standards: { standard_quantity: number }[];
 };
 type Props = {
     stores: StoreType[];
@@ -80,7 +81,7 @@ export default function StoreInventory({
                                 <Warehouse className="size-3.5" />
                             </div>
                             <CardTitle className="text-sm font-semibold">
-                                Daftar Posisi Saldo Fisik & Kebutuhan
+                                Daftar Stok Fisik & Kebutuhan
                             </CardTitle>
                         </div>
                     </CardHeader>
@@ -100,7 +101,7 @@ export default function StoreInventory({
                                             Satuan
                                         </th>
                                         <th className="px-4 py-3 text-right">
-                                            Saldo Saat Ini
+                                            Stok Saat Ini
                                         </th>
                                         <th className="px-4 py-3 text-right">
                                             Standar Min
@@ -127,11 +128,11 @@ export default function StoreInventory({
                                         items.data.map((item, index) => {
                                             const stock =
                                                 item.stocks[0]?.quantity ??
-                                                '0.000';
+                                                '0';
                                             const standard =
                                                 item.stock_standards[0]
                                                     ?.standard_quantity ??
-                                                '0.000';
+                                                '0';
                                             const suggested = Math.max(
                                                 Number(standard) -
                                                     Number(stock),
@@ -165,16 +166,18 @@ export default function StoreInventory({
                                                         {item.unit.symbol}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono font-bold text-foreground tabular-nums">
-                                                        {stock}
+                                                        {formatQuantity(stock)}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono text-muted-foreground tabular-nums">
-                                                        {standard}
+                                                        {formatQuantity(
+                                                            standard,
+                                                        )}
                                                     </td>
                                                     <td className="px-4 py-3 text-right font-mono tabular-nums">
                                                         {suggested > 0 ? (
                                                             <span className="font-bold text-amber-600 dark:text-amber-400">
-                                                                {suggested.toFixed(
-                                                                    3,
+                                                                {formatQuantity(
+                                                                    suggested,
                                                                 )}
                                                             </span>
                                                         ) : (

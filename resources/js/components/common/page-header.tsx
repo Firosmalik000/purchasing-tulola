@@ -10,12 +10,12 @@ type PageHeaderProps = {
 export function PageHeader({ title, badge, actions }: PageHeaderProps) {
     return (
         <div className="flex flex-col gap-2 border-b border-border/50 pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0 flex items-center gap-2.5">
-                <h1 className="text-lg font-semibold tracking-tight text-foreground">
+            <div className="flex min-w-0 items-center gap-2.5">
+                <h1 className="truncate text-lg font-semibold tracking-tight text-foreground">
                     {title}
                 </h1>
                 {badge && (
-                    <span className="inline-flex items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                    <span className="inline-flex shrink-0 items-center rounded-md border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                         {badge}
                     </span>
                 )}

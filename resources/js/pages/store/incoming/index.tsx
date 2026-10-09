@@ -10,6 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,6 +18,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { formatQuantity } from '@/lib/utils';
 
 type IncomingSummary = {
     id: number;
@@ -25,9 +27,9 @@ type IncomingSummary = {
     expected_date?: string | null;
     status: string;
     line_count: number;
-    ordered_quantity: string;
-    received_quantity: string;
-    outstanding_quantity: string;
+    ordered_quantity: number;
+    received_quantity: number;
+    outstanding_quantity: number;
 };
 type Store = { id: number; code: string; name: string };
 type Props = {
@@ -40,7 +42,11 @@ type Props = {
     stores: Store[];
     selectedStoreId: number;
     statuses: { value: string; label: string }[];
-    filters: { status: string };
+    filters: {
+        status: string;
+        date_from?: string;
+        date_to?: string;
+    };
 };
 
 export default function IncomingOrderIndex({
@@ -50,6 +56,12 @@ export default function IncomingOrderIndex({
     statuses,
     filters,
 }: Props) {
+    const hasActiveFilters = Boolean(
+        filters.status ||
+        filters.date_from ||
+        filters.date_to,
+    );
+
     const selectClass =
         'h-8.5 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
@@ -58,9 +70,9 @@ export default function IncomingOrderIndex({
 
     return (
         <>
-            <Head title="Penerimaan Barang Masuk — Tulola Purchasing" />
+            <Head title="Order Toko — Tulola Purchasing" />
             <main className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-                <PageHeader badge="Logistik" title="Barang Masuk" />
+                <PageHeader badge="Pengadaan" title="Order Toko" />
 
                 {/* Filter Toolbar */}
                 <Card className="border border-border/70 shadow-2xs">
@@ -89,11 +101,9 @@ export default function IncomingOrderIndex({
                                 name="status"
                                 defaultValue={filters.status}
                                 className={selectClass}
-                                aria-label="Filter status pengiriman"
+                                aria-label="Filter status order"
                             >
-                                <option value="">
-                                    Semua Status Pengiriman
-                                </option>
+                                <option value="">Semua Status Order</option>
                                 {statuses.map((status) => (
                                     <option
                                         key={status.value}
@@ -104,13 +114,31 @@ export default function IncomingOrderIndex({
                                 ))}
                             </select>
 
+                            <Input
+                                type="date"
+                                name="date_from"
+                                defaultValue={filters.date_from}
+                                className="h-8.5 w-auto text-xs"
+                                aria-label="Tanggal mulai"
+                                title="Tanggal mulai"
+                            />
+
+                            <Input
+                                type="date"
+                                name="date_to"
+                                defaultValue={filters.date_to}
+                                className="h-8.5 w-auto text-xs"
+                                aria-label="Tanggal akhir"
+                                title="Tanggal akhir"
+                            />
+
                             <Button
                                 size="sm"
                                 className="h-8.5 px-3 text-xs font-medium shadow-xs"
                             >
                                 Filter
                             </Button>
-                            {filters.status && (
+                            {hasActiveFilters && (
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -127,8 +155,8 @@ export default function IncomingOrderIndex({
                 {orders.data.length === 0 ? (
                     <EmptyState
                         icon={PackageCheck}
-                        title="Tidak ada kiriman barang untuk toko cabang ini"
-                        description="Order internal yang telah dikirim purchasing pusat akan tampil di sini untuk diterima."
+                        title="Belum ada order untuk toko cabang ini"
+                        description="Order otomatis muncul setelah permintaan disetujui pusat. Status proses, pengiriman, dan penerimaan dapat dipantau dari sini."
                     />
                 ) : (
                     <Card className="overflow-hidden border border-border/70 shadow-2xs">
@@ -169,6 +197,10 @@ export default function IncomingOrderIndex({
                                             Number(
                                                 order.outstanding_quantity,
                                             ) <= 0;
+                                        const canReceive = [
+                                            'ORDERED',
+                                            'PARTIALLY_RECEIVED',
+                                        ].includes(order.status);
                                         return (
                                             <tr
                                                 key={order.id}
@@ -206,12 +238,12 @@ export default function IncomingOrderIndex({
                                                         : '-'}
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center font-mono font-semibold">
-                                                    {rtrim(
+                                                    {formatQuantity(
                                                         order.ordered_quantity,
                                                     )}
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                                    {rtrim(
+                                                    {formatQuantity(
                                                         order.received_quantity,
                                                     )}
                                                 </td>
@@ -225,7 +257,7 @@ export default function IncomingOrderIndex({
                                                         </Badge>
                                                     ) : (
                                                         <span className="text-amber-600 dark:text-amber-400">
-                                                            {rtrim(
+                                                            {formatQuantity(
                                                                 order.outstanding_quantity,
                                                             )}
                                                         </span>
@@ -266,8 +298,14 @@ export default function IncomingOrderIndex({
                                                                     href={`/store/incoming/${order.id}?store_id=${selectedStoreId}`}
                                                                     className="flex cursor-pointer items-center"
                                                                 >
-                                                                    <Eye className="mr-2 size-3.5" />
-                                                                    Verifikasi
+                                                                    {canReceive ? (
+                                                                        <PackageCheck className="mr-2 size-3.5" />
+                                                                    ) : (
+                                                                        <Eye className="mr-2 size-3.5" />
+                                                                    )}
+                                                                    {canReceive
+                                                                        ? 'Terima Barang'
+                                                                        : 'Lihat Detail'}
                                                                 </Link>
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
@@ -289,14 +327,9 @@ export default function IncomingOrderIndex({
     );
 }
 
-function rtrim(val: string | number) {
-    const s = String(val);
-    return s.includes('.') ? s.replace(/\.?0+$/, '') : s;
-}
-
 IncomingOrderIndex.layout = {
     breadcrumbs: [
         { title: 'Portal Toko Cabang', href: '/store/dashboard' },
-        { title: 'Barang Masuk', href: '/store/incoming' },
+        { title: 'Order Toko', href: '/store/incoming' },
     ],
 };

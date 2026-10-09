@@ -17,7 +17,7 @@ class PurchaseOrderRequestItem extends Model
 {
     protected function casts(): array
     {
-        return ['allocated_quantity' => 'decimal:3'];
+        return ['allocated_quantity' => 'integer'];
     }
 
     /** @return BelongsTo<PurchaseOrderItem, $this> */

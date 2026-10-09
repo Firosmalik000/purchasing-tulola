@@ -2,38 +2,30 @@
 
 namespace App\Actions\Orders;
 
-use App\Actions\Requests\TransitionPurchaseRequestStatus;
 use App\Enums\PurchaseOrderStatus;
-use App\Enums\PurchaseRequestStatus;
 use App\Models\PurchaseOrder;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CancelPurchaseOrder
 {
-    public function __construct(
-        private TransitionPurchaseOrderStatus $orderTransition,
-        private TransitionPurchaseRequestStatus $requestTransition,
-    ) {}
+    public function __construct(private TransitionPurchaseOrderStatus $orderTransition) {}
 
-    public function handle(PurchaseOrder $purchaseOrder, User $actor): PurchaseOrder
+    public function handle(PurchaseOrder $purchaseOrder): PurchaseOrder
     {
-        return DB::transaction(function () use ($purchaseOrder, $actor): PurchaseOrder {
+        return DB::transaction(function () use ($purchaseOrder): PurchaseOrder {
             $purchaseOrder = PurchaseOrder::query()
                 ->with('purchaseRequest')
                 ->lockForUpdate()
                 ->findOrFail($purchaseOrder->id);
 
-            $this->orderTransition->handle($purchaseOrder, PurchaseOrderStatus::CANCELLED);
-
-            if ($purchaseOrder->purchaseRequest?->status === PurchaseRequestStatus::PROCESSED) {
-                $this->requestTransition->handle(
-                    $purchaseOrder->purchaseRequest,
-                    PurchaseRequestStatus::CANCELLED,
-                    $actor,
-                    'Order internal dibatalkan.',
-                );
+            if ($purchaseOrder->status !== PurchaseOrderStatus::DRAFT) {
+                throw ValidationException::withMessages([
+                    'status' => 'Hanya order berstatus Proses yang dapat dibatalkan.',
+                ]);
             }
+
+            $this->orderTransition->handle($purchaseOrder, PurchaseOrderStatus::CANCELLED);
 
             return $purchaseOrder->refresh();
         }, 3);

@@ -11,9 +11,21 @@ export type StepItem = {
 type WorkflowStepperProps = {
     steps: StepItem[];
     className?: string;
+    completionLabel?: string;
 };
 
-export function WorkflowStepper({ steps, className }: WorkflowStepperProps) {
+export function WorkflowStepper({
+    steps,
+    className,
+    completionLabel = 'Selesai',
+}: WorkflowStepperProps) {
+    const gridColumns = {
+        2: 'md:grid-cols-2',
+        3: 'md:grid-cols-3',
+        4: 'md:grid-cols-4',
+        5: 'md:grid-cols-5',
+    }[steps.length];
+
     return (
         <div
             className={cn(
@@ -28,12 +40,17 @@ export function WorkflowStepper({ steps, className }: WorkflowStepperProps) {
                 <span>
                     {steps.findIndex((s) => s.status === 'current') !== -1
                         ? `Langkah ${steps.findIndex((s) => s.status === 'current') + 1} dari ${steps.length}`
-                        : 'Selesai'}
+                        : completionLabel}
                 </span>
             </div>
 
             <div className="relative">
-                <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-5 md:gap-2">
+                <ol
+                    className={cn(
+                        'grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-2',
+                        gridColumns,
+                    )}
+                >
                     {steps.map((step, idx) => {
                         const isComplete = step.status === 'complete';
                         const isCurrent = step.status === 'current';
@@ -141,8 +158,7 @@ export function getPurchaseRequestSteps(status: string): StepItem[] {
         ];
     }
 
-    const order = ['DRAFT', 'SUBMITTED', 'PROCESSED', 'ORDERED', 'COMPLETED'];
-    const currentIdx = order.indexOf(status);
+    const isApproved = status === 'PROCESSED';
 
     return [
         {
@@ -150,9 +166,9 @@ export function getPurchaseRequestSteps(status: string): StepItem[] {
             label: '1. Draft Toko',
             description: 'Item & stok diverifikasi',
             status:
-                currentIdx > 0
+                status !== 'DRAFT'
                     ? 'complete'
-                    : currentIdx === 0
+                    : status === 'DRAFT'
                       ? 'current'
                       : 'upcoming',
         },
@@ -160,40 +176,17 @@ export function getPurchaseRequestSteps(status: string): StepItem[] {
             key: 'SUBMITTED',
             label: '2. Diajukan',
             description: 'Menunggu review pusat',
-            status:
-                currentIdx > 1
-                    ? 'complete'
-                    : currentIdx === 1
-                      ? 'current'
-                      : 'upcoming',
+            status: isApproved
+                ? 'complete'
+                : status === 'SUBMITTED'
+                  ? 'current'
+                  : 'upcoming',
         },
         {
             key: 'PROCESSED',
             label: '3. Disetujui',
             description: 'Kuantitas disetujui',
-            status:
-                currentIdx > 2
-                    ? 'complete'
-                    : currentIdx === 2
-                      ? 'current'
-                      : 'upcoming',
-        },
-        {
-            key: 'ORDERED',
-            label: '4. Order Dikirim',
-            description: 'Menunggu penerimaan toko',
-            status:
-                currentIdx > 3
-                    ? 'complete'
-                    : currentIdx === 3
-                      ? 'current'
-                      : 'upcoming',
-        },
-        {
-            key: 'COMPLETED',
-            label: '5. Selesai',
-            description: 'Barang diterima toko',
-            status: currentIdx >= 4 ? 'complete' : 'upcoming',
+            status: isApproved ? 'complete' : 'upcoming',
         },
     ];
 }

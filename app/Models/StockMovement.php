@@ -30,10 +30,10 @@ class StockMovement extends Model
     protected function casts(): array
     {
         return [
-            'previous_quantity' => 'decimal:3', 'new_quantity' => 'decimal:3',
-            'quantity_difference' => 'decimal:3', 'unit_cost' => 'decimal:2',
-            'movement_value' => 'decimal:2', 'previous_value' => 'decimal:2',
-            'new_value' => 'decimal:2', 'movement_type' => StockMovementType::class,
+            'previous_quantity' => 'integer', 'new_quantity' => 'integer',
+            'quantity_difference' => 'integer', 'unit_cost' => 'integer',
+            'movement_value' => 'integer', 'previous_value' => 'integer',
+            'new_value' => 'integer', 'movement_type' => StockMovementType::class,
         ];
     }
 

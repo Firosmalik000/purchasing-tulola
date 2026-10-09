@@ -19,7 +19,7 @@ class ReceiptItem extends Model
 {
     protected function casts(): array
     {
-        return ['ordered_quantity' => 'decimal:3', 'received_quantity' => 'decimal:3'];
+        return ['ordered_quantity' => 'integer', 'received_quantity' => 'integer'];
     }
 
     /** @return BelongsTo<Receipt, $this> */

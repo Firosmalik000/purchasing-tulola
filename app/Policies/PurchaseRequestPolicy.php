@@ -25,8 +25,15 @@ class PurchaseRequestPolicy
 
     public function update(User $user, PurchaseRequest $request): bool
     {
+        if ($request->status !== PurchaseRequestStatus::DRAFT) {
+            return false;
+        }
+
+        if ($user->isSuperAdmin()) {
+            return true;
+        }
+
         return $user->role === UserRole::STORE_PIC
-            && $request->status === PurchaseRequestStatus::DRAFT
             && $user->stores()
                 ->whereKey($request->store_id)
                 ->where('stores.is_active', true)
@@ -36,7 +43,7 @@ class PurchaseRequestPolicy
 
     public function process(User $user, PurchaseRequest $request): bool
     {
-        return $user->role === UserRole::CENTRAL_ADMIN
+        return in_array($user->role, [UserRole::SUPER_ADMIN, UserRole::CENTRAL_ADMIN], true)
             && $request->status === PurchaseRequestStatus::SUBMITTED;
     }
 

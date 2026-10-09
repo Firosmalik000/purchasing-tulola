@@ -43,9 +43,9 @@ class ManagementReportTest extends TestCase
             ->component('central/reports/index')
             ->has('reportTypes', count(ManagementReportType::cases()))
             ->where('report.context.Order No', $order->number)
-            ->where('report.rows.0.stock', 'PP 3.000, PIM 4.000')
-            ->where('report.rows.0.standard_stock', 'PP 5.000, PIM 6.000')
-            ->where('report.rows.0.remarks', 'PP 2.000, PIM 4.000')
+            ->where('report.rows.0.stock', 'PP 3, PIM 4')
+            ->where('report.rows.0.standard_stock', 'PP 5, PIM 6')
+            ->where('report.rows.0.remarks', 'PP 2, PIM 4')
             ->where('report.rows.1.stock', '-')
             ->where('report.rows.1.standard_stock', '-'));
     }
@@ -92,7 +92,7 @@ class ManagementReportTest extends TestCase
         ];
 
         $this->actingAs($user)->get(route('central.reports.print', $parameters))
-            ->assertOk()->assertSee('Purchasing Request')->assertSee('PP 2.000, PIM 4.000');
+            ->assertOk()->assertSee('Purchasing Request')->assertSee('PP 2, PIM 4');
 
         $pdf = $this->actingAs($user)->get(route('central.reports.pdf', $parameters));
         $pdf->assertOk()->assertHeader('content-type', 'application/pdf');

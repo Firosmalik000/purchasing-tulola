@@ -1,13 +1,13 @@
-import { Form, Head } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, KeyRound, Mail, Send } from 'lucide-react';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
-import AuthLayout from '@/layouts/auth-layout';
-import { login } from '@/routes';
-import { email } from '@/routes/password';
+import { Form, Head } from "@inertiajs/react";
+import { ArrowLeft, CheckCircle2, KeyRound, Mail, Send } from "lucide-react";
+import InputError from "@/components/input-error";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import AuthLayout from "@/layouts/auth-layout";
+import { login } from "@/routes";
+import { email } from "@/routes/password";
 
 export default function ForgotPassword({ status }: { status?: string }) {
     return (
@@ -16,7 +16,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
             description="Masukkan email terdaftar untuk menerima tautan atur ulang kata sandi"
             badge="Pemulihan Akses"
             icon={KeyRound}
-            backLink={{ href: login(), label: 'Kembali ke Masuk' }}
+            backLink={{ href: login(), label: "Kembali ke Masuk" }}
         >
             <Head title="Lupa Kata Sandi — Portal Purchasing Tulola" />
 
@@ -32,7 +32,10 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     {({ processing, errors }) => (
                         <div className="space-y-3">
                             <div className="space-y-1">
-                                <Label htmlFor="email" className="text-[11px] font-medium">
+                                <Label
+                                    htmlFor="email"
+                                    className="text-[11px] font-medium"
+                                >
                                     Alamat Email Terdaftar
                                 </Label>
                                 <div className="relative">
@@ -43,7 +46,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                         autoComplete="email"
                                         autoFocus
                                         required
-                                        placeholder="nama@tulolajewelry.com"
+                                        placeholder="nama@shoptulola.com"
                                         className="h-9 text-xs pr-9"
                                     />
                                     <Mail className="pointer-events-none absolute right-3 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground/60" />
@@ -74,7 +77,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </Form>
 
                 <p className="text-[10px] text-muted-foreground text-center pt-1">
-                    Tautan berlaku sementara. Periksa folder <em>Spam</em> jika email tidak segera muncul.
+                    Tautan berlaku sementara. Periksa folder <em>Spam</em> jika
+                    email tidak segera muncul.
                 </p>
             </div>
         </AuthLayout>

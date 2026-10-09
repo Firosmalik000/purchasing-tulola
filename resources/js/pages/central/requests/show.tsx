@@ -2,6 +2,7 @@ import { Form, Head, Link } from '@inertiajs/react';
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { PageHeader } from '@/components/common/page-header';
+import { SampleImagePreview } from '@/components/common/sample-image-preview';
 import {
     RequestStatusBadge,
     requestStatusLabel,
@@ -25,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatQuantity } from '@/lib/utils';
 
 type RequestItem = {
     id: number;
@@ -32,12 +34,13 @@ type RequestItem = {
     item: { sku: string; name: string } | null;
     name: string | null;
     description: string | null;
+    sample_image_url: string | null;
     unit: { symbol: string };
-    current_stock_snapshot: string | null;
-    standard_stock_snapshot: string | null;
-    suggested_quantity: string | null;
-    requested_quantity: string;
-    approved_quantity: string | null;
+    current_stock_snapshot: number | null;
+    standard_stock_snapshot: number | null;
+    suggested_quantity: number | null;
+    requested_quantity: number;
+    approved_quantity: number | null;
     required_date: string | null;
     reason: string | null;
     status: string | null;
@@ -115,6 +118,7 @@ export default function CentralRequestShow({
                 {/* Workflow Stepper */}
                 <WorkflowStepper
                     steps={getPurchaseRequestSteps(purchaseRequest.status)}
+                    completionLabel="Disetujui"
                 />
 
                 {/* Metadata Card */}
@@ -307,40 +311,71 @@ function RequestSection({
                             name={`items[${line.id}][id]`}
                             value={line.id}
                         />
-                        <div className="xl:col-span-2">
-                            <p className="font-serif text-sm font-bold text-foreground">
-                                {line.type === 'STOCK'
-                                    ? line.item?.name
-                                    : line.name}
-                            </p>
-                            <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                                {line.type === 'STOCK'
-                                    ? `${line.item?.sku} · Satuan: ${line.unit.symbol}`
-                                    : (line.description ?? line.unit.symbol)}
-                            </p>
-                            {line.reason && (
-                                <p className="mt-2 rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
-                                    <strong className="text-foreground">
-                                        Alasan:
-                                    </strong>{' '}
-                                    {line.reason}
+                        <div className="flex min-w-0 gap-3 xl:col-span-2">
+                            {line.type === 'SPECIAL' &&
+                                line.sample_image_url && (
+                                    <SampleImagePreview
+                                        src={line.sample_image_url}
+                                        itemName={
+                                            line.name ?? 'permintaan khusus'
+                                        }
+                                        className="size-20"
+                                    />
+                                )}
+                            <div className="min-w-0 flex-1">
+                                <p className="font-serif text-sm font-bold text-foreground">
+                                    {line.type === 'STOCK'
+                                        ? line.item?.name
+                                        : line.name}
                                 </p>
-                            )}
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                    {line.type === 'STOCK'
+                                        ? `${line.item?.sku} · Satuan: ${line.unit.symbol}`
+                                        : (line.description ??
+                                          line.unit.symbol)}
+                                </p>
+                                {line.reason && (
+                                    <p className="mt-2 rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
+                                        <strong className="text-foreground">
+                                            Alasan:
+                                        </strong>{' '}
+                                        {line.reason}
+                                    </p>
+                                )}
+                            </div>
                         </div>
 
                         {line.type === 'STOCK' ? (
                             <>
                                 <Info
                                     label="Stok Saat Ini"
-                                    value={line.current_stock_snapshot ?? '—'}
+                                    value={
+                                        line.current_stock_snapshot === null
+                                            ? '—'
+                                            : formatQuantity(
+                                                  line.current_stock_snapshot,
+                                              )
+                                    }
                                 />
                                 <Info
                                     label="Standar Toko"
-                                    value={line.standard_stock_snapshot ?? '—'}
+                                    value={
+                                        line.standard_stock_snapshot === null
+                                            ? '—'
+                                            : formatQuantity(
+                                                  line.standard_stock_snapshot,
+                                              )
+                                    }
                                 />
                                 <Info
                                     label="Saran Pengadaan"
-                                    value={line.suggested_quantity ?? '—'}
+                                    value={
+                                        line.suggested_quantity === null
+                                            ? '—'
+                                            : formatQuantity(
+                                                  line.suggested_quantity,
+                                              )
+                                    }
                                 />
                             </>
                         ) : (
@@ -370,7 +405,10 @@ function RequestSection({
                                             Qty Disetujui
                                         </Label>
                                         <span className="text-[11px] text-muted-foreground">
-                                            Diminta: {line.requested_quantity}
+                                            Diminta:{' '}
+                                            {formatQuantity(
+                                                line.requested_quantity,
+                                            )}
                                         </span>
                                     </div>
                                     <Input
@@ -379,11 +417,13 @@ function RequestSection({
                                         type="number"
                                         min="0"
                                         max={line.requested_quantity}
-                                        step="0.001"
-                                        defaultValue={
-                                            line.approved_quantity ??
-                                            line.requested_quantity
-                                        }
+                                        step="1"
+                                        defaultValue={String(
+                                            Number(
+                                                line.approved_quantity ??
+                                                    line.requested_quantity,
+                                            ),
+                                        )}
                                         required
                                         className="h-9 bg-card font-mono text-sm font-semibold"
                                     />
@@ -399,7 +439,7 @@ function RequestSection({
                                 <div className="space-y-1">
                                     <Info
                                         label="Kuantitas Disetujui / Diminta"
-                                        value={`${line.approved_quantity ?? '—'} / ${line.requested_quantity} ${line.unit.symbol}`}
+                                        value={`${line.approved_quantity === null ? '—' : formatQuantity(line.approved_quantity)} / ${formatQuantity(line.requested_quantity)} ${line.unit.symbol}`}
                                     />
                                     {line.status && (
                                         <Badge

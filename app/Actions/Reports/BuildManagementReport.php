@@ -203,7 +203,7 @@ class BuildManagementReport
             ->whereHas('purchaseOrder', fn ($orders) => $orders->whereNotIn('status', [PurchaseOrderStatus::DRAFT, PurchaseOrderStatus::CANCELLED]));
         $this->orderDateRange($query, $filters);
         $this->applyCategory($query, $filters);
-        $rows = $query->get()->filter(fn ($line) => (float) $line->quantity > (float) ($line->received_quantity ?? 0))->map(fn ($line) => ['order' => $line->purchaseOrder->number, 'order_date' => $line->purchaseOrder->order_date->format('d/m/Y'), 'expected' => $line->purchaseOrder->expected_date?->format('d/m/Y') ?? '—', 'item' => data_get($line, 'item.name', $line->name ?? '—'), 'ordered' => $line->quantity, 'received' => $this->quantity($line->received_quantity ?? 0), 'outstanding' => $this->quantity((float) $line->quantity - (float) ($line->received_quantity ?? 0)), 'unit' => $line->unit->symbol])->values()->all();
+        $rows = $query->get()->filter(fn ($line) => $line->quantity > ($line->received_quantity ?? 0))->map(fn ($line) => ['order' => $line->purchaseOrder->number, 'order_date' => $line->purchaseOrder->order_date->format('d/m/Y'), 'expected' => $line->purchaseOrder->expected_date?->format('d/m/Y') ?? '—', 'item' => data_get($line, 'item.name', $line->name ?? '—'), 'ordered' => $line->quantity, 'received' => $this->quantity($line->received_quantity ?? 0), 'outstanding' => $this->quantity($line->quantity - ($line->received_quantity ?? 0)), 'unit' => $line->unit->symbol])->values()->all();
 
         return ['columns' => [$this->column('order', 'No. Order'), $this->column('order_date', 'Tanggal'), $this->column('expected', 'Target'), $this->column('item', 'Item'), $this->column('ordered', 'Dikirim', 'quantity', 'right'), $this->column('received', 'Diterima', 'quantity', 'right'), $this->column('outstanding', 'Outstanding', 'quantity', 'right'), $this->column('unit', 'Unit')], 'rows' => $rows];
     }
@@ -246,8 +246,8 @@ class BuildManagementReport
         $this->applyStockFilters($query, $filters);
         $stocks = StoreStock::query()->get()->keyBy(fn ($stock) => $stock->store_id.'-'.$stock->item_id);
         $rows = $query->get()->map(function ($standard) use ($stocks): array {
-            $stock = (float) data_get($stocks->get($standard->store_id.'-'.$standard->item_id), 'quantity', 0);
-            $target = (float) $standard->standard_quantity;
+            $stock = (int) data_get($stocks->get($standard->store_id.'-'.$standard->item_id), 'quantity', 0);
+            $target = $standard->standard_quantity;
             $difference = $stock - $target;
 
             return ['store' => $standard->store->code.' - '.$standard->store->name, 'sku' => $standard->item->sku, 'item' => $standard->item->name, 'stock' => $this->quantity($stock), 'standard' => $standard->standard_quantity, 'difference' => $this->quantity($difference), 'status' => $difference < 0 ? 'Di bawah standar' : ($difference > 0 ? 'Di atas standar' : 'Sesuai'), 'unit' => $standard->item->unit->symbol];
@@ -315,12 +315,12 @@ class BuildManagementReport
 
     private function quantity(mixed $value): string
     {
-        return number_format((float) $value, 3, '.', '');
+        return (string) (int) $value;
     }
 
     private function money(mixed $value): string
     {
-        return number_format((float) $value, 2, '.', '');
+        return (string) (int) $value;
     }
 
     private function date(string $value): string

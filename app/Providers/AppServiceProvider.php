@@ -9,6 +9,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\Receipt;
 use App\Models\StockMovement;
+use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\StoreStockStandard;
 use App\Models\Supplier;
@@ -19,6 +20,7 @@ use App\Policies\MasterDataPolicy;
 use App\Policies\PurchaseOrderPolicy;
 use App\Policies\PurchaseRequestPolicy;
 use App\Policies\ReceiptPolicy;
+use App\Policies\StorePolicy;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -28,14 +30,6 @@ use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
-
     /**
      * Bootstrap any application services.
      */
@@ -57,7 +51,22 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(PurchaseRequest::class, PurchaseRequestPolicy::class);
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
         Gate::policy(Receipt::class, ReceiptPolicy::class);
-        Gate::before(fn (User $user): ?bool => $user->role === UserRole::SUPER_ADMIN ? true : null);
+        Gate::policy(Store::class, StorePolicy::class);
+        Gate::before(function (User $user, string $ability, array $arguments): ?bool {
+            if ($user->role !== UserRole::SUPER_ADMIN) {
+                return null;
+            }
+
+            $subject = $arguments[0] ?? null;
+            $statefulAbilities = ['update', 'process', 'reject', 'place', 'cancel'];
+
+            if (($subject instanceof PurchaseRequest || $subject instanceof PurchaseOrder)
+                && in_array($ability, $statefulAbilities, true)) {
+                return null;
+            }
+
+            return true;
+        });
 
         Gate::define('access-central', fn (User $user): bool => $user->isCentralUser());
         Gate::define('access-store', fn (User $user): bool => $user->role === UserRole::STORE_PIC);

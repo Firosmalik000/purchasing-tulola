@@ -13,6 +13,7 @@ use App\Http\Requests\Central\ProcessPurchaseRequestRequest;
 use App\Http\Requests\Central\RejectPurchaseRequestRequest;
 use App\Models\PurchaseRequest;
 use App\Models\Store;
+use App\Support\Paging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -24,7 +25,12 @@ class PurchaseRequestController extends Controller
     public function index(FilterPurchaseRequestsRequest $request, ListCentralPurchaseRequests $query): Response
     {
         $filters = $request->validated();
-        $filters['per_page'] = \App\Support\Paging::perPage($request);
+        $dateFrom = $filters['date_from'] ?? now()->startOfMonth()->toDateString();
+        $dateTo = $filters['date_to'] ?? now()->endOfMonth()->toDateString();
+
+        $filters['date_from'] = $dateFrom;
+        $filters['date_to'] = $dateTo;
+        $filters['per_page'] = Paging::perPage($request);
 
         return Inertia::render('central/requests/index', [
             'requests' => $query->handle($filters),
@@ -41,8 +47,8 @@ class PurchaseRequestController extends Controller
                 'store_id' => (string) ($filters['store_id'] ?? ''),
                 'status' => (string) ($filters['status'] ?? ''),
                 'type' => (string) ($filters['type'] ?? ''),
-                'date_from' => (string) ($filters['date_from'] ?? ''),
-                'date_to' => (string) ($filters['date_to'] ?? ''),
+                'date_from' => (string) $dateFrom,
+                'date_to' => (string) $dateTo,
                 'keyword' => (string) ($filters['keyword'] ?? ''),
             ],
         ]);
@@ -56,6 +62,11 @@ class PurchaseRequestController extends Controller
             'requester:id,name,email',
             'items.item:id,sku,name',
             'items.unit:id,name,symbol',
+            'statusHistories' => fn ($query) => $query
+                ->whereNotIn('to_status', ['ORDERED', 'COMPLETED'])
+                ->where(fn ($history) => $history
+                    ->where('notes', '!=', 'Order internal dibatalkan.')
+                    ->orWhereNull('notes')),
             'statusHistories.changer:id,name',
         ]);
 

@@ -41,10 +41,10 @@ class ExportManagementReportToExcel
                 $cell = Coordinate::stringFromColumnIndex($columnIndex + 1).$excelRow;
                 $value = $row[$column['key']] ?? '';
                 if (in_array($column['format'], ['currency', 'quantity', 'integer'], true) && is_numeric($value)) {
-                    $sheet->setCellValue($cell, (float) $value);
+                    $sheet->setCellValue($cell, (int) $value);
                     $sheet->getStyle($cell)->getNumberFormat()->setFormatCode(match ($column['format']) {
-                        'currency' => '[$Rp-id-ID] #,##0.00',
-                        'quantity' => '#,##0.000',
+                        'currency' => '[$Rp-id-ID] #,##0',
+                        'quantity' => '#,##0',
                         default => '0',
                     });
                 } else {

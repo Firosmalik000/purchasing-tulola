@@ -9,7 +9,12 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '@/components/common/page-header';
 import { StatCard } from '@/components/common/stat-card';
+import { DashboardPeriodFilter } from '@/components/dashboard/dashboard-period-filter';
 import { PurchasingBarChart } from '@/components/dashboard/purchasing-charts';
+import {
+    TopRequestedItemsCard,
+    type TopRequestedItem,
+} from '@/components/dashboard/top-requested-items-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,11 +28,16 @@ type Props = {
         confirmedReceipts: number;
         lowStockCount: number;
     };
+    selectedPeriod: {
+        month: number;
+        year: number;
+    };
     monthlyTrend: {
         month: string;
         requests: number;
-        receipts: number;
+        orders: number;
     }[];
+    topRequestedItems: TopRequestedItem[];
     recentRequests: {
         id: number;
         number: string;
@@ -47,17 +57,12 @@ type Props = {
 
 export default function StoreDashboard({
     metrics,
+    selectedPeriod,
     monthlyTrend,
+    topRequestedItems,
     recentRequests,
     recentReceipts,
 }: Props) {
-    // Transform trend data for BarChart
-    const chartData = monthlyTrend.map((m) => ({
-        month: m.month,
-        requests: m.requests,
-        orders: m.receipts,
-    }));
-
     return (
         <>
             <Head title="Dashboard Toko Cabang — Tulola Purchasing" />
@@ -66,7 +71,11 @@ export default function StoreDashboard({
                     badge="Toko Cabang"
                     title="Dashboard Toko Cabang"
                     actions={
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <DashboardPeriodFilter
+                                selectedMonth={selectedPeriod.month}
+                                selectedYear={selectedPeriod.year}
+                            />
                             <Button size="sm" asChild className="h-8 shadow-xs">
                                 <Link href="/store/requests/create">
                                     <Plus className="mr-1.5 size-3.5" />
@@ -80,8 +89,8 @@ export default function StoreDashboard({
                                 className="h-8"
                             >
                                 <Link href="/store/incoming">
-                                    <PackageCheck className="mr-1.5 size-3.5" />
-                                    Barang Masuk
+                                    <PackageOpen className="mr-1.5 size-3.5" />
+                                    Order Toko
                                 </Link>
                             </Button>
                         </div>
@@ -96,28 +105,24 @@ export default function StoreDashboard({
                     <StatCard
                         label="Draft Permintaan"
                         value={metrics.myDrafts}
-                        helper="Belum diajukan ke pusat"
                         icon={ClipboardList}
                         tone="neutral"
                     />
                     <StatCard
                         label="Diajukan ke Pusat"
                         value={metrics.submittedRequests}
-                        helper="Menunggu review purchasing"
                         icon={Send}
                         tone="warning"
                     />
                     <StatCard
                         label="Barang Menuju Toko Cabang"
                         value={metrics.incomingOrders}
-                        helper="PO siap diterima fisik"
                         icon={PackageOpen}
                         tone="info"
                     />
                     <StatCard
                         label="Penerimaan Selesai"
                         value={metrics.confirmedReceipts}
-                        helper="Histori barang masuk"
                         icon={PackageCheck}
                         tone="success"
                     />
@@ -129,7 +134,7 @@ export default function StoreDashboard({
                         <CardHeader className="border-b border-border/40 pb-3">
                             <div className="flex items-center justify-between">
                                 <CardTitle className="text-sm font-semibold">
-                                    Tren Pengajuan & Penerimaan Barang
+                                    Tren Pengadaan & Pesanan
                                 </CardTitle>
                                 <span className="text-xs text-muted-foreground">
                                     Volume Toko Cabang
@@ -137,7 +142,10 @@ export default function StoreDashboard({
                             </div>
                         </CardHeader>
                         <CardContent className="pt-4">
-                            <PurchasingBarChart data={chartData} height={180} />
+                            <PurchasingBarChart
+                                data={monthlyTrend}
+                                height={180}
+                            />
                         </CardContent>
                     </Card>
 
@@ -185,8 +193,16 @@ export default function StoreDashboard({
                     </Card>
                 </section>
 
-                {/* Recent Activities Section */}
-                <section className="grid gap-5 lg:grid-cols-2">
+                {/* Highlights & Recent Activities Section */}
+                <section className="grid gap-5 lg:grid-cols-3">
+                    {/* Top 3 Requested Items Card */}
+                    <TopRequestedItemsCard
+                        items={topRequestedItems}
+                        title="Top 3 Item Sering Diminta"
+                        subtitle="Kebutuhan toko cabang ini"
+                        detailHref="/store/requests"
+                    />
+
                     {/* Recent Requests Table */}
                     <Card className="border-border/70 shadow-2xs">
                         <CardHeader className="flex flex-row items-center justify-between border-b border-border/40 pb-3">

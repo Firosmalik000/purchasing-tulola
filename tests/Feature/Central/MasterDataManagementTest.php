@@ -26,10 +26,11 @@ class MasterDataManagementTest extends TestCase
 
         $this->actingAs($user)->post(route('central.items.store'), [
             'sku' => 'CLN-TISSUE-BASAH', 'name' => 'Tissue Basah',
-            'item_category_id' => $category->id, 'unit_id' => $unit->id, 'is_active' => true,
+            'item_category_id' => $category->id, 'unit_id' => $unit->id,
+            'cost_price' => 25000, 'min_stock' => 5, 'is_active' => true,
         ])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('items', ['sku' => 'CLN-TISSUE-BASAH']);
+        $this->assertDatabaseHas('items', ['sku' => 'CLN-TISSUE-BASAH', 'cost_price' => 25000, 'min_stock' => 5]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'item.created']);
     }
 
@@ -38,6 +39,25 @@ class MasterDataManagementTest extends TestCase
         $this->actingAs(User::factory()->create())->post(route('central.item-categories.store'), [
             'name' => 'Blocked', 'code' => 'BLK', 'is_active' => true,
         ])->assertForbidden();
+    }
+
+    public function test_item_cost_and_minimum_stock_must_be_whole_numbers(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $category = ItemCategory::create(['name' => 'Cleaning', 'code' => 'CLN', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pack', 'symbol' => 'pack', 'is_active' => true]);
+
+        $this->actingAs($user)->post(route('central.items.store'), [
+            'sku' => 'CLN-FRACTIONAL',
+            'name' => 'Fractional Item',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'cost_price' => '25000.50',
+            'min_stock' => '2.99',
+            'is_active' => true,
+        ])->assertSessionHasErrors(['cost_price', 'min_stock']);
+
+        $this->assertDatabaseMissing('items', ['sku' => 'CLN-FRACTIONAL']);
     }
 
     public function test_duplicate_sku_is_rejected(): void

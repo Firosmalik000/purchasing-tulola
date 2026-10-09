@@ -24,6 +24,13 @@ class ProcessPurchaseRequest
     {
         return DB::transaction(function () use ($purchaseRequest, $actor, $approvals, $notes): PurchaseRequest {
             $purchaseRequest = PurchaseRequest::query()->with('items')->lockForUpdate()->findOrFail($purchaseRequest->id);
+
+            if ($purchaseRequest->status !== PurchaseRequestStatus::SUBMITTED) {
+                throw ValidationException::withMessages([
+                    'status' => 'Hanya permintaan berstatus Diajukan yang dapat ditinjau.',
+                ]);
+            }
+
             $lines = $purchaseRequest->items->keyBy('id');
             $approvalMap = $this->validateApprovals($lines, $approvals);
 
@@ -31,7 +38,7 @@ class ProcessPurchaseRequest
                 $quantity = $approvalMap[$line->id];
                 $line->update([
                     'approved_quantity' => $quantity,
-                    'status' => (float) $quantity > 0 ? PurchaseRequestItemStatus::APPROVED : PurchaseRequestItemStatus::REJECTED,
+                    'status' => $quantity > 0 ? PurchaseRequestItemStatus::APPROVED : PurchaseRequestItemStatus::REJECTED,
                 ]);
             }
 
@@ -53,27 +60,27 @@ class ProcessPurchaseRequest
     /**
      * @param  Collection<int, PurchaseRequestItem>  $lines
      * @param  array<int, array<string, mixed>>  $approvals
-     * @return array<int, string>
+     * @return array<int, int>
      */
     private function validateApprovals(Collection $lines, array $approvals): array
     {
-        $approvalMap = collect($approvals)->mapWithKeys(fn (array $approval) => [(int) $approval['id'] => number_format((float) $approval['approved_quantity'], 3, '.', '')]);
+        $approvalMap = collect($approvals)->mapWithKeys(fn (array $approval) => [(int) $approval['id'] => (int) $approval['approved_quantity']]);
 
         if ($approvalMap->keys()->sort()->values()->all() !== $lines->keys()->sort()->values()->all()) {
             throw ValidationException::withMessages(['items' => 'Seluruh item permintaan harus ditinjau tepat satu kali.']);
         }
 
         foreach ($lines as $line) {
-            if ((float) $approvalMap[$line->id] < 0) {
+            if ($approvalMap[$line->id] < 0) {
                 throw ValidationException::withMessages(["items.{$line->id}.approved_quantity" => 'Jumlah disetujui tidak boleh negatif.']);
             }
 
-            if ((float) $approvalMap[$line->id] > (float) $line->requested_quantity) {
+            if ($approvalMap[$line->id] > $line->requested_quantity) {
                 throw ValidationException::withMessages(["items.{$line->id}.approved_quantity" => 'Jumlah disetujui tidak boleh melebihi jumlah yang diminta.']);
             }
         }
 
-        if (! $approvalMap->contains(fn (string $quantity) => (float) $quantity > 0)) {
+        if (! $approvalMap->contains(fn (int $quantity) => $quantity > 0)) {
             throw ValidationException::withMessages(['items' => 'Setujui minimal satu item, atau tolak seluruh permintaan.']);
         }
 

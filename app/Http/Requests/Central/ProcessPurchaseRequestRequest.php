@@ -21,7 +21,7 @@ class ProcessPurchaseRequestRequest extends FormRequest
         return [
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer', 'distinct'],
-            'items.*.approved_quantity' => ['required', 'numeric', 'min:0', 'decimal:0,3'],
+            'items.*.approved_quantity' => ['required', 'integer', 'min:0'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
@@ -32,6 +32,7 @@ class ProcessPurchaseRequestRequest extends FormRequest
             'items.required' => 'Detail persetujuan item wajib diisi.',
             'items.*.approved_quantity.required' => 'Jumlah disetujui wajib diisi.',
             'items.*.approved_quantity.min' => 'Jumlah disetujui tidak boleh negatif.',
+            'items.*.approved_quantity.integer' => 'Jumlah disetujui wajib berupa bilangan bulat.',
         ];
     }
 }

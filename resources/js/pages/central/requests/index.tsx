@@ -87,7 +87,7 @@ export default function CentralRequestIndex({
                         <Form
                             action="/central/requests"
                             method="get"
-                            className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-[1.5fr_1fr_1fr_1fr_auto_auto_auto]"
+                            className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-[1.5fr_1fr_1fr_1fr_135px_135px_auto]"
                         >
                             <div className="relative">
                                 <Search className="absolute top-2.5 left-2.5 size-3.5 text-muted-foreground" />
@@ -143,22 +143,44 @@ export default function CentralRequestIndex({
                                     ))}
                                 </select>
                             </div>
-                            <Button
-                                size="sm"
-                                className="h-8.5 px-3 text-xs font-medium shadow-xs"
-                            >
-                                Filter
-                            </Button>
-                            {hasActiveFilters && (
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
+                            <div>
+                                <Input
+                                    type="date"
+                                    name="date_from"
+                                    defaultValue={filters.date_from}
                                     className="h-8.5 text-xs"
-                                    asChild
+                                    aria-label="Tanggal mulai"
+                                    title="Tanggal mulai"
+                                />
+                            </div>
+                            <div>
+                                <Input
+                                    type="date"
+                                    name="date_to"
+                                    defaultValue={filters.date_to}
+                                    className="h-8.5 text-xs"
+                                    aria-label="Tanggal akhir"
+                                    title="Tanggal akhir"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-1">
+                                <Button
+                                    size="sm"
+                                    className="h-8.5 px-3 text-xs font-medium shadow-xs"
                                 >
-                                    <Link href="/central/requests">Reset</Link>
+                                    Filter
                                 </Button>
-                            )}
+                                {hasActiveFilters && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8.5 text-xs"
+                                        asChild
+                                    >
+                                        <Link href="/central/requests">Reset</Link>
+                                    </Button>
+                                )}
+                            </div>
                         </Form>
                     </CardContent>
                 </Card>
