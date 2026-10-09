@@ -3,8 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vp build",
-        "build:ssr": "vp build && vp build --ssr",
+        "build": "php artisan wayfinder:generate --with-form && vite build",
+        "build:ssr": "php artisan wayfinder:generate --with-form && vite build && vite build --ssr",
         "dev": "vp dev",
         "check": "vp check",
         "check:fix": "vp check --fix",

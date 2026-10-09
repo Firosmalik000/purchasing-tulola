@@ -24,9 +24,12 @@ export default defineConfig({
             presets: [reactCompilerPreset()],
         }),
         tailwindcss(),
-        wayfinder({
-            formVariants: true,
-        }),
+        {
+            ...wayfinder({
+                formVariants: true,
+            }),
+            apply: 'serve',
+        },
     ]),
     server: {
         host: '127.0.0.1',
