@@ -6,6 +6,7 @@ import {
     Image as ImageIcon,
     Package,
     Plus,
+    Send,
     Sparkles,
     Trash2,
 } from 'lucide-react';
@@ -108,6 +109,8 @@ export default function RequestForm({
                 })) ?? [],
     );
 
+    const [submitAction, setSubmitAction] = useState<'draft' | 'submit'>('draft');
+
     const action = purchaseRequest
         ? `/store/requests/${purchaseRequest.id}`
         : '/store/requests';
@@ -189,6 +192,11 @@ export default function RequestForm({
                 >
                     {({ processing, errors }) => (
                         <>
+                            <input
+                                type="hidden"
+                                name="action"
+                                value={submitAction}
+                            />
                             {purchaseRequest && (
                                 <input
                                     type="hidden"
@@ -774,14 +782,26 @@ export default function RequestForm({
                                 </Button>
                                 <Button
                                     type="submit"
+                                    variant="secondary"
                                     disabled={processing}
-                                    className="font-medium"
+                                    onClick={() => setSubmitAction('draft')}
                                 >
-                                    {processing
+                                    {processing && submitAction === 'draft'
                                         ? 'Menyimpan...'
                                         : purchaseRequest
                                           ? 'Simpan Perubahan'
                                           : 'Simpan Draft'}
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="font-medium"
+                                    onClick={() => setSubmitAction('submit')}
+                                >
+                                    <Send className="mr-1.5 size-4" />
+                                    {processing && submitAction === 'submit'
+                                        ? 'Mengajukan...'
+                                        : 'Simpan & Ajukan ke Pusat'}
                                 </Button>
                             </div>
                         </>

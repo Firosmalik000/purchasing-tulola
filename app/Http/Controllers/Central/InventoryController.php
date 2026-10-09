@@ -11,6 +11,7 @@ use App\Http\Requests\Central\BulkAddStoreStockRequest;
 use App\Http\Requests\Central\UpdateStoreStockRequest;
 use App\Http\Requests\Central\UpdateStoreStockStandardRequest;
 use App\Models\Item;
+use App\Models\PurchaseOrder;
 use App\Models\Receipt;
 use App\Models\StockBatch;
 use App\Models\StockMovement;
@@ -18,6 +19,7 @@ use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\Supplier;
 use App\Support\Paging;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -69,17 +71,19 @@ class InventoryController extends Controller
             if ($m->reference_type && $m->reference_id) {
                 return "{$m->reference_type}:{$m->reference_id}";
             }
+
             return "mov:{$m->id}";
         });
 
         $transactions = $grouped->map(function ($groupMovements) {
-            /** @var \Illuminate\Database\Eloquent\Collection<int, StockMovement> $groupMovements */
+            /** @var Collection<int, StockMovement> $groupMovements */
             $first = $groupMovements->first();
             $reference = $first->reference;
 
             $batchNumber = match (true) {
                 $reference instanceof StockBatch => $reference->batch_number,
                 $reference instanceof Receipt => $reference->number,
+                $reference instanceof PurchaseOrder => $reference->number,
                 default => sprintf('REQ-%s-%04d', $first->created_at?->format('Ymd') ?? date('Ymd'), $first->id),
             };
 
@@ -174,6 +178,7 @@ class InventoryController extends Controller
                 StockMovementType::STOCK_IN,
                 StockMovementType::MANUAL_UPDATE,
                 StockMovementType::ORDER_RECEIVED,
+                StockMovementType::DISTRIBUTION_OUT,
                 StockMovementType::OPENING_BALANCE,
                 StockMovementType::CORRECTION,
                 StockMovementType::OTHER,

@@ -20,6 +20,13 @@ class Store extends Model
         return ['is_active' => 'boolean'];
     }
 
+    public static function centralStore(): ?self
+    {
+        return static::query()->where('is_active', true)
+            ->where(fn ($q) => $q->where('code', 'HO-JKT')->orWhere('name', 'like', '%Head Office%')->orWhere('name', 'like', '%Pusat%'))
+            ->first() ?? static::query()->where('is_active', true)->orderBy('id')->first();
+    }
+
     /** @return BelongsToMany<User, $this> */
     public function users(): BelongsToMany
     {

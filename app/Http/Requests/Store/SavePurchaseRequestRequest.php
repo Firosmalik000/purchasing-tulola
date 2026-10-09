@@ -23,6 +23,8 @@ class SavePurchaseRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'action' => ['nullable', 'string', 'in:draft,submit'],
+            'submit_immediately' => ['nullable', 'boolean'],
             'store_id' => ['nullable', 'integer'],
             'required_date' => ['nullable', 'date', 'after_or_equal:today'],
             'notes' => ['nullable', 'string', 'max:2000'],

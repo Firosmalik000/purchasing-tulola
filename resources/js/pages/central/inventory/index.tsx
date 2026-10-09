@@ -297,6 +297,20 @@ export default function InventoryIndex({
                         Penerimaan PO
                     </span>
                 );
+            case 'DISTRIBUTION_OUT':
+                return (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                        <ArrowDownRight className="size-3" />
+                        Distribusi Cabang
+                    </span>
+                );
+            case 'DISTRIBUTION_CANCELLED':
+                return (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-500/10 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                        <ArrowUpRight className="size-3" />
+                        Batal Distribusi
+                    </span>
+                );
             case 'CORRECTION':
                 return (
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">

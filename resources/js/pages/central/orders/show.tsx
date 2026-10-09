@@ -1,5 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import {
+    AlertCircle,
     ArrowLeft,
     Ban,
     Calendar,
@@ -12,6 +13,7 @@ import {
     Truck,
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { OrderStatusBadge } from '@/components/common/order-status-badge';
 import {
     WorkflowStepper,
@@ -154,7 +156,20 @@ export default function OrderShow({
         e.preventDefault();
         placeForm.post(`/central/orders/${purchaseOrder.id}/place`, {
             preserveScroll: true,
-            onSuccess: () => setPlaceOpen(false),
+            onSuccess: () => {
+                setPlaceOpen(false);
+                toast.success(
+                    `Order ${purchaseOrder.number} berhasil dikirim ke toko dan stok Gudang Pusat telah dipotong.`,
+                );
+            },
+            onError: (errors) => {
+                const message =
+                    (errors.stock as string) ||
+                    (errors.error as string) ||
+                    (Object.values(errors)[0] as string) ||
+                    'Gagal mengirim order.';
+                toast.error(message);
+            },
         });
     }
 
@@ -663,6 +678,16 @@ export default function OrderShow({
                                 Order <strong className="text-foreground">{purchaseOrder.number}</strong> akan dikirim ke cabang <strong className="text-foreground">{targetStore?.name ?? 'Toko'}</strong> ({totalItemsCount} item, {formatQuantity(totalQuantityCount)} unit).
                             </p>
                         </div>
+
+                        {placeForm.errors.stock && (
+                            <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+                                <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="font-semibold">Stok Tidak Mencukupi</p>
+                                    <p>{placeForm.errors.stock}</p>
+                                </div>
+                            </div>
+                        )}
 
                         <form onSubmit={handlePlaceSubmit}>
                             <DialogFooter className="gap-2 sm:gap-0">

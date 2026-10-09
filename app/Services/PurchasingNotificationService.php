@@ -36,26 +36,86 @@ class PurchasingNotificationService
     }
 
     /**
-     * Notify central purchasing team when a store PR is submitted.
+     * Determine if an email address is a dummy/unroutable test email.
+     */
+    protected function isDummyEmail(string $email): bool
+    {
+        if (app()->environment('testing')) {
+            return false;
+        }
+
+        $email = strtolower(trim($email));
+
+        return str_ends_with($email, '.test')
+            || str_ends_with($email, '.example')
+            || str_ends_with($email, '.invalid')
+            || str_ends_with($email, '@localhost');
+    }
+
+    /**
+     * Get active central purchasing team emails.
+     *
+     * @return array<int, string>
+     */
+    public function getCentralEmails(): array
+    {
+        $emails = User::query()
+            ->where('is_active', true)
+            ->whereIn('role', [
+                UserRole::SUPER_ADMIN,
+                UserRole::CENTRAL_ADMIN,
+                UserRole::PURCHASING,
+                UserRole::MANAGEMENT,
+            ])
+            ->pluck('email')
+            ->filter()
+            ->reject(fn (string $email) => $this->isDummyEmail($email))
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($emails)) {
+            $fallback = config('mail.from.address');
+            if ($fallback && ! $this->isDummyEmail($fallback)) {
+                $emails[] = $fallback;
+            }
+        }
+
+        return array_values(array_unique(array_filter($emails)));
+    }
+
+    /**
+     * Notify central purchasing team and requester when a store PR is submitted.
      */
     public function sendPurchaseRequestSubmitted(PurchaseRequest $request): void
     {
         try {
-            $centralEmails = User::query()
-                ->where('is_active', true)
-                ->whereIn('role', [UserRole::SUPER_ADMIN, UserRole::CENTRAL_ADMIN])
-                ->pluck('email')
-                ->filter()
-                ->all();
-
-            if (empty($centralEmails)) {
-                return;
-            }
+            $centralEmails = $this->getCentralEmails();
 
             $request->loadMissing(['store', 'requester', 'items.item', 'items.unit']);
             $viewUrl = route('central.requests.show', $request);
 
-            Mail::to($centralEmails)->send(new PurchaseRequestSubmittedMail($request, $viewUrl));
+            $recipients = $centralEmails;
+            $requesterEmail = $request->requester?->email;
+            if ($requesterEmail && filter_var($requesterEmail, FILTER_VALIDATE_EMAIL) && ! $this->isDummyEmail($requesterEmail)) {
+                $recipients[] = $requesterEmail;
+            }
+            $recipients = array_values(array_unique(array_filter($recipients)));
+
+            if (empty($recipients)) {
+                if (config('mail.from.address')) {
+                    $recipients = [config('mail.from.address')];
+                } else {
+                    Log::warning('Tidak ada email penerima valid untuk notifikasi pengajuan PR.', [
+                        'request_id' => $request->id,
+                        'request_number' => $request->number,
+                    ]);
+
+                    return;
+                }
+            }
+
+            Mail::to($recipients)->send(new PurchaseRequestSubmittedMail($request, $viewUrl));
         } catch (Throwable $e) {
             Log::error('Gagal mengirim email pengajuan PR: '.$e->getMessage(), [
                 'request_id' => $request->id,
@@ -65,13 +125,14 @@ class PurchasingNotificationService
     }
 
     /**
-     * Notify store PICs when a purchase order is placed with allocations for their store.
+     * Notify store PICs and requester when a purchase order is placed.
      */
     public function sendPurchaseOrderPlaced(PurchaseOrder $order): void
     {
         try {
             $order->loadMissing([
-                'purchaseRequest.store',
+                'purchaseRequest.store.users',
+                'purchaseRequest.requester',
                 'items.item',
                 'items.unit',
                 'items.allocations.purchaseRequestItem.purchaseRequest.store.users',
@@ -90,6 +151,7 @@ class PurchasingNotificationService
                     if (! isset($storesMap[$storeId])) {
                         $storesMap[$storeId] = [
                             'store' => $pr->store,
+                            'requester_email' => $pr->requester?->email,
                             'items' => [],
                         ];
                     }
@@ -107,6 +169,29 @@ class PurchasingNotificationService
                 }
             }
 
+            // Fallback: If no allocations found but order belongs to a PR with store
+            if (empty($storesMap) && $order->purchaseRequest?->store) {
+                $store = $order->purchaseRequest->store;
+                $items = [];
+                foreach ($order->items as $orderItem) {
+                    $itemName = $orderItem->item_type === PurchaseRequestItemType::STOCK
+                        ? ($orderItem->item->name ?? 'Item')
+                        : ($orderItem->name ?? 'Item Khusus');
+
+                    $items[] = [
+                        'name' => $itemName,
+                        'sku' => $orderItem->item?->sku,
+                        'quantity' => (string) $orderItem->quantity,
+                        'unit' => $orderItem->unit->symbol ?? $orderItem->unit->name ?? '',
+                    ];
+                }
+                $storesMap[$store->id] = [
+                    'store' => $store,
+                    'requester_email' => $order->purchaseRequest->requester?->email,
+                    'items' => $items,
+                ];
+            }
+
             foreach ($storesMap as $storeData) {
                 /** @var Store $store */
                 $store = $storeData['store'];
@@ -118,10 +203,28 @@ class PurchasingNotificationService
                     ->wherePivot('is_active', true)
                     ->pluck('users.email')
                     ->filter()
+                    ->reject(fn (string $email) => $this->isDummyEmail($email))
                     ->all();
 
+                // Also include requester email
+                if (! empty($storeData['requester_email']) && filter_var($storeData['requester_email'], FILTER_VALIDATE_EMAIL)) {
+                    if (! $this->isDummyEmail($storeData['requester_email'])) {
+                        $recipientEmails[] = $storeData['requester_email'];
+                    }
+                }
+
+                $recipientEmails = array_values(array_unique(array_filter($recipientEmails)));
+
                 if (empty($recipientEmails)) {
-                    continue;
+                    if (config('mail.from.address')) {
+                        $recipientEmails = [config('mail.from.address')];
+                    } else {
+                        Log::warning('Tidak ada penerima valid untuk email PO ditempatkan ke cabang.', [
+                            'store_id' => $store->id,
+                            'order_id' => $order->id,
+                        ]);
+                        continue;
+                    }
                 }
 
                 $viewUrl = route('store.incoming.show', [
@@ -145,12 +248,7 @@ class PurchasingNotificationService
     public function sendGoodsReceiptConfirmed(Receipt $receipt): void
     {
         try {
-            $centralEmails = User::query()
-                ->where('is_active', true)
-                ->whereIn('role', [UserRole::SUPER_ADMIN, UserRole::CENTRAL_ADMIN])
-                ->pluck('email')
-                ->filter()
-                ->all();
+            $centralEmails = $this->getCentralEmails();
 
             if (empty($centralEmails)) {
                 return;

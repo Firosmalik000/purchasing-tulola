@@ -25,8 +25,9 @@ class UpdateStoreStock
         ?User $actor = null,
         ?string $unitCost = null,
         ?int $supplierId = null,
+        bool $decrement = false,
     ): StoreStock {
-        return DB::transaction(function () use ($store, $item, $quantity, $type, $reason, $notes, $increment, $reference, $actor, $unitCost, $supplierId): StoreStock {
+        return DB::transaction(function () use ($store, $item, $quantity, $type, $reason, $notes, $increment, $decrement, $reference, $actor, $unitCost, $supplierId): StoreStock {
             StoreStock::query()->createOrFirst(['store_id' => $store->id, 'item_id' => $item->id], [
                 'quantity' => 0, 'average_unit_cost' => 0, 'total_value' => 0,
             ]);
@@ -34,18 +35,32 @@ class UpdateStoreStock
             $previous = (int) $stock->quantity;
             $previousValue = (int) $stock->total_value;
             $previousAverage = (int) $stock->average_unit_cost;
-            $newQuantity = $increment ? $previous + (int) $quantity : (int) $quantity;
+            $qty = (int) $quantity;
+
+            if ($increment) {
+                $newQuantity = $previous + $qty;
+            } elseif ($decrement) {
+                $newQuantity = max(0, $previous - $qty);
+            } else {
+                $newQuantity = $qty;
+            }
+
             $inputCost = $unitCost === null ? null : (int) $unitCost;
             $masterCost = $item->cost_price !== null && (int) $item->cost_price > 0
                 ? (int) $item->cost_price
                 : 0;
             $effectiveCost = $inputCost ?? ($previousAverage > 0 ? $previousAverage : $masterCost);
-            $newValue = $increment
-                ? $previousValue + ((int) $quantity * $effectiveCost)
-                : $newQuantity * $effectiveCost;
-            $newAverage = $newQuantity > 0
-                ? (int) round($newValue / $newQuantity)
-                : 0;
+
+            if ($increment) {
+                $newValue = $previousValue + ($qty * $effectiveCost);
+                $newAverage = $newQuantity > 0 ? (int) round($newValue / $newQuantity) : 0;
+            } elseif ($decrement) {
+                $newAverage = $previousAverage > 0 ? $previousAverage : $masterCost;
+                $newValue = $newQuantity * $newAverage;
+            } else {
+                $newValue = $newQuantity * $effectiveCost;
+                $newAverage = $newQuantity > 0 ? (int) round($newValue / $newQuantity) : 0;
+            }
 
             $stock->update([
                 'quantity' => $newQuantity,
@@ -55,7 +70,7 @@ class UpdateStoreStock
 
             $recordedCost = $unitCost !== null
                 ? (int) $unitCost
-                : ($masterCost > 0 ? $masterCost : null);
+                : ($newAverage > 0 ? $newAverage : ($masterCost > 0 ? $masterCost : null));
 
             StockMovement::create([
                 'store_id' => $store->id, 'item_id' => $item->id, 'supplier_id' => $supplierId,

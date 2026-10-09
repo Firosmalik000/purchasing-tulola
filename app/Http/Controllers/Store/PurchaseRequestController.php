@@ -63,10 +63,17 @@ class PurchaseRequestController extends Controller
         return Inertia::render('store/requests/form', $this->formProps($stores, $storeId));
     }
 
-    public function store(SavePurchaseRequestRequest $request, SavePurchaseRequestDraft $action): RedirectResponse
+    public function store(SavePurchaseRequestRequest $request, SavePurchaseRequestDraft $action, SubmitPurchaseRequest $submitAction, PurchasingNotificationService $notifications): RedirectResponse
     {
         $store = Store::findOrFail($request->integer('store_id'));
         $purchaseRequest = $action->handle($store, $request->user(), $request->validated());
+
+        if ($request->input('action') === 'submit' || $request->boolean('submit_immediately')) {
+            $submitted = $submitAction->handle($purchaseRequest, $request->user());
+            $notifications->sendPurchaseRequestSubmitted($submitted);
+
+            return to_route('store.requests.show', $purchaseRequest)->with('success', 'Permintaan berhasil disimpan, diajukan ke pusat, dan notifikasi email telah terkirim.');
+        }
 
         return to_route('store.requests.index')->with('success', 'Draft permintaan berhasil disimpan.');
     }
@@ -101,10 +108,17 @@ class PurchaseRequestController extends Controller
         ]);
     }
 
-    public function update(SavePurchaseRequestRequest $request, PurchaseRequest $purchaseRequest, SavePurchaseRequestDraft $action): RedirectResponse
+    public function update(SavePurchaseRequestRequest $request, PurchaseRequest $purchaseRequest, SavePurchaseRequestDraft $action, SubmitPurchaseRequest $submitAction, PurchasingNotificationService $notifications): RedirectResponse
     {
         Gate::authorize('update', $purchaseRequest);
         $action->handle($purchaseRequest->store, $request->user(), $request->validated(), $purchaseRequest);
+
+        if ($request->input('action') === 'submit' || $request->boolean('submit_immediately')) {
+            $submitted = $submitAction->handle($purchaseRequest, $request->user());
+            $notifications->sendPurchaseRequestSubmitted($submitted);
+
+            return to_route('store.requests.show', $purchaseRequest)->with('success', 'Permintaan berhasil diperbarui, diajukan ke pusat, dan notifikasi email telah terkirim.');
+        }
 
         return to_route('store.requests.index')->with('success', 'Draft permintaan berhasil diperbarui.');
     }

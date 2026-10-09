@@ -79,10 +79,12 @@ class PurchaseOrderController extends Controller
     public function place(Request $request, PurchaseOrder $purchaseOrder, PlacePurchaseOrder $action, PurchasingNotificationService $notifications): RedirectResponse
     {
         Gate::authorize('place', $purchaseOrder);
-        $order = $action->handle($purchaseOrder);
+        $order = $action->handle($purchaseOrder, $request->user());
         $notifications->sendPurchaseOrderPlaced($order);
 
-        return back()->with('success', 'Order internal dikirim dan sekarang menunggu penerimaan toko.');
+        $destinationName = $purchaseOrder->purchaseRequest?->store?->name ?? 'toko';
+
+        return back()->with('success', "Order internal {$purchaseOrder->number} berhasil dikirim ke {$destinationName} dan stok Gudang Pusat telah dipotong.");
     }
 
     public function cancel(Request $request, PurchaseOrder $purchaseOrder, CancelPurchaseOrder $action): RedirectResponse

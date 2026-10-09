@@ -28,6 +28,7 @@ class InternalPurchasingWorkflowTest extends TestCase
     public function test_approved_request_flows_through_internal_order_receipt_and_stock(): void
     {
         Mail::fake();
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta']);
         $store = Store::factory()->create(['code' => 'FLOW']);
         $admin = User::factory()->create(['role' => UserRole::CENTRAL_ADMIN]);
         $pic = User::factory()->create(['role' => UserRole::STORE_PIC]);
@@ -37,6 +38,10 @@ class InternalPurchasingWorkflowTest extends TestCase
         $item = Item::create([
             'sku' => 'OPS-FLOW-001', 'name' => 'Item Alur Internal',
             'item_category_id' => $category->id, 'unit_id' => $unit->id, 'is_active' => true,
+        ]);
+        StoreStock::create([
+            'store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 10,
+            'average_unit_cost' => 100, 'total_value' => 1000,
         ]);
         StoreStock::create([
             'store_id' => $store->id, 'item_id' => $item->id, 'quantity' => 1,
@@ -66,6 +71,18 @@ class InternalPurchasingWorkflowTest extends TestCase
         $this->assertSame(PurchaseOrderStatus::ORDERED, $order->fresh()->status);
         $this->assertSame(PurchaseRequestStatus::PROCESSED, $request->fresh()->status);
 
+        // Verify Central Stock decreased
+        $this->assertDatabaseHas('store_stocks', [
+            'store_id' => $centralStore->id, 'item_id' => $item->id,
+            'quantity' => 8, 'average_unit_cost' => 100, 'total_value' => 800,
+        ]);
+        $this->assertDatabaseHas('stock_movements', [
+            'store_id' => $centralStore->id, 'item_id' => $item->id,
+            'movement_type' => StockMovementType::DISTRIBUTION_OUT->value,
+            'quantity_difference' => -2, 'movement_value' => -200, 'new_value' => 800,
+            'reference_type' => $order->getMorphClass(), 'reference_id' => $order->id,
+        ]);
+
         $this->actingAs($pic)->post(route('store.incoming.receipts.store', $order), [
             'store_id' => $store->id,
             'received_at' => now()->subMinute()->format('Y-m-d H:i:s'),
@@ -89,6 +106,8 @@ class InternalPurchasingWorkflowTest extends TestCase
             'purchase_request_id' => $request->id,
             'to_status' => 'COMPLETED',
         ]);
+
+        // Verify Store Stock increased
         $this->assertDatabaseHas('store_stocks', [
             'store_id' => $store->id, 'item_id' => $item->id,
             'quantity' => 3, 'average_unit_cost' => 100, 'total_value' => 300,
@@ -98,6 +117,52 @@ class InternalPurchasingWorkflowTest extends TestCase
             'movement_type' => StockMovementType::ORDER_RECEIVED->value,
             'quantity_difference' => 2, 'movement_value' => 200, 'new_value' => 300,
             'reference_type' => $receipt->getMorphClass(), 'reference_id' => $receipt->id,
+        ]);
+    }
+
+    public function test_placing_order_fails_when_central_stock_is_insufficient(): void
+    {
+        Mail::fake();
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta']);
+        $store = Store::factory()->create(['code' => 'BRANCH']);
+        $admin = User::factory()->create(['role' => UserRole::CENTRAL_ADMIN]);
+        $pic = User::factory()->create(['role' => UserRole::STORE_PIC]);
+        $unit = Unit::create(['name' => 'Piece', 'symbol' => 'pcs', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Operasional', 'code' => 'OPS', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'OPS-LOW-001', 'name' => 'Item Stok Kurang',
+            'item_category_id' => $category->id, 'unit_id' => $unit->id, 'is_active' => true,
+        ]);
+        // Central only has 1 pc
+        StoreStock::create([
+            'store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 1,
+            'average_unit_cost' => 100, 'total_value' => 100,
+        ]);
+        $request = PurchaseRequest::factory()->submitted()->create([
+            'number' => 'REQ/BRANCH/2026/10/0002', 'store_id' => $store->id, 'requested_by' => $pic->id,
+        ]);
+        $line = $request->items()->create([
+            'type' => PurchaseRequestItemType::STOCK, 'item_id' => $item->id, 'unit_id' => $unit->id,
+            'current_stock_snapshot' => 0, 'requested_quantity' => 5,
+        ]);
+
+        $this->actingAs($admin)->post(route('central.requests.process', $request), [
+            'items' => [$line->id => ['id' => $line->id, 'approved_quantity' => '5']],
+        ])->assertSessionHasNoErrors();
+
+        $order = PurchaseOrder::query()->whereBelongsTo($request)->firstOrFail();
+
+        // Placing order must fail due to insufficient Central stock (needs 5, available 1)
+        $this->actingAs($admin)->post(route('central.orders.place', $order))
+            ->assertSessionHasErrors('stock');
+
+        // Order remains in DRAFT
+        $this->assertSame(PurchaseOrderStatus::DRAFT, $order->fresh()->status);
+
+        // Central stock remains 1
+        $this->assertDatabaseHas('store_stocks', [
+            'store_id' => $centralStore->id, 'item_id' => $item->id,
+            'quantity' => 1,
         ]);
     }
 
