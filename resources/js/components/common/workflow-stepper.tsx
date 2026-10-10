@@ -29,11 +29,11 @@ export function WorkflowStepper({
     return (
         <div
             className={cn(
-                'w-full rounded-xl border border-border/70 bg-card p-4 shadow-xs md:p-5',
+                'w-full rounded-xl border border-border/70 bg-card p-3 shadow-xs md:p-3.5',
                 className,
             )}
         >
-            <div className="mb-3 flex items-center justify-between text-xs font-medium text-muted-foreground">
+            <div className="mb-2.5 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
                 <span className="tracking-wider uppercase">
                     Tahapan Alur Purchasing
                 </span>
@@ -47,7 +47,7 @@ export function WorkflowStepper({
             <div className="relative">
                 <ol
                     className={cn(
-                        'grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-2',
+                        'grid grid-cols-1 gap-2 sm:grid-cols-2 md:gap-2',
                         gridColumns,
                     )}
                 >
@@ -61,7 +61,7 @@ export function WorkflowStepper({
                             <li
                                 key={step.key}
                                 className={cn(
-                                    'group relative flex flex-row items-center gap-3 rounded-lg border p-3 transition-all md:flex-col md:items-start md:p-3.5',
+                                    'group relative flex flex-row items-center gap-2.5 rounded-lg border p-2.5 transition-all',
                                     isCurrent &&
                                         'border-blue-500/50 bg-blue-500/5 ring-1 ring-blue-500/30 dark:bg-blue-500/10',
                                     isComplete &&
@@ -74,48 +74,46 @@ export function WorkflowStepper({
                             >
                                 <div className="flex shrink-0 items-center justify-center">
                                     {isComplete && (
-                                        <div className="flex size-7 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xs">
-                                            <Check className="size-4 stroke-[2.5]" />
+                                        <div className="flex size-6 items-center justify-center rounded-full bg-emerald-600 text-white shadow-xs">
+                                            <Check className="size-3.5 stroke-[2.5]" />
                                         </div>
                                     )}
                                     {isCurrent && (
-                                        <div className="relative flex size-7 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs">
+                                        <div className="relative flex size-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-xs">
                                             <span className="absolute -inset-1 animate-ping rounded-full bg-blue-500/30" />
-                                            <CircleDot className="size-4" />
+                                            <CircleDot className="size-3.5" />
                                         </div>
                                     )}
                                     {isDanger && (
-                                        <div className="flex size-7 items-center justify-center rounded-full bg-rose-600 text-white shadow-xs">
-                                            <AlertCircle className="size-4" />
+                                        <div className="flex size-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-xs">
+                                            <AlertCircle className="size-3.5" />
                                         </div>
                                     )}
                                     {isUpcoming && (
-                                        <div className="flex size-7 items-center justify-center rounded-full border border-muted-foreground/30 bg-muted text-xs font-semibold text-muted-foreground">
+                                        <div className="flex size-6 items-center justify-center rounded-full border border-muted-foreground/30 bg-muted text-[11px] font-semibold text-muted-foreground">
                                             {idx + 1}
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-1.5">
-                                        <p
-                                            className={cn(
-                                                'text-xs leading-tight font-semibold md:text-sm',
-                                                isCurrent &&
-                                                    'font-bold text-amber-950 dark:text-amber-300',
-                                                isComplete &&
-                                                    'text-emerald-950 dark:text-emerald-300',
-                                                isDanger &&
-                                                    'text-rose-700 dark:text-rose-400',
-                                                isUpcoming &&
-                                                    'text-muted-foreground',
-                                            )}
-                                        >
-                                            {step.label}
-                                        </p>
-                                    </div>
+                                    <p
+                                        className={cn(
+                                            'truncate text-xs font-semibold leading-tight',
+                                            isCurrent &&
+                                                'text-blue-700 dark:text-blue-300',
+                                            isComplete &&
+                                                'text-emerald-800 dark:text-emerald-300',
+                                            isDanger &&
+                                                'text-rose-700 dark:text-rose-400',
+                                            isUpcoming &&
+                                                'text-muted-foreground',
+                                        )}
+                                    >
+                                        {step.label}
+                                    </p>
                                     {step.description && (
-                                        <p className="mt-0.5 line-clamp-1 text-[11px] leading-normal text-muted-foreground">
+                                        <p className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground">
                                             {step.description}
                                         </p>
                                     )}

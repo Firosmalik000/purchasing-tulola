@@ -213,9 +213,9 @@ export default function OrderShow({
     return (
         <>
             <Head title={`Order ${purchaseOrder.number} — Tulola Purchasing`} />
-            <main className="flex flex-1 flex-col gap-6 p-4 md:p-6 print:p-0">
+            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-5 md:p-6 print:p-0">
                 {/* Header Section */}
-                <div className="flex flex-col gap-4 border-b border-border/60 pb-4 md:flex-row md:items-center md:justify-between">
+                <div className="flex flex-col gap-3 border-b border-border/60 pb-3.5 md:flex-row md:items-center md:justify-between">
                     <div className="flex flex-wrap items-center gap-3">
                         <Button
                             variant="outline"
@@ -229,7 +229,7 @@ export default function OrderShow({
                             </Link>
                         </Button>
 
-                        <h1 className="font-serif text-xl font-bold tracking-tight text-foreground">
+                        <h1 className="font-mono text-lg font-bold tracking-tight text-foreground">
                             {purchaseOrder.number}
                         </h1>
 
@@ -291,77 +291,79 @@ export default function OrderShow({
                     />
                 </div>
 
-                {/* Summary Metadata Cards */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <Card className="border-border/70 shadow-xs">
-                        <CardContent className="flex items-start gap-3.5 p-4">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                                <Store className="size-4.5" />
+                {/* Summary Metadata Card */}
+                <Card className="border-border/70 shadow-xs">
+                    <CardContent className="grid grid-cols-1 divide-y divide-border/60 p-0 sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
+                        <div className="flex items-center gap-3 p-3 sm:p-3.5">
+                            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                                <Store className="size-4" />
                             </div>
-                            <div className="min-w-0 flex-1 space-y-0.5">
-                                <p className="text-xs font-medium text-muted-foreground">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-medium text-muted-foreground">
                                     Toko Tujuan
                                 </p>
-                                <p className="truncate font-serif text-sm font-bold text-foreground">
+                                <p
+                                    className="truncate text-xs font-semibold text-foreground"
+                                    title={
+                                        targetStore
+                                            ? `${targetStore.code} — ${targetStore.name}`
+                                            : 'Internal / Pusat'
+                                    }
+                                >
                                     {targetStore
                                         ? `${targetStore.code} — ${targetStore.name}`
                                         : 'Internal / Pusat'}
                                 </p>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
 
-                    <Card className="border-border/70 shadow-xs">
-                        <CardContent className="flex items-start gap-3.5 p-4">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                                <FileText className="size-4.5" />
+                        <div className="flex items-center gap-3 p-3 sm:p-3.5">
+                            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                                <FileText className="size-4" />
                             </div>
-                            <div className="min-w-0 flex-1 space-y-0.5">
-                                <p className="text-xs font-medium text-muted-foreground">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-medium text-muted-foreground">
                                     Sumber Permintaan (PR)
                                 </p>
                                 {purchaseOrder.purchase_request ? (
                                     <Link
                                         href={`/central/requests/${purchaseOrder.purchase_request.id}`}
-                                        className="inline-block truncate font-mono text-sm font-semibold text-primary underline-offset-4 hover:underline"
+                                        title={purchaseOrder.purchase_request.number}
+                                        className="block truncate font-mono text-xs font-semibold text-primary underline-offset-4 hover:underline"
                                     >
                                         {purchaseOrder.purchase_request.number}
                                     </Link>
                                 ) : (
-                                    <p className="truncate font-mono text-sm font-semibold text-foreground">
+                                    <p className="truncate font-mono text-xs font-semibold text-foreground">
                                         Data Terakumulasi
                                     </p>
                                 )}
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
 
-                    <Card className="border-border/70 shadow-xs">
-                        <CardContent className="flex items-start gap-3.5 p-4">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                <Calendar className="size-4.5" />
+                        <div className="flex items-center gap-3 p-3 sm:p-3.5">
+                            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                <Calendar className="size-4" />
                             </div>
-                            <div className="min-w-0 flex-1 space-y-0.5">
-                                <p className="text-xs font-medium text-muted-foreground">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-medium text-muted-foreground">
                                     Tanggal Order
                                 </p>
-                                <p className="font-serif text-sm font-bold text-foreground">
+                                <p className="text-xs font-semibold text-foreground">
                                     {formatDate(purchaseOrder.order_date)}
                                 </p>
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
 
-                    <Card className="border-border/70 shadow-xs">
-                        <CardContent className="flex items-start gap-3.5 p-4">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                                <Clock className="size-4.5" />
+                        <div className="flex items-center gap-3 p-3 sm:p-3.5">
+                            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                                <Clock className="size-4" />
                             </div>
-                            <div className="min-w-0 flex-1 space-y-0.5">
-                                <p className="text-xs font-medium text-muted-foreground">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[11px] font-medium text-muted-foreground">
                                     Target Tiba di Toko
                                 </p>
-                                <p className="font-serif text-sm font-bold text-foreground">
+                                <p className="text-xs font-semibold text-foreground">
                                     {purchaseOrder.expected_date
                                         ? formatDate(
                                               purchaseOrder.expected_date,
@@ -369,15 +371,15 @@ export default function OrderShow({
                                         : '—'}
                                 </p>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Catatan Internal Card */}
                 <Card className="border-border/70 shadow-xs">
-                    <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 px-5 py-3">
-                        <CardTitle className="flex items-center gap-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-                            <FileText className="size-4 text-primary" />
+                    <CardHeader className="flex flex-row items-center justify-between border-b border-border/50 px-4 py-2.5">
+                        <CardTitle className="flex items-center gap-1.5 text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                            <FileText className="size-3.5 text-primary" />
                             Catatan Internal
                         </CardTitle>
                         {canUpdate && (
@@ -385,7 +387,7 @@ export default function OrderShow({
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => setEditOpen(true)}
-                                className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground print:hidden"
+                                className="h-6 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground print:hidden"
                             >
                                 <Pencil className="size-3" />
                                 {purchaseOrder.notes
@@ -394,9 +396,9 @@ export default function OrderShow({
                             </Button>
                         )}
                     </CardHeader>
-                    <CardContent className="p-4">
+                    <CardContent className="p-3.5">
                         {purchaseOrder.notes ? (
-                            <p className="rounded-lg border border-border/50 bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-line text-foreground">
+                            <p className="rounded-lg border border-border/50 bg-muted/30 p-2.5 text-xs leading-relaxed whitespace-pre-line text-foreground">
                                 {purchaseOrder.notes}
                             </p>
                         ) : (
@@ -409,8 +411,8 @@ export default function OrderShow({
 
                 {/* Line Items Card */}
                 <Card className="border-border/70 shadow-xs">
-                    <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 px-5 py-3.5">
-                        <CardTitle className="font-serif text-base font-bold text-foreground">
+                    <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 px-4 py-3">
+                        <CardTitle className="text-sm font-semibold text-foreground">
                             Rincian Item & Penerimaan
                         </CardTitle>
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -444,19 +446,19 @@ export default function OrderShow({
                             <table className="w-full text-left text-sm">
                                 <thead>
                                     <tr className="border-b border-border/60 bg-muted/40 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                                        <th className="w-12 px-4 py-3 text-center">
+                                        <th className="w-10 px-3.5 py-2.5 text-center">
                                             #
                                         </th>
-                                        <th className="px-4 py-3">
+                                        <th className="px-3.5 py-2.5">
                                             Barang & Tipe
                                         </th>
-                                        <th className="px-4 py-3 text-right">
+                                        <th className="px-3.5 py-2.5 text-right">
                                             Dipesan
                                         </th>
-                                        <th className="px-4 py-3 text-right">
+                                        <th className="px-3.5 py-2.5 text-right">
                                             Diterima (Receipt)
                                         </th>
-                                        <th className="w-32 px-4 py-3 text-center">
+                                        <th className="w-28 px-3.5 py-2.5 text-center">
                                             Status
                                         </th>
                                     </tr>
@@ -465,7 +467,7 @@ export default function OrderShow({
                                     {purchaseOrder.items.map((item, index) => {
                                         const itemName =
                                             item.item_type === 'STOCK'
-                                                ? item.item?.name
+                                                 ? item.item?.name
                                                 : item.name;
 
                                         const itemReceived = (
@@ -503,12 +505,12 @@ export default function OrderShow({
                                                 key={item.id}
                                                 className="transition-colors hover:bg-muted/20"
                                             >
-                                                <td className="px-4 py-3 text-center font-mono text-xs text-muted-foreground">
+                                                <td className="px-3.5 py-2.5 text-center font-mono text-xs text-muted-foreground">
                                                     {index + 1}
                                                 </td>
-                                                <td className="px-4 py-3">
+                                                <td className="px-3.5 py-2.5">
                                                     <div className="flex flex-wrap items-center gap-2">
-                                                        <span className="font-serif font-bold text-foreground">
+                                                        <span className="text-xs font-medium text-foreground">
                                                             {itemName ??
                                                                 'Item Tanpa Nama'}
                                                         </span>
@@ -531,19 +533,19 @@ export default function OrderShow({
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
-                                                    <span className="font-mono text-sm font-semibold text-foreground">
+                                                <td className="px-3.5 py-2.5 text-right">
+                                                    <span className="font-mono text-xs font-semibold text-foreground">
                                                         {formatQuantity(
                                                             item.quantity,
                                                         )}{' '}
                                                     </span>
-                                                    <span className="text-xs text-muted-foreground">
+                                                    <span className="text-[11px] text-muted-foreground">
                                                         {item.unit.symbol}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-right">
+                                                <td className="px-3.5 py-2.5 text-right">
                                                     <span
-                                                        className={`font-mono text-sm font-semibold ${
+                                                        className={`font-mono text-xs font-semibold ${
                                                             itemReceived > 0
                                                                 ? 'text-emerald-600 dark:text-emerald-400'
                                                                 : 'text-muted-foreground'
@@ -553,29 +555,29 @@ export default function OrderShow({
                                                             itemReceived,
                                                         )}{' '}
                                                     </span>
-                                                    <span className="text-xs text-muted-foreground">
+                                                    <span className="text-[11px] text-muted-foreground">
                                                         {item.unit.symbol}
                                                     </span>
                                                 </td>
-                                                <td className="px-4 py-3 text-center">
+                                                <td className="px-3.5 py-2.5 text-center">
                                                     {isFullyReceived ? (
                                                         <Badge
                                                             variant="outline"
-                                                            className="border-emerald-500/30 bg-emerald-500/10 text-[11px] font-medium text-emerald-700 dark:text-emerald-300"
+                                                            className="border-emerald-500/30 bg-emerald-500/10 text-[10px] font-medium text-emerald-700 dark:text-emerald-300"
                                                         >
                                                             Lengkap
                                                         </Badge>
                                                     ) : isPartiallyReceived ? (
                                                         <Badge
                                                             variant="outline"
-                                                            className="border-amber-500/30 bg-amber-500/10 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+                                                            className="border-amber-500/30 bg-amber-500/10 text-[10px] font-medium text-amber-700 dark:text-amber-300"
                                                         >
                                                             Sebagian
                                                         </Badge>
                                                     ) : (
                                                         <Badge
                                                             variant="outline"
-                                                            className="border-border/70 text-[11px] font-normal text-muted-foreground"
+                                                            className="border-border/70 text-[10px] font-normal text-muted-foreground"
                                                         >
                                                             Belum Diterima
                                                         </Badge>
@@ -589,27 +591,27 @@ export default function OrderShow({
                                     <tr className="border-t-2 border-border/80 bg-muted/30 font-medium">
                                         <td
                                             colSpan={2}
-                                            className="px-4 py-3 text-right text-xs tracking-wider text-muted-foreground uppercase"
+                                            className="px-3.5 py-2.5 text-right text-xs tracking-wider text-muted-foreground uppercase"
                                         >
                                             Total:
                                         </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <span className="font-mono text-base font-bold text-foreground">
+                                        <td className="px-3.5 py-2.5 text-right">
+                                            <span className="font-mono text-sm font-bold text-foreground">
                                                 {formatQuantity(
                                                     totalQuantityCount,
                                                 )}
                                             </span>
-                                            <span className="ml-1 text-xs text-muted-foreground">
+                                            <span className="ml-1 text-[11px] text-muted-foreground">
                                                 Unit
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-right">
-                                            <span className="font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
+                                        <td className="px-3.5 py-2.5 text-right">
+                                            <span className="font-mono text-sm font-bold text-emerald-600 dark:text-emerald-400">
                                                 {formatQuantity(
                                                     totalReceivedQuantityCount,
                                                 )}
                                             </span>
-                                            <span className="ml-1 text-xs text-muted-foreground">
+                                            <span className="ml-1 text-[11px] text-muted-foreground">
                                                 Unit
                                             </span>
                                         </td>
@@ -625,8 +627,8 @@ export default function OrderShow({
                 {purchaseOrder.receipts &&
                     purchaseOrder.receipts.length > 0 && (
                         <Card className="border border-border/70 shadow-xs">
-                            <CardHeader className="border-b border-border/60 px-5 py-3.5">
-                                <CardTitle className="font-serif text-base font-bold text-foreground">
+                            <CardHeader className="border-b border-border/60 px-4 py-3">
+                                <CardTitle className="text-sm font-semibold text-foreground">
                                     Riwayat Penerimaan di Toko
                                 </CardTitle>
                             </CardHeader>
@@ -643,7 +645,7 @@ export default function OrderShow({
                                     return (
                                         <div
                                             key={receipt.id}
-                                            className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
+                                            className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-3.5"
                                         >
                                             <div className="space-y-1">
                                                 <div className="flex flex-wrap items-center gap-2">
