@@ -212,7 +212,10 @@ export default function IncomingShow({
                                 <p className="text-xs text-muted-foreground">
                                     Catatan Pusat
                                 </p>
-                                <p className="text-sm font-semibold text-foreground truncate max-w-[200px]" title={purchaseOrder.notes ?? undefined}>
+                                <p
+                                    className="max-w-[200px] truncate text-sm font-semibold text-foreground"
+                                    title={purchaseOrder.notes ?? undefined}
+                                >
                                     {purchaseOrder.notes || '—'}
                                 </p>
                             </div>
@@ -222,7 +225,7 @@ export default function IncomingShow({
 
                 {/* Store Allocations Card */}
                 <Card className="border-border/70 shadow-xs">
-                    <CardHeader className="border-b border-border/50 py-3.5 px-5">
+                    <CardHeader className="border-b border-border/50 px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
                             <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <Package className="size-3.5" />
@@ -254,8 +257,8 @@ export default function IncomingShow({
                                             </span>
                                         </div>
                                         <p className="mt-0.5 font-mono text-xs text-muted-foreground">
-                                            {line.sku ?? 'Non-SKU'} ·
-                                            Satuan: {line.unit.symbol}
+                                            {line.sku ?? 'Non-SKU'} · Satuan:{' '}
+                                            {line.unit.symbol}
                                         </p>
                                     </div>
 
@@ -300,9 +303,7 @@ export default function IncomingShow({
                                         }`}
                                     >
                                         <p className="text-[11px] font-semibold">
-                                            {isFulfilled
-                                                ? 'Selesai'
-                                                : 'Sisa'}
+                                            {isFulfilled ? 'Selesai' : 'Sisa'}
                                         </p>
                                         <p className="mt-0.5 font-mono text-sm font-bold tabular-nums">
                                             {formatQuantity(
@@ -320,7 +321,7 @@ export default function IncomingShow({
                 {/* Receiving Confirmation Form */}
                 {purchaseOrder.can_receive && (
                     <Card className="border-border/70 shadow-xs">
-                        <CardHeader className="border-b border-border/50 py-3.5 px-5">
+                        <CardHeader className="border-b border-border/50 px-5 py-3.5">
                             <div className="flex items-center gap-2.5">
                                 <div className="flex size-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                     <PackageCheck className="size-3.5" />
@@ -336,7 +337,8 @@ export default function IncomingShow({
                                 <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-700 dark:text-emerald-300">
                                     <CheckCircle2 className="size-5 shrink-0" />
                                     <p className="text-sm font-medium">
-                                        Semua alokasi barang untuk pesanan ini telah diterima lengkap.
+                                        Semua alokasi barang untuk pesanan ini
+                                        telah diterima lengkap.
                                     </p>
                                 </div>
                             ) : (
@@ -363,7 +365,7 @@ export default function IncomingShow({
                                                 required
                                             />
                                             {form.errors.received_at && (
-                                                <p className="text-xs text-destructive font-medium">
+                                                <p className="text-xs font-medium text-destructive">
                                                     {form.errors.received_at}
                                                 </p>
                                             )}
@@ -402,7 +404,8 @@ export default function IncomingShow({
                                                         {line.name}
                                                     </p>
                                                     <p className="mt-0.5 text-xs text-muted-foreground">
-                                                        {line.sku ?? 'Non-SKU'} · Sisa:{' '}
+                                                        {line.sku ?? 'Non-SKU'}{' '}
+                                                        · Sisa:{' '}
                                                         <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
                                                             {formatQuantity(
                                                                 line.outstanding_quantity,
@@ -498,11 +501,19 @@ export default function IncomingShow({
                                                             {line.unit.symbol}
                                                         </span>
                                                     </div>
-                                                    {(form.errors[`items.${index}.received_quantity`] ||
-                                                        form.errors[`items.${line.allocation_id}.received_quantity`]) && (
-                                                        <p className="text-xs text-destructive font-medium">
-                                                            {form.errors[`items.${index}.received_quantity`] ||
-                                                                form.errors[`items.${line.allocation_id}.received_quantity`]}
+                                                    {(form.errors[
+                                                        `items.${index}.received_quantity`
+                                                    ] ||
+                                                        form.errors[
+                                                            `items.${line.allocation_id}.received_quantity`
+                                                        ]) && (
+                                                        <p className="text-xs font-medium text-destructive">
+                                                            {form.errors[
+                                                                `items.${index}.received_quantity`
+                                                            ] ||
+                                                                form.errors[
+                                                                    `items.${line.allocation_id}.received_quantity`
+                                                                ]}
                                                         </p>
                                                     )}
                                                 </div>
@@ -515,11 +526,14 @@ export default function IncomingShow({
                                             <div className="flex items-center gap-2 font-semibold">
                                                 <AlertCircle className="size-4 shrink-0" />
                                                 <span>
-                                                    Gagal memproses konfirmasi penerimaan:
+                                                    Gagal memproses konfirmasi
+                                                    penerimaan:
                                                 </span>
                                             </div>
-                                            <ul className="list-disc pl-6 space-y-0.5">
-                                                {Object.entries(form.errors).map(([key, error]) => (
+                                            <ul className="list-disc space-y-0.5 pl-6">
+                                                {Object.entries(
+                                                    form.errors,
+                                                ).map(([key, error]) => (
                                                     <li key={key}>{error}</li>
                                                 ))}
                                             </ul>
@@ -545,7 +559,7 @@ export default function IncomingShow({
 
                 {/* Receiving Receipts History */}
                 <Card className="border-border/70 shadow-xs">
-                    <CardHeader className="border-b border-border/50 py-3.5 px-5">
+                    <CardHeader className="border-b border-border/50 px-5 py-3.5">
                         <div className="flex items-center gap-2.5">
                             <div className="flex size-7 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                                 <HistoryIcon className="size-3.5" />
@@ -575,7 +589,8 @@ export default function IncomingShow({
                                             {receipt.is_partial ? (
                                                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
                                                     <Clock className="size-3" />
-                                                    Penerimaan Sebagian (Parsial)
+                                                    Penerimaan Sebagian
+                                                    (Parsial)
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">

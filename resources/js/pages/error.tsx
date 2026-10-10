@@ -60,7 +60,7 @@ export default function ErrorPage({ status, message }: ErrorPageProps) {
             gradientTo: 'to-transparent',
             primaryAction: {
                 label: 'Masuk ke Portal',
-                href: login(),
+                href: login().url,
                 action: 'link',
                 icon: LogIn,
             },
@@ -81,7 +81,7 @@ export default function ErrorPage({ status, message }: ErrorPageProps) {
                 label: isAuthenticated
                     ? 'Kembali ke Dashboard'
                     : 'Masuk Akun Lain',
-                href: isAuthenticated ? dashboard() : login(),
+                href: isAuthenticated ? dashboard().url : login().url,
                 action: 'link',
                 icon: isAuthenticated ? Home : LogIn,
             },
@@ -102,7 +102,7 @@ export default function ErrorPage({ status, message }: ErrorPageProps) {
                 label: isAuthenticated
                     ? 'Ke Dashboard Saya'
                     : 'Kembali ke Beranda',
-                href: isAuthenticated ? dashboard() : home(),
+                href: isAuthenticated ? dashboard().url : home().url,
                 action: 'link',
                 icon: Home,
             },

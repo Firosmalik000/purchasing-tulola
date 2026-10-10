@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Central;
 
+use App\Actions\Stores\AssignUserToStore;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Central\StoreRequest;
 use App\Models\Store;
+use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Support\Paging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -35,19 +38,19 @@ class StoreController extends Controller
                         'requester:id,name,email',
                         'items' => fn ($iq) => $iq->select('id', 'purchase_request_id', 'name', 'requested_quantity'),
                     ])
-                    ->withCount('items')
-                    ->latest()
-                    ->take(30);
+                        ->withCount('items')
+                        ->latest()
+                        ->take(30);
                 },
             ])
             ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested
                 ->where('name', 'like', "%{$search}%")
                 ->orWhere('code', 'like', "%{$search}%")))
             ->latest()
-            ->paginate(\App\Support\Paging::perPage($request))
+            ->paginate(Paging::perPage($request))
             ->withQueryString();
 
-        $availableUsers = \App\Models\User::query()
+        $availableUsers = User::query()
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'role', 'is_active', 'invitation_token']);
 
@@ -58,7 +61,7 @@ class StoreController extends Controller
         ]);
     }
 
-    public function store(StoreRequest $request, ActivityLogger $logger, \App\Actions\Stores\AssignUserToStore $assignAction): RedirectResponse
+    public function store(StoreRequest $request, ActivityLogger $logger, AssignUserToStore $assignAction): RedirectResponse
     {
         $store = DB::transaction(function () use ($request, $logger, $assignAction): Store {
             $data = $request->validated();
@@ -71,7 +74,7 @@ class StoreController extends Controller
             $logger->log('store.created', $store, newValues: $store->only(['code', 'name', 'address', 'is_active']));
 
             if (! empty($data['pic_user_id'])) {
-                $user = \App\Models\User::find($data['pic_user_id']);
+                $user = User::find($data['pic_user_id']);
                 if ($user) {
                     $isPic = isset($data['is_pic']) ? (bool) $data['is_pic'] : true;
                     $assignAction->handle($store, $user, $isPic);

@@ -26,7 +26,11 @@ export function ThemeToggle() {
                         size="icon"
                         onClick={toggleTheme}
                         className="size-8.5 rounded-lg border border-border/60 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                        aria-label={isDark ? 'Beralih ke mode terang' : 'Beralih ke mode gelap'}
+                        aria-label={
+                            isDark
+                                ? 'Beralih ke mode terang'
+                                : 'Beralih ke mode gelap'
+                        }
                     >
                         {isDark ? (
                             <Sun className="size-4 text-amber-400 transition-transform hover:rotate-45" />

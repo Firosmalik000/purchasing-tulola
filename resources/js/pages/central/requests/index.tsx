@@ -1,10 +1,5 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import {
-    ClipboardList,
-    Eye,
-    MoreHorizontal,
-    Search,
-} from 'lucide-react';
+import { ClipboardList, Eye, MoreHorizontal, Search } from 'lucide-react';
 import { PageHeader } from '@/components/common/page-header';
 import {
     PaginationLinks,
@@ -177,7 +172,9 @@ export default function CentralRequestIndex({
                                         className="h-8.5 text-xs"
                                         asChild
                                     >
-                                        <Link href="/central/requests">Reset</Link>
+                                        <Link href="/central/requests">
+                                            Reset
+                                        </Link>
                                     </Button>
                                 )}
                             </div>

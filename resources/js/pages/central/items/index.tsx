@@ -23,10 +23,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
-    DialogDescription,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import {
     DropdownMenu,
@@ -56,7 +54,12 @@ type Item = {
     unit: Option;
 };
 type Props = {
-    items: { data: Item[]; links: PaginationLink[]; current_page?: number; per_page?: number };
+    items: {
+        data: Item[];
+        links: PaginationLink[];
+        current_page?: number;
+        per_page?: number;
+    };
     categories: Option[];
     units: Option[];
     filters: { search: string };
@@ -120,7 +123,7 @@ export default function ItemIndex({
 
                 {/* Main Full-Width Data Table Card */}
                 <Card className="border-border/70 shadow-2xs">
-                    <CardHeader className="border-b border-border/40 py-3 px-4">
+                    <CardHeader className="border-b border-border/40 px-4 py-3">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-2">
                                 <Boxes className="size-4 text-primary" />
@@ -131,13 +134,13 @@ export default function ItemIndex({
 
                             <Form action="/central/items" method="get">
                                 <div className="relative">
-                                    <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                                    <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         name="search"
                                         defaultValue={filters.search}
                                         placeholder="Cari SKU atau nama item..."
                                         aria-label="Cari item"
-                                        className="h-8 w-full pl-8 sm:w-64 text-xs"
+                                        className="h-8 w-full pl-8 text-xs sm:w-64"
                                     />
                                 </div>
                             </Form>
@@ -155,72 +158,119 @@ export default function ItemIndex({
                             </div>
                         ) : (
                             <div className="overflow-x-auto">
-                                <table className="w-full text-left border-collapse text-xs">
+                                <table className="w-full border-collapse text-left text-xs">
                                     <thead>
                                         <tr className="border-b border-border/60 bg-muted/30 font-medium text-muted-foreground">
-                                            <th className="py-2.5 px-3 w-12 text-center">#</th>
-                                            <th className="py-2.5 px-3">Kode SKU</th>
-                                            <th className="py-2.5 px-3">Nama Item / Perhiasan</th>
-                                            <th className="py-2.5 px-3">Kategori</th>
-                                            <th className="py-2.5 px-3">Satuan</th>
-                                            <th className="py-2.5 px-3 text-right">Harga Pokok Acuan</th>
-                                            <th className="py-2.5 px-3 text-right">Min. Stok</th>
-                                            <th className="py-2.5 px-3 text-center">Status</th>
-                                            <th className="py-2.5 px-3 w-16 text-center">Aksi</th>
+                                            <th className="w-12 px-3 py-2.5 text-center">
+                                                #
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Kode SKU
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Nama Item / Perhiasan
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Kategori
+                                            </th>
+                                            <th className="px-3 py-2.5">
+                                                Satuan
+                                            </th>
+                                            <th className="px-3 py-2.5 text-right">
+                                                Harga Pokok Acuan
+                                            </th>
+                                            <th className="px-3 py-2.5 text-right">
+                                                Min. Stok
+                                            </th>
+                                            <th className="px-3 py-2.5 text-center">
+                                                Status
+                                            </th>
+                                            <th className="w-16 px-3 py-2.5 text-center">
+                                                Aksi
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/40">
                                         {items.data.map((item, idx) => (
-                                            <tr key={item.id} className="hover:bg-muted/30 transition-colors">
-                                                <td className="py-2.5 px-3 text-center font-mono text-[11px] text-muted-foreground">
-                                                    {(currentPage - 1) * perPage + idx + 1}
+                                            <tr
+                                                key={item.id}
+                                                className="transition-colors hover:bg-muted/30"
+                                            >
+                                                <td className="px-3 py-2.5 text-center font-mono text-[11px] text-muted-foreground">
+                                                    {(currentPage - 1) *
+                                                        perPage +
+                                                        idx +
+                                                        1}
                                                 </td>
-                                                <td className="py-2.5 px-3 font-mono text-[11px] font-semibold text-primary">
+                                                <td className="px-3 py-2.5 font-mono text-[11px] font-semibold text-primary">
                                                     {item.sku}
                                                 </td>
-                                                <td className="py-2.5 px-3 font-semibold text-foreground">
+                                                <td className="px-3 py-2.5 font-semibold text-foreground">
                                                     {item.name}
                                                 </td>
-                                                <td className="py-2.5 px-3">
+                                                <td className="px-3 py-2.5">
                                                     <span className="rounded-md bg-muted px-2 py-0.5 text-[11px] font-medium text-foreground">
                                                         {item.category.name}
                                                     </span>
                                                 </td>
-                                                <td className="py-2.5 px-3 font-mono text-muted-foreground">
-                                                    {item.unit.symbol ?? item.unit.name}
+                                                <td className="px-3 py-2.5 font-mono text-muted-foreground">
+                                                    {item.unit.symbol ??
+                                                        item.unit.name}
                                                 </td>
-                                                <td className="py-2.5 px-3 text-right font-mono text-[11px] tabular-nums text-foreground">
-                                                    Rp {Number(item.cost_price || 0).toLocaleString('id-ID')}
+                                                <td className="px-3 py-2.5 text-right font-mono text-[11px] text-foreground tabular-nums">
+                                                    Rp{' '}
+                                                    {Number(
+                                                        item.cost_price || 0,
+                                                    ).toLocaleString('id-ID')}
                                                 </td>
-                                                <td className="py-2.5 px-3 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
-                                                    {Number(item.min_stock || 0).toLocaleString('id-ID')}
+                                                <td className="px-3 py-2.5 text-right font-mono text-[11px] text-muted-foreground tabular-nums">
+                                                    {Number(
+                                                        item.min_stock || 0,
+                                                    ).toLocaleString('id-ID')}
                                                 </td>
-                                                <td className="py-2.5 px-3 text-center">
+                                                <td className="px-3 py-2.5 text-center">
                                                     <Badge
-                                                        variant={item.is_active ? 'default' : 'secondary'}
+                                                        variant={
+                                                            item.is_active
+                                                                ? 'default'
+                                                                : 'secondary'
+                                                        }
                                                         className="text-[10px]"
                                                     >
-                                                        {item.is_active ? 'Aktif' : 'Nonaktif'}
+                                                        {item.is_active
+                                                            ? 'Aktif'
+                                                            : 'Nonaktif'}
                                                     </Badge>
                                                 </td>
-                                                <td className="py-2.5 px-3 text-center">
+                                                <td className="px-3 py-2.5 text-center">
                                                     <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
+                                                        <DropdownMenuTrigger
+                                                            asChild
+                                                        >
                                                             <Button
                                                                 variant="ghost"
                                                                 size="icon"
                                                                 className="size-7 text-muted-foreground hover:text-foreground"
                                                             >
                                                                 <MoreHorizontal className="size-4" />
-                                                                <span className="sr-only">Aksi</span>
+                                                                <span className="sr-only">
+                                                                    Aksi
+                                                                </span>
                                                             </Button>
                                                         </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="w-36 text-xs">
+                                                        <DropdownMenuContent
+                                                            align="end"
+                                                            className="w-36 text-xs"
+                                                        >
                                                             <DropdownMenuLabel className="text-[10px] text-muted-foreground">
                                                                 Pilihan
                                                             </DropdownMenuLabel>
                                                             <DropdownMenuItem
-                                                                onClick={() => setEditingItem(item)}
+                                                                onClick={() =>
+                                                                    setEditingItem(
+                                                                        item,
+                                                                    )
+                                                                }
                                                                 className="cursor-pointer"
                                                             >
                                                                 <Pencil className="mr-2 size-3.5" />
@@ -259,7 +309,9 @@ export default function ItemIndex({
                             {({ errors, processing }) => (
                                 <>
                                     <div className="space-y-1">
-                                        <Label className="text-xs font-medium">Kode SKU *</Label>
+                                        <Label className="text-xs font-medium">
+                                            Kode SKU *
+                                        </Label>
                                         <Input
                                             name="sku"
                                             className="h-8.5 font-mono text-xs"
@@ -270,7 +322,9 @@ export default function ItemIndex({
                                     </div>
 
                                     <div className="space-y-1">
-                                        <Label className="text-xs font-medium">Nama Item / Material *</Label>
+                                        <Label className="text-xs font-medium">
+                                            Nama Item / Material *
+                                        </Label>
                                         <Input
                                             name="name"
                                             className="h-8.5 text-xs"
@@ -280,45 +334,67 @@ export default function ItemIndex({
                                         <InputError message={errors.name} />
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Kategori *</Label>
+                                            <Label className="text-xs font-medium">
+                                                Kategori *
+                                            </Label>
                                             <select
                                                 name="item_category_id"
                                                 className="form-select-custom h-8.5 w-full text-xs"
                                                 required
                                             >
-                                                <option value="">Pilih Kategori</option>
+                                                <option value="">
+                                                    Pilih Kategori
+                                                </option>
                                                 {activeCategories.map((c) => (
-                                                    <option key={c.id} value={c.id}>
+                                                    <option
+                                                        key={c.id}
+                                                        value={c.id}
+                                                    >
                                                         {c.name}
                                                     </option>
                                                 ))}
                                             </select>
-                                            <InputError message={errors.item_category_id} />
+                                            <InputError
+                                                message={
+                                                    errors.item_category_id
+                                                }
+                                            />
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Satuan Standar *</Label>
+                                            <Label className="text-xs font-medium">
+                                                Satuan Standar *
+                                            </Label>
                                             <select
                                                 name="unit_id"
                                                 className="form-select-custom h-8.5 w-full text-xs"
                                                 required
                                             >
-                                                <option value="">Pilih Satuan</option>
+                                                <option value="">
+                                                    Pilih Satuan
+                                                </option>
                                                 {activeUnits.map((u) => (
-                                                    <option key={u.id} value={u.id}>
+                                                    <option
+                                                        key={u.id}
+                                                        value={u.id}
+                                                    >
                                                         {u.name} ({u.symbol})
                                                     </option>
                                                 ))}
                                             </select>
-                                            <InputError message={errors.unit_id} />
+                                            <InputError
+                                                message={errors.unit_id}
+                                            />
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Harga Pokok Acuan (Rp)</Label>
+                                            <Label className="text-xs font-medium">
+                                                Harga Pokok Acuan (Rp)
+                                            </Label>
                                             <Input
                                                 name="cost_price"
                                                 type="number"
@@ -327,11 +403,15 @@ export default function ItemIndex({
                                                 placeholder="0"
                                                 className="h-8.5 font-mono text-xs"
                                             />
-                                            <InputError message={errors.cost_price} />
+                                            <InputError
+                                                message={errors.cost_price}
+                                            />
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Standar Min. Stok Global</Label>
+                                            <Label className="text-xs font-medium">
+                                                Standar Min. Stok Global
+                                            </Label>
                                             <Input
                                                 name="min_stock"
                                                 type="number"
@@ -340,13 +420,23 @@ export default function ItemIndex({
                                                 placeholder="0"
                                                 className="h-8.5 font-mono text-xs"
                                             />
-                                            <InputError message={errors.min_stock} />
+                                            <InputError
+                                                message={errors.min_stock}
+                                            />
                                         </div>
                                     </div>
 
                                     <label className="flex items-center gap-2 pt-1 text-xs">
-                                        <input type="hidden" name="is_active" value="0" />
-                                        <Checkbox name="is_active" value="1" defaultChecked />
+                                        <input
+                                            type="hidden"
+                                            name="is_active"
+                                            value="0"
+                                        />
+                                        <Checkbox
+                                            name="is_active"
+                                            value="1"
+                                            defaultChecked
+                                        />
                                         <span>Item Langsung Aktif</span>
                                     </label>
 
@@ -356,7 +446,9 @@ export default function ItemIndex({
                                             variant="outline"
                                             size="sm"
                                             className="h-8 text-xs"
-                                            onClick={() => setCreateItemOpen(false)}
+                                            onClick={() =>
+                                                setCreateItemOpen(false)
+                                            }
                                         >
                                             Batal
                                         </Button>
@@ -377,7 +469,10 @@ export default function ItemIndex({
 
                 {/* Dialog: Edit Item */}
                 {editingItem && (
-                    <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
+                    <Dialog
+                        open={!!editingItem}
+                        onOpenChange={(open) => !open && setEditingItem(null)}
+                    >
                         <DialogContent className="sm:max-w-md">
                             <DialogHeader>
                                 <DialogTitle className="text-base font-semibold">
@@ -393,7 +488,9 @@ export default function ItemIndex({
                                 {({ errors, processing }) => (
                                     <>
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Kode SKU *</Label>
+                                            <Label className="text-xs font-medium">
+                                                Kode SKU *
+                                            </Label>
                                             <Input
                                                 name="sku"
                                                 defaultValue={editingItem.sku}
@@ -404,7 +501,9 @@ export default function ItemIndex({
                                         </div>
 
                                         <div className="space-y-1">
-                                            <Label className="text-xs font-medium">Nama Item *</Label>
+                                            <Label className="text-xs font-medium">
+                                                Nama Item *
+                                            </Label>
                                             <Input
                                                 name="name"
                                                 defaultValue={editingItem.name}
@@ -414,74 +513,121 @@ export default function ItemIndex({
                                             <InputError message={errors.name} />
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Kategori *</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Kategori *
+                                                </Label>
                                                 <select
                                                     name="item_category_id"
-                                                    defaultValue={editingItem.category.id}
+                                                    defaultValue={
+                                                        editingItem.category.id
+                                                    }
                                                     className="form-select-custom h-8.5 w-full text-xs"
                                                 >
                                                     {categories.map((c) => (
-                                                        <option key={c.id} value={c.id}>
+                                                        <option
+                                                            key={c.id}
+                                                            value={c.id}
+                                                        >
                                                             {c.name}
                                                         </option>
                                                     ))}
                                                 </select>
-                                                <InputError message={errors.item_category_id} />
+                                                <InputError
+                                                    message={
+                                                        errors.item_category_id
+                                                    }
+                                                />
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Satuan *</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Satuan *
+                                                </Label>
                                                 <select
                                                     name="unit_id"
-                                                    defaultValue={editingItem.unit.id}
+                                                    defaultValue={
+                                                        editingItem.unit.id
+                                                    }
                                                     className="form-select-custom h-8.5 w-full text-xs"
                                                 >
                                                     {units.map((u) => (
-                                                        <option key={u.id} value={u.id}>
-                                                            {u.name} ({u.symbol})
+                                                        <option
+                                                            key={u.id}
+                                                            value={u.id}
+                                                        >
+                                                            {u.name} ({u.symbol}
+                                                            )
                                                         </option>
                                                     ))}
                                                 </select>
-                                                <InputError message={errors.unit_id} />
+                                                <InputError
+                                                    message={errors.unit_id}
+                                                />
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Harga Pokok Acuan (Rp)</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Harga Pokok Acuan (Rp)
+                                                </Label>
                                                 <Input
                                                     name="cost_price"
                                                     type="number"
                                                     min="0"
                                                     step="1"
-                                                    defaultValue={editingItem.cost_price ? Number(editingItem.cost_price) : 0}
+                                                    defaultValue={
+                                                        editingItem.cost_price
+                                                            ? Number(
+                                                                  editingItem.cost_price,
+                                                              )
+                                                            : 0
+                                                    }
                                                     className="h-8.5 font-mono text-xs"
                                                 />
-                                                <InputError message={errors.cost_price} />
+                                                <InputError
+                                                    message={errors.cost_price}
+                                                />
                                             </div>
 
                                             <div className="space-y-1">
-                                                <Label className="text-xs font-medium">Standar Min. Stok Global</Label>
+                                                <Label className="text-xs font-medium">
+                                                    Standar Min. Stok Global
+                                                </Label>
                                                 <Input
                                                     name="min_stock"
                                                     type="number"
                                                     min="0"
                                                     step="1"
-                                                    defaultValue={editingItem.min_stock ? Number(editingItem.min_stock) : 0}
+                                                    defaultValue={
+                                                        editingItem.min_stock
+                                                            ? Number(
+                                                                  editingItem.min_stock,
+                                                              )
+                                                            : 0
+                                                    }
                                                     className="h-8.5 font-mono text-xs"
                                                 />
-                                                <InputError message={errors.min_stock} />
+                                                <InputError
+                                                    message={errors.min_stock}
+                                                />
                                             </div>
                                         </div>
 
                                         <label className="flex items-center gap-2 pt-1 text-xs">
-                                            <input type="hidden" name="is_active" value="0" />
+                                            <input
+                                                type="hidden"
+                                                name="is_active"
+                                                value="0"
+                                            />
                                             <Checkbox
                                                 name="is_active"
                                                 value="1"
-                                                defaultChecked={editingItem.is_active}
+                                                defaultChecked={
+                                                    editingItem.is_active
+                                                }
                                             />
                                             <span>Item Aktif Digunakan</span>
                                         </label>
@@ -492,7 +638,9 @@ export default function ItemIndex({
                                                 variant="outline"
                                                 size="sm"
                                                 className="h-8 text-xs"
-                                                onClick={() => setEditingItem(null)}
+                                                onClick={() =>
+                                                    setEditingItem(null)
+                                                }
                                             >
                                                 Batal
                                             </Button>
@@ -513,7 +661,10 @@ export default function ItemIndex({
                 )}
 
                 {/* Dialog: Category Manager */}
-                <Dialog open={createCategoryOpen} onOpenChange={setCreateCategoryOpen}>
+                <Dialog
+                    open={createCategoryOpen}
+                    onOpenChange={setCreateCategoryOpen}
+                >
                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle className="text-base font-semibold">
@@ -529,8 +680,10 @@ export default function ItemIndex({
                             >
                                 {({ processing }) => (
                                     <>
-                                        <p className="text-xs font-semibold">Tambah Kategori Baru</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <p className="text-xs font-semibold">
+                                            Tambah Kategori Baru
+                                        </p>
+                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                             <Input
                                                 name="name"
                                                 placeholder="Nama Kategori *"
@@ -543,21 +696,37 @@ export default function ItemIndex({
                                                 className="h-8 text-xs"
                                             />
                                         </div>
-                                        <Button size="sm" className="h-7.5 w-full text-xs" disabled={processing}>
+                                        <Button
+                                            size="sm"
+                                            className="h-7.5 w-full text-xs"
+                                            disabled={processing}
+                                        >
                                             Simpan Kategori
                                         </Button>
                                     </>
                                 )}
                             </Form>
 
-                            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                            <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
                                 <Label className="text-xs font-semibold text-muted-foreground uppercase">
                                     Daftar Kategori Saat Ini:
                                 </Label>
                                 {categories.map((c) => (
-                                    <div key={c.id} className="flex items-center justify-between rounded-md border border-border/40 p-2 text-xs">
-                                        <span className="font-medium text-foreground">{c.name} {c.code && `(${c.code})`}</span>
-                                        <Badge variant={c.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                                    <div
+                                        key={c.id}
+                                        className="flex items-center justify-between rounded-md border border-border/40 p-2 text-xs"
+                                    >
+                                        <span className="font-medium text-foreground">
+                                            {c.name} {c.code && `(${c.code})`}
+                                        </span>
+                                        <Badge
+                                            variant={
+                                                c.is_active
+                                                    ? 'default'
+                                                    : 'secondary'
+                                            }
+                                            className="text-[10px]"
+                                        >
                                             {c.is_active ? 'Aktif' : 'Nonaktif'}
                                         </Badge>
                                     </div>
@@ -584,8 +753,10 @@ export default function ItemIndex({
                             >
                                 {({ processing }) => (
                                     <>
-                                        <p className="text-xs font-semibold">Tambah Satuan Baru</p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <p className="text-xs font-semibold">
+                                            Tambah Satuan Baru
+                                        </p>
+                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                             <Input
                                                 name="name"
                                                 placeholder="Nama Satuan *"
@@ -599,21 +770,37 @@ export default function ItemIndex({
                                                 className="h-8 text-xs"
                                             />
                                         </div>
-                                        <Button size="sm" className="h-7.5 w-full text-xs" disabled={processing}>
+                                        <Button
+                                            size="sm"
+                                            className="h-7.5 w-full text-xs"
+                                            disabled={processing}
+                                        >
                                             Simpan Satuan
                                         </Button>
                                     </>
                                 )}
                             </Form>
 
-                            <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                            <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
                                 <Label className="text-xs font-semibold text-muted-foreground uppercase">
                                     Daftar Satuan Saat Ini:
                                 </Label>
                                 {units.map((u) => (
-                                    <div key={u.id} className="flex items-center justify-between rounded-md border border-border/40 p-2 text-xs">
-                                        <span className="font-medium text-foreground">{u.name} ({u.symbol})</span>
-                                        <Badge variant={u.is_active ? 'default' : 'secondary'} className="text-[10px]">
+                                    <div
+                                        key={u.id}
+                                        className="flex items-center justify-between rounded-md border border-border/40 p-2 text-xs"
+                                    >
+                                        <span className="font-medium text-foreground">
+                                            {u.name} ({u.symbol})
+                                        </span>
+                                        <Badge
+                                            variant={
+                                                u.is_active
+                                                    ? 'default'
+                                                    : 'secondary'
+                                            }
+                                            className="text-[10px]"
+                                        >
                                             {u.is_active ? 'Aktif' : 'Nonaktif'}
                                         </Badge>
                                     </div>

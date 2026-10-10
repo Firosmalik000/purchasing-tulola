@@ -8,6 +8,7 @@ use App\Http\Requests\Central\ItemRequest;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\Unit;
+use App\Support\Paging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -24,7 +25,7 @@ class ItemController extends Controller
         return Inertia::render('central/items/index', [
             'items' => Item::query()->with(['category:id,name', 'unit:id,name,symbol'])
                 ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('sku', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
-                ->orderBy('name')->paginate(\App\Support\Paging::perPage($request))->withQueryString(),
+                ->orderBy('name')->paginate(Paging::perPage($request))->withQueryString(),
             'categories' => ItemCategory::query()->orderBy('name')->get(),
             'units' => Unit::query()->orderBy('name')->get(),
             'filters' => ['search' => $search],

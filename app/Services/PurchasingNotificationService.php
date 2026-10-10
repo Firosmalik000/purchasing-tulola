@@ -223,6 +223,7 @@ class PurchasingNotificationService
                             'store_id' => $store->id,
                             'order_id' => $order->id,
                         ]);
+
                         continue;
                     }
                 }

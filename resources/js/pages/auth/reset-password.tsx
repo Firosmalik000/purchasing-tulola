@@ -36,7 +36,10 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                 {({ processing, errors }) => (
                     <div className="space-y-2.5">
                         <div className="space-y-1">
-                            <Label htmlFor="email" className="text-[11px] font-medium">
+                            <Label
+                                htmlFor="email"
+                                className="text-[11px] font-medium"
+                            >
                                 Alamat Email Terdaftar
                             </Label>
                             <Input
@@ -46,13 +49,16 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 autoComplete="email"
                                 value={email}
                                 readOnly
-                                className="h-8.5 text-xs bg-muted/50 text-muted-foreground cursor-not-allowed"
+                                className="h-8.5 cursor-not-allowed bg-muted/50 text-xs text-muted-foreground"
                             />
                             <InputError message={errors.email} />
                         </div>
 
                         <div className="space-y-1">
-                            <Label htmlFor="password" className="text-[11px] font-medium">
+                            <Label
+                                htmlFor="password"
+                                className="text-[11px] font-medium"
+                            >
                                 Kata Sandi Baru *
                             </Label>
                             <PasswordInput
@@ -69,7 +75,10 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                         </div>
 
                         <div className="space-y-1">
-                            <Label htmlFor="password_confirmation" className="text-[11px] font-medium">
+                            <Label
+                                htmlFor="password_confirmation"
+                                className="text-[11px] font-medium"
+                            >
                                 Konfirmasi Kata Sandi Baru *
                             </Label>
                             <PasswordInput
@@ -81,17 +90,21 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                                 passwordrules={passwordRules}
                                 className="h-8.5 text-xs"
                             />
-                            <InputError message={errors.password_confirmation} />
+                            <InputError
+                                message={errors.password_confirmation}
+                            />
                         </div>
 
                         <div className="flex items-center gap-1.5 pt-0.5 text-[10px] text-muted-foreground">
-                            <ShieldCheck className="size-3 text-blue-600 dark:text-blue-400 shrink-0" />
-                            <span>Minimal 8 karakter kombinasi huruf & angka.</span>
+                            <ShieldCheck className="size-3 shrink-0 text-blue-600 dark:text-blue-400" />
+                            <span>
+                                Minimal 8 karakter kombinasi huruf & angka.
+                            </span>
                         </div>
 
                         <Button
                             type="submit"
-                            className="w-full h-9 font-medium text-xs shadow-xs gap-1.5 mt-1"
+                            className="mt-1 h-9 w-full gap-1.5 text-xs font-medium shadow-xs"
                             disabled={processing}
                             data-test="reset-password-button"
                         >

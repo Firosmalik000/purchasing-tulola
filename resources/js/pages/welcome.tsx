@@ -109,7 +109,9 @@ export default function Welcome() {
                                 className="bg-teal-600 text-sm font-semibold text-white shadow-xs hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
                             >
                                 <Link href={auth.user ? dashboard() : login()}>
-                                    {auth.user ? 'Buka Dashboard' : 'Masuk Portal'}
+                                    {auth.user
+                                        ? 'Buka Dashboard'
+                                        : 'Masuk Portal'}
                                     <ArrowRight className="ml-1.5 size-4" />
                                 </Link>
                             </Button>
@@ -128,25 +130,33 @@ export default function Welcome() {
                             </div>
 
                             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl lg:leading-tight dark:text-white">
-                                Kebutuhan toko cabang dan pusat, tertata rapi tanpa ribet.
+                                Kebutuhan toko cabang dan pusat, tertata rapi
+                                tanpa ribet.
                             </h1>
 
                             <p className="max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">
-                                Aplikasi internal Shop Tulola untuk mengajukan perlengkapan toko cabang, persetujuan kantor pusat, hingga barang datang dan stok terdata otomatis.
+                                Aplikasi internal Shop Tulola untuk mengajukan
+                                perlengkapan toko cabang, persetujuan kantor
+                                pusat, hingga barang datang dan stok terdata
+                                otomatis.
                             </p>
 
                             <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center">
                                 <Button
                                     asChild
                                     size="lg"
-                                    className="h-11 px-6 text-sm font-semibold bg-teal-600 text-white shadow-xs hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
+                                    className="h-11 bg-teal-600 px-6 text-sm font-semibold text-white shadow-xs hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
                                 >
-                                    <Link href={auth.user ? dashboard() : login()}>
-                                        {auth.user ? 'Lanjut ke Dashboard' : 'Masuk ke Akun Anda'}
+                                    <Link
+                                        href={auth.user ? dashboard() : login()}
+                                    >
+                                        {auth.user
+                                            ? 'Lanjut ke Dashboard'
+                                            : 'Masuk ke Akun Anda'}
                                         <ArrowRight className="ml-2 size-4" />
                                     </Link>
                                 </Button>
-                                <span className="text-xs text-slate-500 dark:text-slate-400 sm:pl-2">
+                                <span className="text-xs text-slate-500 sm:pl-2 dark:text-slate-400">
                                     Khusus staf toko cabang & tim kantor pusat
                                 </span>
                             </div>
@@ -161,7 +171,8 @@ export default function Welcome() {
                                         </span>
                                     </div>
                                     <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                        Ajukan barang operasional langsung saat stok menipis.
+                                        Ajukan barang operasional langsung saat
+                                        stok menipis.
                                     </p>
                                 </div>
 
@@ -173,7 +184,8 @@ export default function Welcome() {
                                         </span>
                                     </div>
                                     <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                        Review permintaan toko dan jadwalkan pengiriman.
+                                        Review permintaan toko dan jadwalkan
+                                        pengiriman.
                                     </p>
                                 </div>
 
@@ -185,7 +197,8 @@ export default function Welcome() {
                                         </span>
                                     </div>
                                     <p className="mt-1 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                                        Stok terupdate otomatis begitu barang diterima toko.
+                                        Stok terupdate otomatis begitu barang
+                                        diterima toko.
                                     </p>
                                 </div>
                             </div>
@@ -203,7 +216,7 @@ export default function Welcome() {
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
 
-                                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
+                                    <div className="absolute right-3 bottom-3 left-3 flex items-center justify-between text-white">
                                         <div className="flex items-center gap-2">
                                             <ShoppingBag className="size-4 text-teal-300" />
                                             <span className="text-xs font-medium">
@@ -219,7 +232,9 @@ export default function Welcome() {
                                 <div className="mt-2.5 flex items-center justify-between px-2 py-1 text-xs text-slate-500 dark:text-slate-400">
                                     <div className="flex items-center gap-1.5">
                                         <CheckCircle2 className="size-3.5 text-teal-600 dark:text-teal-400" />
-                                        <span>Terhubung Toko Pusat & Semua Cabang</span>
+                                        <span>
+                                            Terhubung Toko Pusat & Semua Cabang
+                                        </span>
                                     </div>
                                     <span className="font-mono text-[11px] text-slate-400">
                                         Internal App
@@ -231,15 +246,16 @@ export default function Welcome() {
 
                     {/* Alur Sederhana (4 Langkah) */}
                     <section className="mt-16 sm:mt-20">
-                        <div className="mx-auto max-w-lg text-center mb-8">
+                        <div className="mx-auto mb-8 max-w-lg text-center">
                             <span className="text-xs font-bold tracking-wider text-teal-700 uppercase dark:text-teal-400">
                                 Alur Mudah
                             </span>
                             <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
                                 Cara kerja pengadaan barang
                             </h2>
-                            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                                Dari toko cabang butuh barang sampai barang sampai dan masuk catatan stok.
+                            <p className="mt-1.5 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
+                                Dari toko cabang butuh barang sampai barang
+                                sampai dan masuk catatan stok.
                             </p>
                         </div>
 
@@ -275,7 +291,7 @@ export default function Welcome() {
 
                     {/* Kategori Barang Toko */}
                     <section className="mt-14 rounded-2xl border border-slate-200 bg-white p-6 shadow-xs sm:p-8 dark:border-slate-800 dark:bg-slate-900/60">
-                        <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
+                        <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                             <div>
                                 <span className="text-xs font-bold tracking-wider text-teal-700 uppercase dark:text-teal-400">
                                     Katalog Barang
@@ -284,8 +300,9 @@ export default function Welcome() {
                                     Barang yang rutin dikelola
                                 </h3>
                             </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 sm:max-w-xs">
-                                Perlengkapan standar operasional toko cabang agar aktivitas jualan tetap lancar setiap hari.
+                            <p className="text-xs text-slate-500 sm:max-w-xs dark:text-slate-400">
+                                Perlengkapan standar operasional toko cabang
+                                agar aktivitas jualan tetap lancar setiap hari.
                             </p>
                         </div>
 
@@ -315,17 +332,22 @@ export default function Welcome() {
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                                 Mau cek stok atau ajukan kebutuhan toko?
                             </h3>
-                            <p className="mt-1.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                                Silakan login dengan akun toko cabang atau kantor pusat Shop Tulola Anda.
+                            <p className="mt-1.5 text-xs text-slate-500 sm:text-sm dark:text-slate-400">
+                                Silakan login dengan akun toko cabang atau
+                                kantor pusat Shop Tulola Anda.
                             </p>
                             <div className="mt-4.5">
                                 <Button
                                     asChild
                                     size="lg"
-                                    className="h-10 px-6 font-semibold bg-teal-600 text-white hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
+                                    className="h-10 bg-teal-600 px-6 font-semibold text-white hover:bg-teal-700 dark:bg-teal-500 dark:hover:bg-teal-600"
                                 >
-                                    <Link href={auth.user ? dashboard() : login()}>
-                                        {auth.user ? 'Buka Dashboard' : 'Masuk ke Portal'}
+                                    <Link
+                                        href={auth.user ? dashboard() : login()}
+                                    >
+                                        {auth.user
+                                            ? 'Buka Dashboard'
+                                            : 'Masuk ke Portal'}
                                         <ArrowRight className="ml-2 size-4" />
                                     </Link>
                                 </Button>
@@ -337,10 +359,12 @@ export default function Welcome() {
                 {/* Footer Santai */}
                 <footer className="mt-14 border-t border-slate-200 py-6 text-center text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
                     <p>
-                        &copy; {new Date().getFullYear()} Shop Tulola. Pengadaan Toko Pusat & Cabang.
+                        &copy; {new Date().getFullYear()} Shop Tulola. Pengadaan
+                        Toko Pusat & Cabang.
                     </p>
                     <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
-                        Aplikasi internal operasional tim toko cabang & kantor pusat.
+                        Aplikasi internal operasional tim toko cabang & kantor
+                        pusat.
                     </p>
                 </footer>
             </div>

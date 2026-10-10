@@ -11,7 +11,7 @@ use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
-use App\Models\Receipt;
+use App\Models\StockMovement;
 use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\Unit;
@@ -47,14 +47,21 @@ class InternalPurchasingWorkflowTest extends TestCase
             'store_id' => $store->id, 'item_id' => $item->id, 'quantity' => 1,
             'average_unit_cost' => 100, 'total_value' => 100,
         ]);
-        $request = PurchaseRequest::factory()->submitted()->create([
-            'number' => 'REQ/FLOW/2026/10/0001', 'store_id' => $store->id, 'requested_by' => $pic->id,
-        ]);
-        $line = $request->items()->create([
-            'type' => PurchaseRequestItemType::STOCK, 'item_id' => $item->id, 'unit_id' => $unit->id,
-            'current_stock_snapshot' => 1, 'requested_quantity' => 2,
-        ]);
+        // 1. PIC Toko membuat dan mengajukan request (Purchase Request)
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'required_date' => now()->addWeek()->toDateString(),
+            'notes' => 'Permintaan kebutuhan toko dari PIC.',
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 2]],
+            'action' => 'submit',
+        ])->assertSessionHasNoErrors();
 
+        $request = PurchaseRequest::query()->whereBelongsTo($store)->firstOrFail();
+        $this->assertSame(PurchaseRequestStatus::SUBMITTED, $request->status);
+        $this->assertSame($pic->id, $request->requested_by);
+        $line = $request->items()->firstOrFail();
+
+        // 2. Central Admin menyetujui (Approve) request
         $this->actingAs($admin)->post(route('central.requests.process', $request), [
             'items' => [$line->id => ['id' => $line->id, 'approved_quantity' => '2']],
             'notes' => 'Disetujui untuk kebutuhan toko.',
@@ -65,105 +72,75 @@ class InternalPurchasingWorkflowTest extends TestCase
         $this->assertSame(PurchaseRequestStatus::PROCESSED, $request->fresh()->status);
         $this->assertSame(PurchaseOrderStatus::DRAFT, $order->status);
 
+        // When order is placed, central stock is NOT deducted yet (goods in transit)
         $this->actingAs($admin)->post(route('central.orders.place', $order))
             ->assertSessionHasNoErrors();
 
         $this->assertSame(PurchaseOrderStatus::ORDERED, $order->fresh()->status);
         $this->assertSame(PurchaseRequestStatus::PROCESSED, $request->fresh()->status);
+        $this->assertDatabaseHas('store_stocks', [
+            'store_id' => $centralStore->id, 'item_id' => $item->id,
+            'quantity' => 10,
+        ]);
 
-        // Verify Central Stock decreased
+        // Penerimaan Parsial 1: Toko menerima 1 unit (dari 2 unit)
+        $this->actingAs($pic)->post(route('store.incoming.receipts.store', $order), [
+            'store_id' => $store->id,
+            'received_at' => now()->subMinutes(5)->format('Y-m-d H:i:s'),
+            'notes' => 'Penerimaan bertahap 1 unit.',
+            'items' => [[
+                'allocation_id' => $allocation->id,
+                'received_quantity' => '1',
+            ]],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(PurchaseOrderStatus::PARTIALLY_RECEIVED, $order->fresh()->status);
+
+        // Stok Pusat berkurang 1 unit (10 - 1 = 9)
+        $this->assertDatabaseHas('store_stocks', [
+            'store_id' => $centralStore->id, 'item_id' => $item->id,
+            'quantity' => 9, 'average_unit_cost' => 100, 'total_value' => 900,
+        ]);
+        // Stok Cabang bertambah 1 unit (1 + 1 = 2)
+        $this->assertDatabaseHas('store_stocks', [
+            'store_id' => $store->id, 'item_id' => $item->id,
+            'quantity' => 2, 'average_unit_cost' => 100, 'total_value' => 200,
+        ]);
+
+        // Penerimaan Parsial 2: Toko menerima sisa 1 unit
+        $this->actingAs($pic)->post(route('store.incoming.receipts.store', $order), [
+            'store_id' => $store->id,
+            'received_at' => now()->subMinute()->format('Y-m-d H:i:s'),
+            'notes' => 'Penerimaan sisa 1 unit lengkap.',
+            'items' => [[
+                'allocation_id' => $allocation->id,
+                'received_quantity' => '1',
+            ]],
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame(PurchaseOrderStatus::COMPLETED, $order->fresh()->status);
+
+        // Stok Pusat berkurang 1 unit lagi (9 - 1 = 8)
         $this->assertDatabaseHas('store_stocks', [
             'store_id' => $centralStore->id, 'item_id' => $item->id,
             'quantity' => 8, 'average_unit_cost' => 100, 'total_value' => 800,
         ]);
-        $this->assertDatabaseHas('stock_movements', [
-            'store_id' => $centralStore->id, 'item_id' => $item->id,
-            'movement_type' => StockMovementType::DISTRIBUTION_OUT->value,
-            'quantity_difference' => -2, 'movement_value' => -200, 'new_value' => 800,
-            'reference_type' => $order->getMorphClass(), 'reference_id' => $order->id,
-        ]);
-
-        $this->actingAs($pic)->post(route('store.incoming.receipts.store', $order), [
-            'store_id' => $store->id,
-            'received_at' => now()->subMinute()->format('Y-m-d H:i:s'),
-            'notes' => 'Barang diterima lengkap.',
-            'items' => [[
-                'allocation_id' => $allocation->id,
-                'received_quantity' => '2',
-            ]],
-        ])->assertSessionHasNoErrors();
-
-        $receipt = Receipt::query()->whereBelongsTo($order)->firstOrFail();
-        $this->assertNotNull($receipt->stock_applied_at);
-        $this->assertSame($pic->id, $receipt->stock_applied_by);
-        $this->assertSame(PurchaseOrderStatus::COMPLETED, $order->fresh()->status);
-        $this->assertSame(PurchaseRequestStatus::PROCESSED, $request->fresh()->status);
-        $this->assertDatabaseMissing('purchase_request_status_histories', [
-            'purchase_request_id' => $request->id,
-            'to_status' => 'ORDERED',
-        ]);
-        $this->assertDatabaseMissing('purchase_request_status_histories', [
-            'purchase_request_id' => $request->id,
-            'to_status' => 'COMPLETED',
-        ]);
-
-        // Verify Store Stock increased
+        // Stok Cabang bertambah 1 unit lagi (2 + 1 = 3)
         $this->assertDatabaseHas('store_stocks', [
             'store_id' => $store->id, 'item_id' => $item->id,
             'quantity' => 3, 'average_unit_cost' => 100, 'total_value' => 300,
         ]);
-        $this->assertDatabaseHas('stock_movements', [
-            'store_id' => $store->id, 'item_id' => $item->id,
-            'movement_type' => StockMovementType::ORDER_RECEIVED->value,
-            'quantity_difference' => 2, 'movement_value' => 200, 'new_value' => 300,
-            'reference_type' => $receipt->getMorphClass(), 'reference_id' => $receipt->id,
-        ]);
-    }
 
-    public function test_placing_order_fails_when_central_stock_is_insufficient(): void
-    {
-        Mail::fake();
-        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta']);
-        $store = Store::factory()->create(['code' => 'BRANCH']);
-        $admin = User::factory()->create(['role' => UserRole::CENTRAL_ADMIN]);
-        $pic = User::factory()->create(['role' => UserRole::STORE_PIC]);
-        $unit = Unit::create(['name' => 'Piece', 'symbol' => 'pcs', 'is_active' => true]);
-        $category = ItemCategory::create(['name' => 'Operasional', 'code' => 'OPS', 'is_active' => true]);
-        $item = Item::create([
-            'sku' => 'OPS-LOW-001', 'name' => 'Item Stok Kurang',
-            'item_category_id' => $category->id, 'unit_id' => $unit->id, 'is_active' => true,
-        ]);
-        // Central only has 1 pc
-        StoreStock::create([
-            'store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 1,
-            'average_unit_cost' => 100, 'total_value' => 100,
-        ]);
-        $request = PurchaseRequest::factory()->submitted()->create([
-            'number' => 'REQ/BRANCH/2026/10/0002', 'store_id' => $store->id, 'requested_by' => $pic->id,
-        ]);
-        $line = $request->items()->create([
-            'type' => PurchaseRequestItemType::STOCK, 'item_id' => $item->id, 'unit_id' => $unit->id,
-            'current_stock_snapshot' => 0, 'requested_quantity' => 5,
-        ]);
-
-        $this->actingAs($admin)->post(route('central.requests.process', $request), [
-            'items' => [$line->id => ['id' => $line->id, 'approved_quantity' => '5']],
-        ])->assertSessionHasNoErrors();
-
-        $order = PurchaseOrder::query()->whereBelongsTo($request)->firstOrFail();
-
-        // Placing order must fail due to insufficient Central stock (needs 5, available 1)
-        $this->actingAs($admin)->post(route('central.orders.place', $order))
-            ->assertSessionHasErrors('stock');
-
-        // Order remains in DRAFT
-        $this->assertSame(PurchaseOrderStatus::DRAFT, $order->fresh()->status);
-
-        // Central stock remains 1
-        $this->assertDatabaseHas('store_stocks', [
-            'store_id' => $centralStore->id, 'item_id' => $item->id,
-            'quantity' => 1,
-        ]);
+        // Mutasi Pusat tercatat 2 kali dengan tipe DISTRIBUTION_OUT
+        $this->assertDatabaseCount('stock_movements', 4); // 2 at Store (ORDER_RECEIVED), 2 at Central (DISTRIBUTION_OUT)
+        $this->assertSame(2, StockMovement::query()
+            ->where('store_id', $centralStore->id)
+            ->where('movement_type', StockMovementType::DISTRIBUTION_OUT)
+            ->count());
+        $this->assertSame(2, StockMovement::query()
+            ->where('store_id', $store->id)
+            ->where('movement_type', StockMovementType::ORDER_RECEIVED)
+            ->count());
     }
 
     public function test_cancelling_draft_order_does_not_change_approved_request(): void

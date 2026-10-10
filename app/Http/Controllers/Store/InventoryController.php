@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Models\Item;
+use App\Support\Paging;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,7 +20,7 @@ class InventoryController extends Controller
         return Inertia::render('store/inventory/index', [
             'stores' => $stores,
             'selectedStoreId' => $storeId,
-            'items' => Item::query()->where('is_active', true)->with(['unit:id,symbol', 'stocks' => fn ($query) => $query->where('store_id', $storeId), 'stockStandards' => fn ($query) => $query->where('store_id', $storeId)])->orderBy('name')->paginate(\App\Support\Paging::perPage($request))->withQueryString(),
+            'items' => Item::query()->where('is_active', true)->with(['unit:id,symbol', 'stocks' => fn ($query) => $query->where('store_id', $storeId), 'stockStandards' => fn ($query) => $query->where('store_id', $storeId)])->orderBy('name')->paginate(Paging::perPage($request))->withQueryString(),
         ]);
     }
 }

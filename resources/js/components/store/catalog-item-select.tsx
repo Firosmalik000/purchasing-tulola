@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Package, Search, X } from 'lucide-react';
+import { Check, ChevronDown, Search, X } from 'lucide-react';
 import {
     type KeyboardEvent,
     useEffect,
@@ -15,8 +15,8 @@ export type CatalogCategory = {
 };
 
 export type CatalogUnit = {
-    id: number;
-    name: string;
+    id?: number;
+    name?: string;
     symbol: string;
 };
 
@@ -248,7 +248,12 @@ export function CatalogItemSelect({
     return (
         <div ref={containerRef} className={cn('relative w-full', className)}>
             {/* Hidden input for form submission */}
-            <input type="hidden" name={name} value={value} required={required} />
+            <input
+                type="hidden"
+                name={name}
+                value={value}
+                required={required}
+            />
 
             {/* Trigger Button */}
             <button
@@ -262,7 +267,7 @@ export function CatalogItemSelect({
                     error
                         ? 'border-destructive'
                         : 'border-input hover:border-muted-foreground/40 hover:bg-muted/10',
-                    disabled && 'cursor-not-allowed opacity-50 bg-muted/40',
+                    disabled && 'cursor-not-allowed bg-muted/40 opacity-50',
                 )}
                 aria-haspopup="listbox"
                 aria-expanded={isOpen}
@@ -291,7 +296,9 @@ export function CatalogItemSelect({
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
                                     e.preventDefault();
-                                    handleClear(e as unknown as React.MouseEvent);
+                                    handleClear(
+                                        e as unknown as React.MouseEvent,
+                                    );
                                 }
                             }}
                             className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -313,15 +320,15 @@ export function CatalogItemSelect({
             {isOpen && (
                 <div
                     className={cn(
-                        'absolute left-0 top-full z-50 mt-1 flex w-full flex-col overflow-hidden rounded-md border border-border/80 bg-popover text-popover-foreground shadow-lg backdrop-blur-md',
-                        'min-w-[260px] max-w-[calc(100vw-2rem)] sm:min-w-[360px] sm:max-w-[500px]',
+                        'absolute top-full left-0 z-50 mt-1 flex w-full flex-col overflow-hidden rounded-md border border-border/80 bg-popover text-popover-foreground shadow-lg backdrop-blur-md',
+                        'max-w-[calc(100vw-2rem)] min-w-[260px] sm:max-w-[500px] sm:min-w-[360px]',
                         'animate-in fade-in-0 zoom-in-95',
                     )}
                 >
                     {/* Filter Input */}
                     <div className="border-b border-border/50 bg-muted/20 p-2">
                         <div className="relative">
-                            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                             <input
                                 ref={searchInputRef}
                                 type="text"
@@ -329,13 +336,13 @@ export function CatalogItemSelect({
                                 onChange={(e) => setSearch(e.target.value)}
                                 onKeyDown={handleInputKeyDown}
                                 placeholder="Cari nama barang atau SKU..."
-                                className="h-8 w-full rounded border border-input bg-background pl-8 pr-7 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/40"
+                                className="h-8 w-full rounded border border-input bg-background pr-7 pl-8 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/40 focus:outline-none"
                             />
                             {search && (
                                 <button
                                     type="button"
                                     onClick={() => setSearch('')}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                    className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                 >
                                     <X className="size-3" />
                                 </button>
@@ -344,7 +351,7 @@ export function CatalogItemSelect({
 
                         {/* Category Tabs */}
                         {categories.length > 1 && (
-                            <div className="mt-1.5 flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none text-[11px]">
+                            <div className="mt-1.5 flex scrollbar-none items-center gap-1 overflow-x-auto pb-0.5 text-[11px]">
                                 <button
                                     type="button"
                                     onClick={() => setActiveCategory('ALL')}
@@ -395,7 +402,7 @@ export function CatalogItemSelect({
                             groupedItems.map((group) => (
                                 <div key={group.categoryId} className="py-0.5">
                                     {/* Category Header */}
-                                    <div className="sticky top-0 z-10 bg-popover/95 px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider backdrop-blur-xs">
+                                    <div className="sticky top-0 z-10 bg-popover/95 px-2 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase backdrop-blur-xs">
                                         {group.categoryName}
                                     </div>
 
@@ -407,14 +414,17 @@ export function CatalogItemSelect({
                                                     (fi) => fi.id === item.id,
                                                 );
                                             const isSelected =
-                                                String(item.id) === String(value);
+                                                String(item.id) ===
+                                                String(value);
                                             const isHighlighted =
                                                 flatIndex === highlightedIndex;
 
                                             return (
                                                 <div
                                                     key={item.id}
-                                                    data-option-index={flatIndex}
+                                                    data-option-index={
+                                                        flatIndex
+                                                    }
                                                     onClick={() =>
                                                         handleSelect(item)
                                                     }
@@ -426,7 +436,7 @@ export function CatalogItemSelect({
                                                     className={cn(
                                                         'flex cursor-pointer items-center justify-between gap-2 rounded px-2.5 py-1.5 transition-colors',
                                                         isSelected
-                                                            ? 'bg-primary/10 text-primary font-medium'
+                                                            ? 'bg-primary/10 font-medium text-primary'
                                                             : isHighlighted
                                                               ? 'bg-muted text-foreground'
                                                               : 'text-foreground hover:bg-muted/60',

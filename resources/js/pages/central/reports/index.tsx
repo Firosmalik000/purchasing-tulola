@@ -393,7 +393,7 @@ export default function ReportIndex({
                                         <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                                             Otorisasi & Pengesahan
                                         </p>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                                             {Object.entries(
                                                 report.signatures,
                                             ).map(([label, name]) => (

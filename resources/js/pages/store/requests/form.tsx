@@ -24,7 +24,6 @@ import { Label } from '@/components/ui/label';
 
 type Store = { id: number; code: string; name: string };
 type Unit = { id: number; name: string; symbol: string };
-type Category = { id: number; name: string; code?: string | null };
 type Item = CatalogItem;
 type RequestItem = {
     id: number;
@@ -109,7 +108,9 @@ export default function RequestForm({
                 })) ?? [],
     );
 
-    const [submitAction, setSubmitAction] = useState<'draft' | 'submit'>('draft');
+    const [submitAction, setSubmitAction] = useState<'draft' | 'submit'>(
+        'draft',
+    );
 
     const action = purchaseRequest
         ? `/store/requests/${purchaseRequest.id}`

@@ -54,7 +54,7 @@ export function DashboardPeriodFilter({
                 onChange={(e) =>
                     handleChange(Number(e.target.value), selectedYear)
                 }
-                className="h-6 cursor-pointer rounded border-0 bg-transparent px-1 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                className="h-6 cursor-pointer rounded border-0 bg-transparent px-1 text-xs font-semibold text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
             >
                 {MONTH_NAMES.map((m) => (
                     <option
@@ -66,7 +66,7 @@ export function DashboardPeriodFilter({
                     </option>
                 ))}
             </select>
-            <span className="text-muted-foreground/40 text-xs font-light">
+            <span className="text-xs font-light text-muted-foreground/40">
                 /
             </span>
             <select
@@ -75,7 +75,7 @@ export function DashboardPeriodFilter({
                 onChange={(e) =>
                     handleChange(selectedMonth, Number(e.target.value))
                 }
-                className="h-6 cursor-pointer rounded border-0 bg-transparent px-1 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                className="h-6 cursor-pointer rounded border-0 bg-transparent px-1 text-xs font-semibold text-foreground focus:ring-1 focus:ring-ring focus:outline-none"
             >
                 {availableYears.map((y) => (
                     <option

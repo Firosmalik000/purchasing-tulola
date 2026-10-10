@@ -94,7 +94,7 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                                 >
                                     {({ errors, processing }) => (
                                         <>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                 <div className="space-y-1">
                                                     <Label className="text-xs font-medium">
                                                         Kode Rekanan *
@@ -126,7 +126,7 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                                                 />
                                             </div>
 
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                                 <div className="space-y-1">
                                                     <Label className="text-xs font-medium">
                                                         Kontak PIC
@@ -421,7 +421,7 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                             >
                                 {({ errors, processing }) => (
                                     <>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                             <div className="space-y-1">
                                                 <Label className="text-xs font-medium">
                                                     Kode Rekanan *
@@ -455,7 +455,7 @@ export default function SupplierIndex({ suppliers, filters }: Props) {
                                             <InputError message={errors.name} />
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                             <div className="space-y-1">
                                                 <Label className="text-xs font-medium">
                                                     Kontak PIC

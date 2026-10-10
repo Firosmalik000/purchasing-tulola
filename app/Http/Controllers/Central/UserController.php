@@ -9,15 +9,19 @@ use App\Http\Requests\Central\UpdateUserRequest;
 use App\Models\Store;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use App\Services\PurchasingNotificationService;
+use App\Support\Paging;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class UserController extends Controller
 {
-    public function index(\Illuminate\Http\Request $request): Response
+    public function index(Request $request): Response
     {
         Gate::authorize('manage-users');
 
@@ -25,14 +29,14 @@ class UserController extends Controller
             'users' => User::query()
                 ->with(['stores' => fn ($query) => $query->where('store_user.is_active', true)])
                 ->orderBy('name')
-                ->paginate(\App\Support\Paging::perPage($request))
+                ->paginate(Paging::perPage($request))
                 ->withQueryString(),
             'stores' => Store::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'roles' => collect(UserRole::cases())->map(fn (UserRole $role) => ['value' => $role->value, 'label' => $role->label()]),
         ]);
     }
 
-    public function store(CreateUserRequest $request, ActivityLogger $logger, \App\Services\PurchasingNotificationService $notifications): RedirectResponse
+    public function store(CreateUserRequest $request, ActivityLogger $logger, PurchasingNotificationService $notifications): RedirectResponse
     {
         $shouldInvite = $request->has('send_invitation')
             ? $request->boolean('send_invitation')
@@ -46,11 +50,11 @@ class UserController extends Controller
                 $data['is_active'] = $request->boolean('is_active', true);
                 $data['email_verified_at'] = now();
             } else {
-                $data['password'] = \Illuminate\Support\Str::random(32);
+                $data['password'] = Str::random(32);
             }
 
             if ($shouldInvite) {
-                $data['invitation_token'] = \Illuminate\Support\Str::random(40);
+                $data['invitation_token'] = Str::random(40);
                 $data['invitation_sent_at'] = now();
                 $data['is_active'] = false; // Status menunggu aktivasi / undangan
             }
@@ -73,19 +77,20 @@ class UserController extends Controller
 
         if ($shouldInvite) {
             $notifications->sendUserInvitation($user);
+
             return back()->with('success', "Undangan berhasil dikirim ke {$user->email}. Status akun: Menunggu Aktivasi.");
         }
 
         return back()->with('success', "Pengguna {$user->name} berhasil dibuat.");
     }
 
-    public function resendInvitation(User $user, \App\Services\PurchasingNotificationService $notifications): RedirectResponse
+    public function resendInvitation(User $user, PurchasingNotificationService $notifications): RedirectResponse
     {
         Gate::authorize('manage-users');
 
         if (! $user->invitation_token) {
             $user->update([
-                'invitation_token' => \Illuminate\Support\Str::random(40),
+                'invitation_token' => Str::random(40),
                 'invitation_sent_at' => now(),
                 'is_active' => false,
             ]);

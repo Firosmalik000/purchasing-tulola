@@ -159,7 +159,7 @@ export function TopRequestedItemsCard({
                                 </svg>
                                 {/* Donut Center Metric */}
                                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-                                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                                    <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
                                         Total
                                     </span>
                                     <span className="text-sm font-bold text-foreground tabular-nums">
@@ -179,7 +179,7 @@ export function TopRequestedItemsCard({
                                     key={`${item.item_id}-${item.name}-${idx}`}
                                     className="flex items-center justify-between p-2.5 text-xs transition-colors hover:bg-muted/30"
                                 >
-                                    <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                    <div className="flex min-w-0 items-center gap-2.5 pr-2">
                                         <span
                                             className={`flex size-5 shrink-0 items-center justify-center rounded-sm font-mono text-[10px] font-bold ${item.color.badge}`}
                                         >
@@ -187,30 +187,32 @@ export function TopRequestedItemsCard({
                                         </span>
                                         <div className="min-w-0">
                                             <p
-                                                className="truncate font-medium text-foreground text-xs"
+                                                className="truncate text-xs font-medium text-foreground"
                                                 title={item.name}
                                             >
                                                 {item.name}
                                             </p>
-                                            <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground truncate">
+                                            <div className="flex items-center gap-1.5 truncate text-[10px] text-muted-foreground">
                                                 <span className="font-mono">
                                                     {item.sku}
                                                 </span>
-                                                {item.category && item.category !== 'Lainnya' && (
-                                                    <>
-                                                        <span>•</span>
-                                                        <span className="truncate">
-                                                            {item.category}
-                                                        </span>
-                                                    </>
-                                                )}
+                                                {item.category &&
+                                                    item.category !==
+                                                        'Lainnya' && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="truncate">
+                                                                {item.category}
+                                                            </span>
+                                                        </>
+                                                    )}
                                             </div>
                                         </div>
                                     </div>
                                     <div className="shrink-0 text-right">
                                         <div className="flex items-center justify-end gap-1.5 font-semibold text-foreground tabular-nums">
                                             <span
-                                                className="size-2 rounded-full shrink-0"
+                                                className="size-2 shrink-0 rounded-full"
                                                 style={{
                                                     backgroundColor:
                                                         item.color.stroke,

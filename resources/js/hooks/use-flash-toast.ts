@@ -10,7 +10,11 @@ export function useFlashToast(): void {
         return router.on('navigate', (event) => {
             const page = (event as CustomEvent).detail?.page;
             const flash = page?.props?.flash as
-                | { toast?: FlashToast; success?: string | null; error?: string | null }
+                | {
+                      toast?: FlashToast;
+                      success?: string | null;
+                      error?: string | null;
+                  }
                 | undefined;
 
             if (!flash) return;

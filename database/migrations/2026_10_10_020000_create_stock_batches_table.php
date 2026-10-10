@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\StockBatch;
-use App\Models\StockMovement;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Carbon;
@@ -36,6 +35,7 @@ return new class extends Migration
             // Group by store, movement_type, reason, created_by, and created_at timestamp
             $grouped = $unreferenced->groupBy(function ($row) {
                 $time = Carbon::parse($row->created_at)->format('Y-m-d H:i:s');
+
                 return "{$row->store_id}_{$row->movement_type}_{$row->reason}_{$row->created_by}_{$time}";
             });
 

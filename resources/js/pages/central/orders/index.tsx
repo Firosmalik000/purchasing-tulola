@@ -135,7 +135,9 @@ export default function OrderIndex({ orders, statuses, filters }: Props) {
                                         className="h-8.5 text-xs"
                                         asChild
                                     >
-                                        <Link href="/central/orders">Reset</Link>
+                                        <Link href="/central/orders">
+                                            Reset
+                                        </Link>
                                     </Button>
                                 )}
                             </div>

@@ -127,12 +127,10 @@ export default function StoreInventory({
                                     ) : (
                                         items.data.map((item, index) => {
                                             const stock =
-                                                item.stocks[0]?.quantity ??
-                                                '0';
+                                                item.stocks[0]?.quantity ?? '0';
                                             const standard =
                                                 item.stock_standards[0]
-                                                    ?.standard_quantity ??
-                                                '0';
+                                                    ?.standard_quantity ?? '0';
                                             const suggested = Math.max(
                                                 Number(standard) -
                                                     Number(stock),

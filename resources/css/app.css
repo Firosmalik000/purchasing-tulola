@@ -9,9 +9,9 @@
 
 @theme {
     --font-sans:
-        'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+        Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -146,5 +146,5 @@
 
 /* Custom utility for clean select inputs */
 .form-select-custom {
-    @apply h-8.5 w-full rounded-md border border-input bg-card px-2.5 py-1 text-xs text-foreground shadow-2xs transition-colors focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply h-8.5 w-full rounded-md border border-input bg-card px-2.5 py-1 text-xs text-foreground shadow-2xs transition-colors focus:border-ring focus:ring-1 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50;
 }

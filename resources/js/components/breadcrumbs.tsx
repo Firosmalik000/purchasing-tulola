@@ -25,20 +25,25 @@ export function Breadcrumbs({
 
                             return (
                                 <Fragment key={index}>
-                                    <BreadcrumbItem className="min-w-0 max-w-[120px] truncate sm:max-w-[200px] md:max-w-none">
+                                    <BreadcrumbItem className="max-w-[120px] min-w-0 truncate sm:max-w-[200px] md:max-w-none">
                                         {isLast ? (
                                             <BreadcrumbPage className="truncate">
                                                 {item.title}
                                             </BreadcrumbPage>
                                         ) : (
-                                            <BreadcrumbLink asChild className="truncate">
+                                            <BreadcrumbLink
+                                                asChild
+                                                className="truncate"
+                                            >
                                                 <Link href={item.href}>
                                                     {item.title}
                                                 </Link>
                                             </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>
-                                    {!isLast && <BreadcrumbSeparator className="shrink-0" />}
+                                    {!isLast && (
+                                        <BreadcrumbSeparator className="shrink-0" />
+                                    )}
                                 </Fragment>
                             );
                         })}

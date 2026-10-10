@@ -695,7 +695,7 @@ export default function StoreIndex({
                                     )}
 
                                     {/* Tab Navigation: PIC & Staf vs Riwayat Permintaan (PR) */}
-                                    <div className="flex overflow-x-auto whitespace-nowrap border-b border-border/80 text-xs scrollbar-none">
+                                    <div className="flex scrollbar-none overflow-x-auto border-b border-border/80 text-xs whitespace-nowrap">
                                         <button
                                             type="button"
                                             onClick={() => setDetailTab('pic')}
@@ -1377,11 +1377,9 @@ export default function StoreIndex({
                                                                                                                 item.name
                                                                                                             }{' '}
                                                                                                             (
-                                                                                                            {
-                                                                                                                formatQuantity(
-                                                                                                                    item.requested_quantity,
-                                                                                                                )
-                                                                                                            }
+                                                                                                            {formatQuantity(
+                                                                                                                item.requested_quantity,
+                                                                                                            )}
                                                                                                             )
                                                                                                         </span>
                                                                                                     ),

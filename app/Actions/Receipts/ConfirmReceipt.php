@@ -70,11 +70,16 @@ class ConfirmReceipt
             }
 
             $receipt->update(['stock_applied_at' => now(), 'stock_applied_by' => $actor->id]);
+
+            $centralStore = Store::centralStore();
+            $isCentralDistribution = $centralStore && $store->id !== $centralStore->id;
+
             $selected->filter(fn (PurchaseOrderRequestItem $allocation) => $allocation->purchaseOrderItem->item_type === PurchaseRequestItemType::STOCK)
                 ->groupBy(fn (PurchaseOrderRequestItem $allocation): int => $allocation->purchaseOrderItem->item->id)
-                ->each(function (Collection $allocations) use ($receipt, $store, $actor, $receivedQuantities): void {
+                ->each(function (Collection $allocations) use ($receipt, $store, $actor, $receivedQuantities, $centralStore, $isCentralDistribution): void {
                     $first = $allocations->first();
                     $quantity = $allocations->sum(fn (PurchaseOrderRequestItem $allocation) => $receivedQuantities[$allocation->id]);
+
                     $this->stocks->handle(
                         $store,
                         $first->purchaseOrderItem->item,
@@ -86,6 +91,21 @@ class ConfirmReceipt
                         reference: $receipt,
                         actor: $actor,
                     );
+
+                    if ($isCentralDistribution && $quantity > 0) {
+                        $this->stocks->handle(
+                            $centralStore,
+                            $first->purchaseOrderItem->item,
+                            (string) $quantity,
+                            StockMovementType::DISTRIBUTION_OUT,
+                            "Distribusi ke {$store->name} ({$receipt->number})",
+                            $receipt->notes,
+                            increment: false,
+                            reference: $receipt,
+                            actor: $actor,
+                            decrement: true,
+                        );
+                    }
                 });
 
             $this->synchronizeOrderStatus($purchaseOrder, $allAllocations);

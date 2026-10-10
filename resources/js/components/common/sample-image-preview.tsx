@@ -26,7 +26,7 @@ export function SampleImagePreview({
             <DialogTrigger asChild>
                 <button
                     type="button"
-                    className={`group relative block size-28 shrink-0 overflow-hidden rounded-lg border border-border/70 bg-muted/30 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${className}`}
+                    className={`group relative block size-28 shrink-0 overflow-hidden rounded-lg border border-border/70 bg-muted/30 text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none ${className}`}
                     aria-label={`Lihat preview foto sampel ${itemName}`}
                 >
                     <img

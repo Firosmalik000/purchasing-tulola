@@ -34,11 +34,18 @@ export default function ConfirmPassword() {
                     separator="Atau konfirmasi dengan kata sandi"
                 />
 
-                <Form {...store.form()} resetOnSuccess={['password']} className="space-y-3">
+                <Form
+                    {...store.form()}
+                    resetOnSuccess={['password']}
+                    className="space-y-3"
+                >
                     {({ processing, errors }) => (
                         <div className="space-y-3">
                             <div className="space-y-1">
-                                <Label htmlFor="password" className="text-[11px] font-medium">
+                                <Label
+                                    htmlFor="password"
+                                    className="text-[11px] font-medium"
+                                >
                                     Kata Sandi Anda
                                 </Label>
                                 <PasswordInput
@@ -55,7 +62,7 @@ export default function ConfirmPassword() {
 
                             <Button
                                 type="submit"
-                                className="w-full h-9 font-medium text-xs shadow-xs gap-1.5 mt-1"
+                                className="mt-1 h-9 w-full gap-1.5 text-xs font-medium shadow-xs"
                                 disabled={processing}
                                 data-test="confirm-password-button"
                             >

@@ -6,6 +6,7 @@ use App\Actions\MasterData\SaveMasterData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Central\SupplierRequest;
 use App\Models\Supplier;
+use App\Support\Paging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -23,7 +24,7 @@ class SupplierController extends Controller
             'suppliers' => Supplier::query()
                 ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('code', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
                 ->orderBy('name')
-                ->paginate(\App\Support\Paging::perPage($request))
+                ->paginate(Paging::perPage($request))
                 ->withQueryString(),
             'filters' => ['search' => $search],
         ]);

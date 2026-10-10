@@ -1,23 +1,23 @@
-import { Form, Head, usePage } from "@inertiajs/react";
+import { Form, Head, usePage } from '@inertiajs/react';
 import {
     ArrowRight,
     CheckCircle2,
     LogIn,
     Mail,
     ShieldAlert,
-} from "lucide-react";
-import InputError from "@/components/input-error";
-import PasskeyVerify from "@/components/passkey-verify";
-import PasswordInput from "@/components/password-input";
-import TextLink from "@/components/text-link";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
-import AuthLayout from "@/layouts/auth-layout";
-import { store } from "@/routes/login";
-import { request } from "@/routes/password";
+} from 'lucide-react';
+import InputError from '@/components/input-error';
+import PasskeyVerify from '@/components/passkey-verify';
+import PasswordInput from '@/components/password-input';
+import TextLink from '@/components/text-link';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import AuthLayout from '@/layouts/auth-layout';
+import { store } from '@/routes/login';
+import { request } from '@/routes/password';
 
 type Props = {
     status?: string;
@@ -63,7 +63,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
             <Form
                 {...store.form()}
-                resetOnSuccess={["password"]}
+                resetOnSuccess={['password']}
                 className="space-y-3"
             >
                 {({ processing, errors }) => (

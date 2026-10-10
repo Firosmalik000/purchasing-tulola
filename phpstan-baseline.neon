@@ -1,0 +1,241 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \!\=\= between int\|non\-empty\-string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Actions/Inventory/BulkAddStoreStock.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Actions/Inventory/BulkAddStoreStock.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int\<0, max\> and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Actions/Inventory/UpdateStoreStock.php
+
+		-
+			message: '#^Binary operation "\-" between string and int results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Actions/Receipts/ConfirmReceipt.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$category_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Central/CentralDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$item_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Central/CentralDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$request_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Central/CentralDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Central/CentralDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$total_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Central/CentralDashboardController.php
+
+		-
+			message: '#^Cannot cast App\\Enums\\StockMovementType to string\.$#'
+			identifier: cast.string
+			count: 1
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\StockMovement\>\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Parameter \#1 \$items of class Illuminate\\Pagination\\LengthAwarePaginator constructor contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Parameter \#2 \$data of method App\\Actions\\Inventory\\BulkAddStoreStock\:\:handle\(\) expects array\{store_id\: int, movement_type\: string, reason\: string, notes\?\: string\|null, supplier_id\?\: int\|null, items\: array\<int, array\{item_id\: int, quantity\: int\|string, unit_cost\?\: int\|string\|null\}\>\}, array\<string, mixed\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<\(int\|string\),Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\StockMovement\>\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<\(int\|string\),array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Support\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>symbol" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Central/InventoryController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Central/PurchaseOrderController.php
+
+		-
+			message: '#^Parameter \#2 \$user of method App\\Actions\\Stores\\AssignUserToStore\:\:handle\(\) expects App\\Models\\User, App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Central/StoreController.php
+
+		-
+			message: '#^Binary operation "\-" between string and int results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Binary operation "\-" between string and string results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\PurchaseOrderRequestItem\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\PurchaseOrderItem\>\:\:flatMap\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Database\\Eloquent\\Collection\<int,array\<string, mixed\>\>\:\:contains\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\PurchaseOrderRequestItem\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,App\\Models\\PurchaseOrderItem\>\:\:flatMap\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>symbol" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Store/IncomingOrderController.php
+
+		-
+			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Store/PurchaseRequestController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$category_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Store/StoreDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$item_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Store/StoreDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$request_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Store/StoreDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Store/StoreDashboardController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$total_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Store/StoreDashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$array \(array\<int, mixed\>\) to function array_filter does not contain falsy values, the array will always stay the same\.$#'
+			identifier: arrayFilter.same
+			count: 1
+			path: app/Services/PurchasingNotificationService.php
+
+		-
+			message: '#^Parameter \#1 \$sql of method Illuminate\\Database\\Query\\Builder\:\:whereRaw\(\) expects Illuminate\\Contracts\\Database\\Query\\Expression\|literal\-string, non\-falsy\-string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: database/migrations/2026_10_09_010000_convert_quantities_and_money_to_integers.php

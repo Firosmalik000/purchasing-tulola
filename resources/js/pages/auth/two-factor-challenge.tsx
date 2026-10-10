@@ -28,7 +28,11 @@ export default function TwoFactorChallenge() {
 
     return (
         <AuthLayout
-            title={showRecoveryInput ? 'Kode Pemulihan Darurat' : 'Verifikasi Dua Faktor (2FA)'}
+            title={
+                showRecoveryInput
+                    ? 'Kode Pemulihan Darurat'
+                    : 'Verifikasi Dua Faktor (2FA)'
+            }
             description={
                 showRecoveryInput
                     ? 'Masukkan salah satu kode pemulihan darurat akun Anda'
@@ -59,7 +63,9 @@ export default function TwoFactorChallenge() {
                                         required
                                         className="h-9 text-center font-mono text-xs tracking-wider"
                                     />
-                                    <InputError message={errors.recovery_code} />
+                                    <InputError
+                                        message={errors.recovery_code}
+                                    />
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center space-y-2">
@@ -74,13 +80,16 @@ export default function TwoFactorChallenge() {
                                             autoFocus
                                         >
                                             <InputOTPGroup className="gap-1.5">
-                                                {Array.from({ length: OTP_MAX_LENGTH }, (_, index) => (
-                                                    <InputOTPSlot
-                                                        key={index}
-                                                        index={index}
-                                                        className="size-9 sm:size-9.5 text-sm font-bold rounded-md border border-border shadow-2xs"
-                                                    />
-                                                ))}
+                                                {Array.from(
+                                                    { length: OTP_MAX_LENGTH },
+                                                    (_, index) => (
+                                                        <InputOTPSlot
+                                                            key={index}
+                                                            index={index}
+                                                            className="size-9 rounded-md border border-border text-sm font-bold shadow-2xs sm:size-9.5"
+                                                        />
+                                                    ),
+                                                )}
                                             </InputOTPGroup>
                                         </InputOTP>
                                     </div>
@@ -90,7 +99,7 @@ export default function TwoFactorChallenge() {
 
                             <Button
                                 type="submit"
-                                className="w-full h-9 font-medium text-xs shadow-xs gap-1.5 mt-1"
+                                className="mt-1 h-9 w-full gap-1.5 text-xs font-medium shadow-xs"
                                 disabled={processing}
                             >
                                 {processing ? (
@@ -106,11 +115,13 @@ export default function TwoFactorChallenge() {
                                 )}
                             </Button>
 
-                            <div className="text-center pt-1">
+                            <div className="pt-1 text-center">
                                 <button
                                     type="button"
-                                    className="cursor-pointer text-[11px] font-medium text-primary hover:underline transition-colors"
-                                    onClick={() => toggleRecoveryMode(clearErrors)}
+                                    className="cursor-pointer text-[11px] font-medium text-primary transition-colors hover:underline"
+                                    onClick={() =>
+                                        toggleRecoveryMode(clearErrors)
+                                    }
                                 >
                                     {showRecoveryInput
                                         ? 'Gunakan kode dari aplikasi authenticator'

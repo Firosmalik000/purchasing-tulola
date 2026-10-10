@@ -57,9 +57,7 @@ export default function IncomingOrderIndex({
     filters,
 }: Props) {
     const hasActiveFilters = Boolean(
-        filters.status ||
-        filters.date_from ||
-        filters.date_to,
+        filters.status || filters.date_from || filters.date_to,
     );
 
     const selectClass =

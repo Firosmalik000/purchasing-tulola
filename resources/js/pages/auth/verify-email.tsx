@@ -21,16 +21,18 @@ export default function VerifyEmail({ status }: { status?: string }) {
 
             {isSent && (
                 <div className="mb-3 flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2.5 text-xs font-medium text-emerald-800 dark:text-emerald-300">
-                    <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-                    <span className="leading-snug text-[11px]">
-                        Tautan verifikasi baru berhasil dikirimkan ke email Anda. Silakan periksa kotak masuk atau spam.
+                    <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-[11px] leading-snug">
+                        Tautan verifikasi baru berhasil dikirimkan ke email
+                        Anda. Silakan periksa kotak masuk atau spam.
                     </span>
                 </div>
             )}
 
             <div className="space-y-3 text-center">
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Sebelum melanjutkan, mohon konfirmasi akun melalui tautan yang dikirimkan ke email Anda.
+                <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Sebelum melanjutkan, mohon konfirmasi akun melalui tautan
+                    yang dikirimkan ke email Anda.
                 </p>
 
                 <Form {...send.form()} className="space-y-2.5">
@@ -39,7 +41,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
                             <Button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full h-9 font-medium text-xs shadow-xs gap-1.5"
+                                className="h-9 w-full gap-1.5 text-xs font-medium shadow-xs"
                             >
                                 {processing ? (
                                     <>
@@ -49,7 +51,9 @@ export default function VerifyEmail({ status }: { status?: string }) {
                                 ) : (
                                     <>
                                         <Send className="size-3.5" />
-                                        <span>Kirim Ulang Email Verifikasi</span>
+                                        <span>
+                                            Kirim Ulang Email Verifikasi
+                                        </span>
                                     </>
                                 )}
                             </Button>
@@ -57,7 +61,7 @@ export default function VerifyEmail({ status }: { status?: string }) {
                             <div className="pt-1">
                                 <TextLink
                                     href={logout()}
-                                    className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+                                    className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
                                 >
                                     <LogOut className="size-3" />
                                     <span>Keluar dari Akun Ini</span>

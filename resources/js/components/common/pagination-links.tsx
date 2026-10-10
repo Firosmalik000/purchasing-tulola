@@ -71,17 +71,19 @@ export function PaginationLinks({
 
     return (
         <div
-            className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground ${className}`}
+            className={`flex flex-col gap-3 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between ${className}`}
         >
             {/* Left side: Rows per page selector & Total records */}
             <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-medium text-foreground">Baris per halaman:</span>
+                    <span className="text-[11px] font-medium text-foreground">
+                        Baris per halaman:
+                    </span>
                     <select
                         value={currentPerPage}
                         onChange={handlePerPageChange}
                         aria-label="Jumlah baris per halaman"
-                        className="form-select-custom h-7 rounded-md border border-input bg-card px-2 py-0.5 text-xs font-semibold text-foreground shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        className="form-select-custom h-7 rounded-md border border-input bg-card px-2 py-0.5 text-xs font-semibold text-foreground shadow-2xs focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                     >
                         {perPageOptions.map((opt) => (
                             <option key={opt} value={opt}>
@@ -93,15 +95,32 @@ export function PaginationLinks({
 
                 {total !== undefined && (
                     <span className="text-[11px] text-muted-foreground">
-                        {from !== null && from !== undefined && to !== null && to !== undefined ? (
+                        {from !== null &&
+                        from !== undefined &&
+                        to !== null &&
+                        to !== undefined ? (
                             <>
-                                Menampilkan <strong className="text-foreground font-semibold">{from}</strong> –{' '}
-                                <strong className="text-foreground font-semibold">{to}</strong> dari{' '}
-                                <strong className="text-foreground font-semibold">{total}</strong> data
+                                Menampilkan{' '}
+                                <strong className="font-semibold text-foreground">
+                                    {from}
+                                </strong>{' '}
+                                –{' '}
+                                <strong className="font-semibold text-foreground">
+                                    {to}
+                                </strong>{' '}
+                                dari{' '}
+                                <strong className="font-semibold text-foreground">
+                                    {total}
+                                </strong>{' '}
+                                data
                             </>
                         ) : (
                             <>
-                                Total <strong className="text-foreground font-semibold">{total}</strong> data
+                                Total{' '}
+                                <strong className="font-semibold text-foreground">
+                                    {total}
+                                </strong>{' '}
+                                data
                             </>
                         )}
                     </span>
@@ -110,24 +129,36 @@ export function PaginationLinks({
 
             {/* Right side: Page links */}
             {links.length > 3 && (
-                <nav aria-label="Paginasi" className="flex items-center gap-1 self-center sm:self-auto flex-wrap">
+                <nav
+                    aria-label="Paginasi"
+                    className="flex flex-wrap items-center gap-1 self-center sm:self-auto"
+                >
                     {links.map((link, idx) => {
-                        const isPrev = idx === 0 || link.label.includes('Previous') || link.label.includes('&laquo;');
+                        const isPrev =
+                            idx === 0 ||
+                            link.label.includes('Previous') ||
+                            link.label.includes('&laquo;');
                         const isNext =
-                            idx === links.length - 1 || link.label.includes('Next') || link.label.includes('&raquo;');
+                            idx === links.length - 1 ||
+                            link.label.includes('Next') ||
+                            link.label.includes('&raquo;');
 
                         let labelContent: React.ReactNode = link.label;
                         if (isPrev) {
                             labelContent = (
                                 <span className="flex items-center gap-1">
                                     <ChevronLeft className="size-3.5" />
-                                    <span className="hidden sm:inline">Sebelumnya</span>
+                                    <span className="hidden sm:inline">
+                                        Sebelumnya
+                                    </span>
                                 </span>
                             );
                         } else if (isNext) {
                             labelContent = (
                                 <span className="flex items-center gap-1">
-                                    <span className="hidden sm:inline">Berikutnya</span>
+                                    <span className="hidden sm:inline">
+                                        Berikutnya
+                                    </span>
                                     <ChevronRight className="size-3.5" />
                                 </span>
                             );
@@ -140,7 +171,7 @@ export function PaginationLinks({
                                     variant="ghost"
                                     size="sm"
                                     disabled
-                                    className="h-7 px-2 text-xs opacity-40 cursor-not-allowed"
+                                    className="h-7 cursor-not-allowed px-2 text-xs opacity-40"
                                 >
                                     {labelContent}
                                 </Button>
@@ -155,8 +186,8 @@ export function PaginationLinks({
                                 asChild
                                 className={`h-7 px-2.5 text-xs font-medium ${
                                     link.active
-                                        ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
-                                        : 'border-border/60 hover:bg-muted/50 hover:text-foreground text-muted-foreground'
+                                        ? 'bg-primary font-semibold text-primary-foreground shadow-xs'
+                                        : 'border-border/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                                 }`}
                             >
                                 <Link

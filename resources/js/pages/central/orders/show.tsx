@@ -1,6 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import {
-    AlertCircle,
     ArrowLeft,
     Ban,
     Calendar,
@@ -159,12 +158,11 @@ export default function OrderShow({
             onSuccess: () => {
                 setPlaceOpen(false);
                 toast.success(
-                    `Order ${purchaseOrder.number} berhasil dikirim ke toko dan stok Gudang Pusat telah dipotong.`,
+                    `Order ${purchaseOrder.number} berhasil dikirim ke toko.`,
                 );
             },
             onError: (errors) => {
                 const message =
-                    (errors.stock as string) ||
                     (errors.error as string) ||
                     (Object.values(errors)[0] as string) ||
                     'Gagal mengirim order.';
@@ -346,7 +344,9 @@ export default function OrderShow({
                                 </p>
                                 <p className="font-serif text-sm font-bold text-foreground">
                                     {purchaseOrder.expected_date
-                                        ? formatDate(purchaseOrder.expected_date)
+                                        ? formatDate(
+                                              purchaseOrder.expected_date,
+                                          )
                                         : '—'}
                                 </p>
                             </div>
@@ -369,13 +369,15 @@ export default function OrderShow({
                                 className="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground print:hidden"
                             >
                                 <Pencil className="size-3" />
-                                {purchaseOrder.notes ? 'Ubah' : 'Tambah Catatan'}
+                                {purchaseOrder.notes
+                                    ? 'Ubah'
+                                    : 'Tambah Catatan'}
                             </Button>
                         )}
                     </CardHeader>
                     <CardContent className="p-4">
                         {purchaseOrder.notes ? (
-                            <p className="rounded-lg border border-border/50 bg-muted/30 p-3 text-sm leading-relaxed text-foreground whitespace-pre-line">
+                            <p className="rounded-lg border border-border/50 bg-muted/30 p-3 text-sm leading-relaxed whitespace-pre-line text-foreground">
                                 {purchaseOrder.notes}
                             </p>
                         ) : (
@@ -393,10 +395,16 @@ export default function OrderShow({
                             Rincian Item & Alokasi Toko
                         </CardTitle>
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                            <Badge variant="outline" className="font-mono text-xs">
+                            <Badge
+                                variant="outline"
+                                className="font-mono text-xs"
+                            >
                                 {totalItemsCount} Item
                             </Badge>
-                            <Badge variant="secondary" className="font-mono text-xs">
+                            <Badge
+                                variant="secondary"
+                                className="font-mono text-xs"
+                            >
                                 Total: {formatQuantity(totalQuantityCount)} Unit
                             </Badge>
                         </div>
@@ -406,11 +414,17 @@ export default function OrderShow({
                             <table className="w-full text-left text-sm">
                                 <thead>
                                     <tr className="border-b border-border/60 bg-muted/40 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                                        <th className="w-12 px-4 py-3 text-center">#</th>
+                                        <th className="w-12 px-4 py-3 text-center">
+                                            #
+                                        </th>
                                         <th className="px-4 py-3">Barang</th>
                                         <th className="px-4 py-3">Tipe</th>
-                                        <th className="px-4 py-3">Alokasi Permintaan</th>
-                                        <th className="px-4 py-3 text-right">Kuantitas</th>
+                                        <th className="px-4 py-3">
+                                            Alokasi Permintaan
+                                        </th>
+                                        <th className="px-4 py-3 text-right">
+                                            Kuantitas
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/50">
@@ -431,7 +445,8 @@ export default function OrderShow({
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <p className="font-serif font-bold text-foreground">
-                                                        {itemName ?? 'Item Tanpa Nama'}
+                                                        {itemName ??
+                                                            'Item Tanpa Nama'}
                                                     </p>
                                                     {sku && (
                                                         <p className="font-mono text-xs text-muted-foreground">
@@ -440,7 +455,8 @@ export default function OrderShow({
                                                     )}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    {item.item_type === 'STOCK' ? (
+                                                    {item.item_type ===
+                                                    'STOCK' ? (
                                                         <Badge
                                                             variant="outline"
                                                             className="border-amber-500/30 bg-amber-500/5 text-[11px] text-amber-700 dark:text-amber-400"
@@ -458,11 +474,16 @@ export default function OrderShow({
                                                 </td>
                                                 <td className="px-4 py-3">
                                                     <div className="flex flex-wrap gap-1.5">
-                                                        {item.allocations.length > 0 ? (
+                                                        {item.allocations
+                                                            .length > 0 ? (
                                                             item.allocations.map(
-                                                                (allocation) => (
+                                                                (
+                                                                    allocation,
+                                                                ) => (
                                                                     <span
-                                                                        key={allocation.id}
+                                                                        key={
+                                                                            allocation.id
+                                                                        }
                                                                         className="inline-flex items-center gap-1.5 rounded-md border border-border/70 bg-card px-2 py-0.5 font-mono text-xs shadow-2xs"
                                                                     >
                                                                         <Store className="size-3 text-muted-foreground" />
@@ -471,7 +492,8 @@ export default function OrderShow({
                                                                                 allocation
                                                                                     .purchase_request_item
                                                                                     .purchase_request
-                                                                                    .store.code
+                                                                                    .store
+                                                                                    .code
                                                                             }
                                                                         </span>
                                                                         <span className="text-muted-foreground">
@@ -501,7 +523,9 @@ export default function OrderShow({
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <span className="font-mono text-sm font-bold text-foreground">
-                                                        {formatQuantity(item.quantity)}{' '}
+                                                        {formatQuantity(
+                                                            item.quantity,
+                                                        )}{' '}
                                                     </span>
                                                     <span className="text-xs text-muted-foreground">
                                                         {item.unit.symbol}
@@ -521,7 +545,9 @@ export default function OrderShow({
                                         </td>
                                         <td className="px-4 py-3 text-right">
                                             <span className="font-mono text-base font-bold text-foreground">
-                                                {formatQuantity(totalQuantityCount)}
+                                                {formatQuantity(
+                                                    totalQuantityCount,
+                                                )}
                                             </span>
                                             <span className="ml-1 text-xs text-muted-foreground">
                                                 Unit
@@ -535,71 +561,84 @@ export default function OrderShow({
                 </Card>
 
                 {/* Riwayat Penerimaan Barang di Toko */}
-                {purchaseOrder.receipts && purchaseOrder.receipts.length > 0 && (
-                    <Card className="border border-border/70 shadow-xs">
-                        <CardHeader className="border-b border-border/60 px-5 py-3.5">
-                            <CardTitle className="font-serif text-base font-bold text-foreground">
-                                Riwayat Penerimaan di Toko
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="divide-y divide-border/50 p-0">
-                            {purchaseOrder.receipts.map((receipt) => {
-                                const totalUnits = (receipt.items ?? []).reduce(
-                                    (sum, item) => sum + Number(item.received_quantity),
-                                    0,
-                                );
-                                return (
-                                    <div
-                                        key={receipt.id}
-                                        className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
-                                    >
-                                        <div className="space-y-1">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <span className="font-mono text-xs font-semibold text-foreground">
-                                                    {receipt.number}
-                                                </span>
-                                                <Badge
-                                                    variant="outline"
-                                                    className="border-emerald-500/30 bg-emerald-500/5 text-[10px] text-emerald-700 dark:text-emerald-300"
-                                                >
-                                                    Diterima
-                                                </Badge>
-                                            </div>
-                                            <p className="text-xs text-muted-foreground">
-                                                Diverifikasi oleh:{' '}
-                                                <strong className="text-foreground">
-                                                    {receipt.receiver?.name ?? 'Staf Toko'}
-                                                </strong>
-                                                {receipt.store ? ` (${receipt.store.name})` : ''}{' '}
-                                                · {formatDateTime(receipt.received_at)}
-                                                {receipt.notes && (
-                                                    <span>
-                                                        {' '}
-                                                        · Catatan:{' '}
-                                                        <em className="text-foreground">
-                                                            "{receipt.notes}"
-                                                        </em>
+                {purchaseOrder.receipts &&
+                    purchaseOrder.receipts.length > 0 && (
+                        <Card className="border border-border/70 shadow-xs">
+                            <CardHeader className="border-b border-border/60 px-5 py-3.5">
+                                <CardTitle className="font-serif text-base font-bold text-foreground">
+                                    Riwayat Penerimaan di Toko
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="divide-y divide-border/50 p-0">
+                                {purchaseOrder.receipts.map((receipt) => {
+                                    const totalUnits = (
+                                        receipt.items ?? []
+                                    ).reduce(
+                                        (sum, item) =>
+                                            sum +
+                                            Number(item.received_quantity),
+                                        0,
+                                    );
+                                    return (
+                                        <div
+                                            key={receipt.id}
+                                            className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
+                                        >
+                                            <div className="space-y-1">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="font-mono text-xs font-semibold text-foreground">
+                                                        {receipt.number}
                                                     </span>
-                                                )}
-                                            </p>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="border-emerald-500/30 bg-emerald-500/5 text-[10px] text-emerald-700 dark:text-emerald-300"
+                                                    >
+                                                        Diterima
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Diverifikasi oleh:{' '}
+                                                    <strong className="text-foreground">
+                                                        {receipt.receiver
+                                                            ?.name ??
+                                                            'Staf Toko'}
+                                                    </strong>
+                                                    {receipt.store
+                                                        ? ` (${receipt.store.name})`
+                                                        : ''}{' '}
+                                                    ·{' '}
+                                                    {formatDateTime(
+                                                        receipt.received_at,
+                                                    )}
+                                                    {receipt.notes && (
+                                                        <span>
+                                                            {' '}
+                                                            · Catatan:{' '}
+                                                            <em className="text-foreground">
+                                                                "{receipt.notes}
+                                                                "
+                                                            </em>
+                                                        </span>
+                                                    )}
+                                                </p>
+                                            </div>
+                                            <div className="text-right text-xs">
+                                                <span className="text-muted-foreground">
+                                                    Total Diterima:{' '}
+                                                </span>
+                                                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                                    {formatQuantity(totalUnits)}
+                                                </span>{' '}
+                                                <span className="text-muted-foreground">
+                                                    unit
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="text-right text-xs">
-                                            <span className="text-muted-foreground">
-                                                Total Diterima:{' '}
-                                            </span>
-                                            <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                                {formatQuantity(totalUnits)}
-                                            </span>{' '}
-                                            <span className="text-muted-foreground">
-                                                unit
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </CardContent>
-                    </Card>
-                )}
+                                    );
+                                })}
+                            </CardContent>
+                        </Card>
+                    )}
 
                 {/* Dialog: Edit Catatan & Target Kedatangan */}
                 <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -609,9 +648,15 @@ export default function OrderShow({
                                 Ubah Catatan & Target Kedatangan
                             </DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleEditSubmit} className="space-y-4 py-2">
+                        <form
+                            onSubmit={handleEditSubmit}
+                            className="space-y-4 py-2"
+                        >
                             <div className="space-y-1.5">
-                                <Label htmlFor="expected_date" className="text-xs">
+                                <Label
+                                    htmlFor="expected_date"
+                                    className="text-xs"
+                                >
                                     Target Diterima Toko
                                 </Label>
                                 <Input
@@ -619,11 +664,16 @@ export default function OrderShow({
                                     type="date"
                                     value={editForm.data.expected_date}
                                     onChange={(e) =>
-                                        editForm.setData('expected_date', e.target.value)
+                                        editForm.setData(
+                                            'expected_date',
+                                            e.target.value,
+                                        )
                                     }
                                     className="h-9 text-xs"
                                 />
-                                <InputError message={editForm.errors.expected_date} />
+                                <InputError
+                                    message={editForm.errors.expected_date}
+                                />
                             </div>
 
                             <div className="space-y-1.5">
@@ -635,7 +685,10 @@ export default function OrderShow({
                                     rows={4}
                                     value={editForm.data.notes}
                                     onChange={(e) =>
-                                        editForm.setData('notes', e.target.value)
+                                        editForm.setData(
+                                            'notes',
+                                            e.target.value,
+                                        )
                                     }
                                     className="w-full rounded-md border border-input bg-card p-3 text-xs leading-relaxed text-foreground shadow-2xs transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                                 />
@@ -673,21 +726,20 @@ export default function OrderShow({
                             </DialogTitle>
                         </DialogHeader>
 
-                        <div className="rounded-lg border border-border/70 bg-muted/40 p-3 text-xs space-y-1 text-muted-foreground">
+                        <div className="space-y-1 rounded-lg border border-border/70 bg-muted/40 p-3 text-xs text-muted-foreground">
                             <p>
-                                Order <strong className="text-foreground">{purchaseOrder.number}</strong> akan dikirim ke cabang <strong className="text-foreground">{targetStore?.name ?? 'Toko'}</strong> ({totalItemsCount} item, {formatQuantity(totalQuantityCount)} unit).
+                                Order{' '}
+                                <strong className="text-foreground">
+                                    {purchaseOrder.number}
+                                </strong>{' '}
+                                akan dikirim ke cabang{' '}
+                                <strong className="text-foreground">
+                                    {targetStore?.name ?? 'Toko'}
+                                </strong>{' '}
+                                ({totalItemsCount} item,{' '}
+                                {formatQuantity(totalQuantityCount)} unit).
                             </p>
                         </div>
-
-                        {placeForm.errors.stock && (
-                            <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
-                                <AlertCircle className="size-4 shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="font-semibold">Stok Tidak Mencukupi</p>
-                                    <p>{placeForm.errors.stock}</p>
-                                </div>
-                            </div>
-                        )}
 
                         <form onSubmit={handlePlaceSubmit}>
                             <DialogFooter className="gap-2 sm:gap-0">

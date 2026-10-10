@@ -11,7 +11,6 @@ import {
     PlusCircle,
     RotateCcw,
     Search,
-    Store as StoreIcon,
     Trash2,
     Warehouse,
 } from 'lucide-react';
@@ -144,28 +143,33 @@ export default function InventoryIndex({
     centralStore,
     selectedStoreId,
     items,
-    allItems = [],
+    allItems,
     movements,
     suppliers,
     movementTypes,
     filters,
 }: Props) {
-    const activeStore = centralStore ?? stores.find((s) => s.id === selectedStoreId) ?? {
-        id: selectedStoreId ?? 1,
-        code: 'HO-JKT',
-        name: 'Head Office Jakarta',
-    };
+    const activeStore = centralStore ??
+        stores.find((s) => s.id === selectedStoreId) ?? {
+            id: selectedStoreId ?? 1,
+            code: 'HO-JKT',
+            name: 'Head Office Jakarta',
+        };
     const currentPage = items.current_page || 1;
     const perPage = items.per_page || 15;
     const activeTab = filters.tab || 'stocks';
 
     const [stockModalItem, setStockModalItem] = useState<Item | null>(null);
-    const [standardModalItem, setStandardModalItem] = useState<Item | null>(null);
+    const [standardModalItem, setStandardModalItem] = useState<Item | null>(
+        null,
+    );
 
     // Bulk Stock Addition Modal State
     const [bulkModalOpen, setBulkModalOpen] = useState(false);
     const [bulkMovementType, setBulkMovementType] = useState('STOCK_IN');
-    const [bulkReason, setBulkReason] = useState('Penerimaan stok dari pusat / supplier');
+    const [bulkReason, setBulkReason] = useState(
+        'Penerimaan stok dari pusat / supplier',
+    );
     const [bulkSupplierId, setBulkSupplierId] = useState<string>('');
     const [bulkNotes, setBulkNotes] = useState('');
     const [bulkRows, setBulkRows] = useState<BulkRow[]>([]);
@@ -198,7 +202,8 @@ export default function InventoryIndex({
     const handleAddBulkRow = () => {
         if (allItems.length === 0) return;
         const usedIds = new Set(bulkRows.map((r) => r.item_id));
-        const available = allItems.find((it) => !usedIds.has(it.id)) || allItems[0];
+        const available =
+            allItems.find((it) => !usedIds.has(it.id)) || allItems[0];
 
         setBulkRows([
             ...bulkRows,
@@ -270,7 +275,9 @@ export default function InventoryIndex({
                 },
                 onError: (errors) => {
                     const firstMsg = Object.values(errors)[0] as string;
-                    setBulkError(firstMsg || 'Gagal menambahkan stok kolektif.');
+                    setBulkError(
+                        firstMsg || 'Gagal menambahkan stok kolektif.',
+                    );
                 },
                 onFinish: () => {
                     setBulkSubmitting(false);
@@ -279,7 +286,10 @@ export default function InventoryIndex({
         );
     };
 
-    const totalBulkQuantity = bulkRows.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0);
+    const totalBulkQuantity = bulkRows.reduce(
+        (sum, r) => sum + (Number(r.quantity) || 0),
+        0,
+    );
 
     const getMovementTypeBadge = (type: string) => {
         switch (type) {
@@ -369,10 +379,12 @@ export default function InventoryIndex({
                                     </div>
                                     <div>
                                         <div className="text-xs font-semibold text-foreground">
-                                            {activeStore?.name ?? 'Gudang Pusat (HO)'}
+                                            {activeStore?.name ??
+                                                'Gudang Pusat (HO)'}
                                         </div>
-                                        <div className="text-[11px] text-muted-foreground font-mono">
-                                            {activeStore?.code ?? 'HO-JKT'} &bull; Stok & Riwayat Internal Pusat
+                                        <div className="font-mono text-[11px] text-muted-foreground">
+                                            {activeStore?.code ?? 'HO-JKT'}{' '}
+                                            &bull; Stok & Riwayat Internal Pusat
                                         </div>
                                     </div>
                                 </div>
@@ -428,7 +440,7 @@ export default function InventoryIndex({
                             </div>
 
                             {/* Tab Switcher */}
-                            <div className="flex overflow-x-auto whitespace-nowrap border-b border-border/60 scrollbar-none">
+                            <div className="flex scrollbar-none overflow-x-auto border-b border-border/60 whitespace-nowrap">
                                 <button
                                     type="button"
                                     onClick={() =>
@@ -436,9 +448,13 @@ export default function InventoryIndex({
                                             '/central/inventory',
                                             {
                                                 tab: 'stocks',
-                                                search: filters.search || undefined,
+                                                search:
+                                                    filters.search || undefined,
                                             },
-                                            { preserveState: true, replace: true },
+                                            {
+                                                preserveState: true,
+                                                replace: true,
+                                            },
                                         )
                                     }
                                     className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
@@ -457,12 +473,22 @@ export default function InventoryIndex({
                                             '/central/inventory',
                                             {
                                                 tab: 'history',
-                                                search: filters.search || undefined,
-                                                movement_type: filters.movement_type || undefined,
-                                                date_from: filters.date_from || undefined,
-                                                date_to: filters.date_to || undefined,
+                                                search:
+                                                    filters.search || undefined,
+                                                movement_type:
+                                                    filters.movement_type ||
+                                                    undefined,
+                                                date_from:
+                                                    filters.date_from ||
+                                                    undefined,
+                                                date_to:
+                                                    filters.date_to ||
+                                                    undefined,
                                             },
-                                            { preserveState: true, replace: true },
+                                            {
+                                                preserveState: true,
+                                                replace: true,
+                                            },
                                         )
                                     }
                                     className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-semibold transition-colors ${
@@ -472,7 +498,8 @@ export default function InventoryIndex({
                                     }`}
                                 >
                                     <History className="size-3.5" />
-                                    Riwayat Tambah Stok & Mutasi ({movements.data.length})
+                                    Riwayat Tambah Stok & Mutasi (
+                                    {movements.data.length})
                                 </button>
                             </div>
                         </div>
@@ -488,142 +515,194 @@ export default function InventoryIndex({
                                     <Warehouse className="size-3.5" />
                                 </div>
                                 <CardTitle className="text-sm font-semibold">
-                                    Posisi Stok Barang Pusat ({activeStore?.name ?? 'Pusat'})
+                                    Posisi Stok Barang Pusat (
+                                    {activeStore?.name ?? 'Pusat'})
                                 </CardTitle>
                             </div>
                         </CardHeader>
 
-                                <CardContent className="p-0">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-xs">
-                                            <thead className="border-b border-border/60 bg-muted/40 font-semibold tracking-wider text-muted-foreground uppercase">
-                                                <tr>
-                                                    <th className="w-12 px-3 py-3 text-center">#</th>
-                                                    <th className="px-4 py-3">Barang & SKU</th>
-                                                    <th className="px-3 py-3 text-center">Satuan</th>
-                                                    <th className="px-4 py-3 text-right">Stok Saat Ini</th>
-                                                    <th className="px-4 py-3 text-right">Standar Min</th>
-                                                    <th className="px-3 py-3 text-center">Status</th>
-                                                    <th className="w-16 px-3 py-3 text-center">Aksi</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-border/50">
-                                                {items.data.length === 0 ? (
-                                                    <tr>
-                                                        <td
-                                                            colSpan={7}
-                                                            className="p-8 text-center text-muted-foreground"
-                                                        >
-                                                            Tidak ada data barang yang cocok.
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-xs">
+                                    <thead className="border-b border-border/60 bg-muted/40 font-semibold tracking-wider text-muted-foreground uppercase">
+                                        <tr>
+                                            <th className="w-12 px-3 py-3 text-center">
+                                                #
+                                            </th>
+                                            <th className="px-4 py-3">
+                                                Barang & SKU
+                                            </th>
+                                            <th className="px-3 py-3 text-center">
+                                                Satuan
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Stok Saat Ini
+                                            </th>
+                                            <th className="px-4 py-3 text-right">
+                                                Standar Min
+                                            </th>
+                                            <th className="px-3 py-3 text-center">
+                                                Status
+                                            </th>
+                                            <th className="w-16 px-3 py-3 text-center">
+                                                Aksi
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border/50">
+                                        {items.data.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={7}
+                                                    className="p-8 text-center text-muted-foreground"
+                                                >
+                                                    Tidak ada data barang yang
+                                                    cocok.
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            items.data.map((item, index) => {
+                                                const current =
+                                                    item.stocks[0]?.quantity ??
+                                                    '0';
+                                                const storeStandard =
+                                                    item.stock_standards[0]
+                                                        ?.standard_quantity;
+                                                const standard =
+                                                    storeStandard ??
+                                                    item.min_stock ??
+                                                    '0';
+                                                const isCritical =
+                                                    Number(current) <
+                                                    Number(standard);
+                                                const rowNumber =
+                                                    (currentPage - 1) *
+                                                        perPage +
+                                                    index +
+                                                    1;
+
+                                                return (
+                                                    <tr
+                                                        key={item.id}
+                                                        className="transition-colors hover:bg-muted/20"
+                                                    >
+                                                        <td className="px-3 py-3 text-center font-mono text-muted-foreground">
+                                                            {rowNumber}
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <p className="font-semibold text-foreground">
+                                                                {item.name}
+                                                            </p>
+                                                            <p className="font-mono text-[11px] text-muted-foreground">
+                                                                {item.sku}
+                                                            </p>
+                                                        </td>
+                                                        <td className="px-3 py-3 text-center font-mono text-muted-foreground">
+                                                            {item.unit.symbol}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono font-bold text-foreground tabular-nums">
+                                                            {formatQuantity(
+                                                                current,
+                                                            )}
+                                                        </td>
+                                                        <td className="px-4 py-3 text-right font-mono text-muted-foreground tabular-nums">
+                                                            <span>
+                                                                {formatQuantity(
+                                                                    standard,
+                                                                )}
+                                                            </span>
+                                                            {storeStandard ? (
+                                                                <span
+                                                                    className="ml-1 text-[10px] text-primary"
+                                                                    title="Override khusus toko"
+                                                                >
+                                                                    (toko)
+                                                                </span>
+                                                            ) : (
+                                                                <span
+                                                                    className="ml-1 text-[10px] text-muted-foreground"
+                                                                    title="Standar global master item"
+                                                                >
+                                                                    (master)
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-3 text-center">
+                                                            {isCritical ? (
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                                                                    <AlertCircle className="size-3" />
+                                                                    Di Bawah Min
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                                    Aman
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-3 py-3 text-center">
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="size-7"
+                                                                    >
+                                                                        <MoreHorizontal className="size-3.5" />
+                                                                        <span className="sr-only">
+                                                                            Aksi
+                                                                        </span>
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent
+                                                                    align="end"
+                                                                    className="w-48"
+                                                                >
+                                                                    <DropdownMenuLabel className="text-xs">
+                                                                        Aksi
+                                                                        Inventaris
+                                                                    </DropdownMenuLabel>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            setStockModalItem(
+                                                                                item,
+                                                                            )
+                                                                        }
+                                                                        className="cursor-pointer text-xs"
+                                                                    >
+                                                                        Sesuaikan
+                                                                        Stok
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem
+                                                                        onClick={() =>
+                                                                            setStandardModalItem(
+                                                                                item,
+                                                                            )
+                                                                        }
+                                                                        className="cursor-pointer text-xs"
+                                                                    >
+                                                                        Atur
+                                                                        Standar
+                                                                        Toko Ini
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
                                                         </td>
                                                     </tr>
-                                                ) : (
-                                                    items.data.map((item, index) => {
-                                                        const current =
-                                                            item.stocks[0]?.quantity ?? '0';
-                                                        const storeStandard =
-                                                            item.stock_standards[0]?.standard_quantity;
-                                                        const standard =
-                                                            storeStandard ?? item.min_stock ?? '0';
-                                                        const isCritical =
-                                                            Number(current) < Number(standard);
-                                                        const rowNumber =
-                                                            (currentPage - 1) * perPage + index + 1;
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
 
-                                                        return (
-                                                            <tr
-                                                                key={item.id}
-                                                                className="transition-colors hover:bg-muted/20"
-                                                            >
-                                                                <td className="px-3 py-3 text-center font-mono text-muted-foreground">
-                                                                    {rowNumber}
-                                                                </td>
-                                                                <td className="px-4 py-3">
-                                                                    <p className="font-semibold text-foreground">
-                                                                        {item.name}
-                                                                    </p>
-                                                                    <p className="font-mono text-[11px] text-muted-foreground">
-                                                                        {item.sku}
-                                                                    </p>
-                                                                </td>
-                                                                <td className="px-3 py-3 text-center font-mono text-muted-foreground">
-                                                                    {item.unit.symbol}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-right font-mono font-bold text-foreground tabular-nums">
-                                                                    {formatQuantity(current)}
-                                                                </td>
-                                                                <td className="px-4 py-3 text-right font-mono text-muted-foreground tabular-nums">
-                                                                    <span>{formatQuantity(standard)}</span>
-                                                                    {storeStandard ? (
-                                                                        <span className="ml-1 text-[10px] text-primary" title="Override khusus toko">(toko)</span>
-                                                                    ) : (
-                                                                        <span className="ml-1 text-[10px] text-muted-foreground" title="Standar global master item">(master)</span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-3 py-3 text-center">
-                                                                    {isCritical ? (
-                                                                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
-                                                                            <AlertCircle className="size-3" />
-                                                                            Di Bawah Min
-                                                                        </span>
-                                                                    ) : (
-                                                                        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                                                            Aman
-                                                                        </span>
-                                                                    )}
-                                                                </td>
-                                                                <td className="px-3 py-3 text-center">
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="icon"
-                                                                                className="size-7"
-                                                                            >
-                                                                                <MoreHorizontal className="size-3.5" />
-                                                                                <span className="sr-only">Aksi</span>
-                                                                            </Button>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent
-                                                                            align="end"
-                                                                            className="w-48"
-                                                                        >
-                                                                            <DropdownMenuLabel className="text-xs">
-                                                                                Aksi Inventaris
-                                                                            </DropdownMenuLabel>
-                                                                            <DropdownMenuSeparator />
-                                                                            <DropdownMenuItem
-                                                                                onClick={() =>
-                                                                                    setStockModalItem(item)
-                                                                                }
-                                                                                className="cursor-pointer text-xs"
-                                                                            >
-                                                                                Sesuaikan Stok
-                                                                            </DropdownMenuItem>
-                                                                            <DropdownMenuItem
-                                                                                onClick={() =>
-                                                                                    setStandardModalItem(item)
-                                                                                }
-                                                                                className="cursor-pointer text-xs"
-                                                                            >
-                                                                                Atur Standar Toko Ini
-                                                                            </DropdownMenuItem>
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </td>
-                                                            </tr>
-                                                        );
-                                                    })
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-
-                                    <div className="border-t border-border/50 p-3">
-                                        <PaginationLinks pagination={items} />
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <div className="border-t border-border/50 p-3">
+                                <PaginationLinks pagination={items} />
+                            </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 {/* TAB 2: Riwayat Tambah Stok & Mutasi (Murni Audit Pergerakan Stok) */}
@@ -637,10 +716,12 @@ export default function InventoryIndex({
                                     </div>
                                     <div>
                                         <CardTitle className="text-sm font-semibold">
-                                            Riwayat Transaksi Stok ({activeStore?.name ?? 'Pusat'})
+                                            Riwayat Transaksi Stok (
+                                            {activeStore?.name ?? 'Pusat'})
                                         </CardTitle>
                                         <p className="text-[11px] text-muted-foreground">
-                                            Daftar transaksi penambahan dan mutasi stok per request
+                                            Daftar transaksi penambahan dan
+                                            mutasi stok per request
                                         </p>
                                     </div>
                                 </div>
@@ -650,31 +731,49 @@ export default function InventoryIndex({
                                     onSubmit={(e) => {
                                         e.preventDefault();
                                         const form = e.currentTarget;
-                                        const dateFromVal = (form.elements.namedItem('date_from') as HTMLInputElement)?.value;
-                                        const dateToVal = (form.elements.namedItem('date_to') as HTMLInputElement)?.value;
-                                        const moveTypeVal = (form.elements.namedItem('movement_type') as HTMLSelectElement)?.value;
+                                        const dateFromVal = (
+                                            form.elements.namedItem(
+                                                'date_from',
+                                            ) as HTMLInputElement
+                                        )?.value;
+                                        const dateToVal = (
+                                            form.elements.namedItem(
+                                                'date_to',
+                                            ) as HTMLInputElement
+                                        )?.value;
+                                        const moveTypeVal = (
+                                            form.elements.namedItem(
+                                                'movement_type',
+                                            ) as HTMLSelectElement
+                                        )?.value;
                                         router.get(
                                             '/central/inventory',
                                             {
                                                 tab: 'history',
-                                                search: filters.search || undefined,
-                                                movement_type: moveTypeVal || undefined,
-                                                date_from: dateFromVal || undefined,
+                                                search:
+                                                    filters.search || undefined,
+                                                movement_type:
+                                                    moveTypeVal || undefined,
+                                                date_from:
+                                                    dateFromVal || undefined,
                                                 date_to: dateToVal || undefined,
                                             },
-                                            { preserveState: true, replace: true },
+                                            {
+                                                preserveState: true,
+                                                replace: true,
+                                            },
                                         );
                                     }}
                                     className="flex flex-wrap items-center gap-2"
                                 >
                                     {/* Integrated Date Range Pill */}
                                     <div className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-background px-2.5 py-1 text-xs shadow-2xs">
-                                        <Calendar className="size-3.5 text-muted-foreground shrink-0" />
+                                        <Calendar className="size-3.5 shrink-0 text-muted-foreground" />
                                         <input
                                             type="date"
                                             name="date_from"
                                             defaultValue={filters.date_from}
-                                            className="w-[115px] bg-transparent text-xs font-mono text-foreground focus:outline-none"
+                                            className="w-[115px] bg-transparent font-mono text-xs text-foreground focus:outline-none"
                                             aria-label="Tanggal mulai"
                                             title="Tanggal mulai (Awal bulan)"
                                         />
@@ -685,7 +784,7 @@ export default function InventoryIndex({
                                             type="date"
                                             name="date_to"
                                             defaultValue={filters.date_to}
-                                            className="w-[115px] bg-transparent text-xs font-mono text-foreground focus:outline-none"
+                                            className="w-[115px] bg-transparent font-mono text-xs text-foreground focus:outline-none"
                                             aria-label="Tanggal akhir"
                                             title="Tanggal akhir (Akhir bulan)"
                                         />
@@ -694,12 +793,19 @@ export default function InventoryIndex({
                                     {/* Movement Type Select */}
                                     <select
                                         name="movement_type"
-                                        className="form-select-custom h-8 rounded-lg border border-border/70 bg-background text-xs px-2.5 shadow-2xs"
-                                        defaultValue={filters.movement_type || ''}
+                                        className="form-select-custom h-8 rounded-lg border border-border/70 bg-background px-2.5 text-xs shadow-2xs"
+                                        defaultValue={
+                                            filters.movement_type || ''
+                                        }
                                     >
-                                        <option value="">Semua Tipe Mutasi</option>
+                                        <option value="">
+                                            Semua Tipe Mutasi
+                                        </option>
                                         {movementTypes.map((mt) => (
-                                            <option key={mt.value} value={mt.value}>
+                                            <option
+                                                key={mt.value}
+                                                value={mt.value}
+                                            >
                                                 {mt.label}
                                             </option>
                                         ))}
@@ -715,7 +821,11 @@ export default function InventoryIndex({
                                         Terapkan
                                     </Button>
 
-                                    {(filters.movement_type || (filters.date_from && filters.date_from !== '') || (filters.date_to && filters.date_to !== '')) && (
+                                    {(filters.movement_type ||
+                                        (filters.date_from &&
+                                            filters.date_from !== '') ||
+                                        (filters.date_to &&
+                                            filters.date_to !== '')) && (
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -724,10 +834,13 @@ export default function InventoryIndex({
                                                 router.get(
                                                     '/central/inventory',
                                                     { tab: 'history' },
-                                                    { preserveState: true, replace: true },
+                                                    {
+                                                        preserveState: true,
+                                                        replace: true,
+                                                    },
                                                 );
                                             }}
-                                            className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                                            className="h-8 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
                                             title="Reset filter"
                                         >
                                             <RotateCcw className="size-3" />
@@ -741,132 +854,240 @@ export default function InventoryIndex({
                         <CardContent className="p-0">
                             {movements.data.length === 0 ? (
                                 <p className="p-8 text-center text-xs text-muted-foreground">
-                                    Belum ada riwayat pergerakan atau penambahan stok untuk gudang pusat pada periode ini.
+                                    Belum ada riwayat pergerakan atau penambahan
+                                    stok untuk gudang pusat pada periode ini.
                                 </p>
                             ) : (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left text-xs">
                                         <thead className="border-b border-border/60 bg-muted/30 font-semibold tracking-wider text-muted-foreground uppercase">
                                             <tr>
-                                                <th className="w-10 px-3 py-2.5 text-center">#</th>
-                                                <th className="px-3 py-2.5">Waktu</th>
-                                                <th className="px-3 py-2.5">No. Referensi / Batch</th>
-                                                <th className="px-3 py-2.5 text-center">Tipe</th>
-                                                <th className="px-4 py-2.5">Item / Request</th>
-                                                <th className="px-3 py-2.5 text-right">Total Perubahan</th>
-                                                <th className="px-4 py-2.5">Supplier</th>
-                                                <th className="px-4 py-2.5">Alasan</th>
-                                                <th className="px-3 py-2.5">Oleh</th>
-                                                <th className="w-20 px-3 py-2.5 text-center">Aksi</th>
+                                                <th className="w-10 px-3 py-2.5 text-center">
+                                                    #
+                                                </th>
+                                                <th className="px-3 py-2.5">
+                                                    Waktu
+                                                </th>
+                                                <th className="px-3 py-2.5">
+                                                    No. Referensi / Batch
+                                                </th>
+                                                <th className="px-3 py-2.5 text-center">
+                                                    Tipe
+                                                </th>
+                                                <th className="px-4 py-2.5">
+                                                    Item / Request
+                                                </th>
+                                                <th className="px-3 py-2.5 text-right">
+                                                    Total Perubahan
+                                                </th>
+                                                <th className="px-4 py-2.5">
+                                                    Supplier
+                                                </th>
+                                                <th className="px-4 py-2.5">
+                                                    Alasan
+                                                </th>
+                                                <th className="px-3 py-2.5">
+                                                    Oleh
+                                                </th>
+                                                <th className="w-20 px-3 py-2.5 text-center">
+                                                    Aksi
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-border/50">
-                                            {movements.data.map((movement, idx) => {
-                                                const diff = Number(movement.quantity_difference);
-                                                const movePage = movements.current_page || 1;
-                                                const movePerPage = movements.per_page || 20;
-                                                const rowNo = (movePage - 1) * movePerPage + idx + 1;
-                                                const totalItems = movement.total_items ?? (movement.items?.length || 1);
+                                            {movements.data.map(
+                                                (movement, idx) => {
+                                                    const diff = Number(
+                                                        movement.quantity_difference,
+                                                    );
+                                                    const movePage =
+                                                        movements.current_page ||
+                                                        1;
+                                                    const movePerPage =
+                                                        movements.per_page ||
+                                                        20;
+                                                    const rowNo =
+                                                        (movePage - 1) *
+                                                            movePerPage +
+                                                        idx +
+                                                        1;
+                                                    const totalItems =
+                                                        movement.total_items ??
+                                                        (movement.items
+                                                            ?.length ||
+                                                            1);
 
-                                                return (
-                                                    <tr
-                                                        key={movement.id}
-                                                        className="transition-colors hover:bg-muted/20"
-                                                    >
-                                                        <td className="px-3 py-2.5 text-center font-mono text-muted-foreground">
-                                                            {rowNo}
-                                                        </td>
-                                                        <td className="px-3 py-2.5 text-[11px] text-muted-foreground whitespace-nowrap font-mono">
-                                                            {movement.created_at
-                                                                ? new Date(movement.created_at).toLocaleString('id-ID', {
-                                                                      day: '2-digit',
-                                                                      month: '2-digit',
-                                                                      year: 'numeric',
-                                                                      hour: '2-digit',
-                                                                      minute: '2-digit',
-                                                                  })
-                                                                : '—'}
-                                                        </td>
-                                                        <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
-                                                            {movement.batch_number ? (
-                                                                <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground border border-border/50">
-                                                                    {movement.batch_number}
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-muted-foreground">—</span>
-                                                            )}
-                                                        </td>
-                                                        <td className="px-3 py-2.5 text-center">
-                                                            {getMovementTypeBadge(movement.movement_type)}
-                                                        </td>
-                                                        <td className="px-4 py-2.5">
-                                                            {totalItems > 1 ? (
-                                                                <div>
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <span className="font-semibold text-foreground">
-                                                                            {totalItems} Item Barang
-                                                                        </span>
-                                                                        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                                                                            Kolektif
-                                                                        </span>
-                                                                    </div>
-                                                                    <p
-                                                                        className="max-w-xs truncate text-[11px] text-muted-foreground"
-                                                                        title={movement.items?.map((i) => i.name).join(', ')}
-                                                                    >
-                                                                        {movement.items?.slice(0, 2).map((i) => i.name).join(', ')}
-                                                                        {(movement.items?.length ?? 0) > 2
-                                                                            ? `, +${(movement.items?.length ?? 0) - 2} lainnya`
-                                                                            : ''}
-                                                                    </p>
-                                                                </div>
-                                                            ) : (
-                                                                <div>
-                                                                    <p className="font-semibold text-foreground">
-                                                                        {movement.items?.[0]?.name ?? movement.item?.name}
-                                                                    </p>
-                                                                    <p className="font-mono text-[11px] text-muted-foreground">
-                                                                        {movement.items?.[0]?.sku ?? movement.item?.sku}
-                                                                    </p>
-                                                                </div>
-                                                            )}
-                                                        </td>
-                                                        <td
-                                                            className={`px-3 py-2.5 text-right font-mono font-bold tabular-nums ${
-                                                                diff < 0
-                                                                    ? 'text-rose-600 dark:text-rose-400'
-                                                                    : 'text-emerald-600 dark:text-emerald-400'
-                                                                }`}
+                                                    return (
+                                                        <tr
+                                                            key={movement.id}
+                                                            className="transition-colors hover:bg-muted/20"
                                                         >
-                                                            {diff > 0
-                                                                ? `+${formatQuantity(movement.quantity_difference)}`
-                                                                : formatQuantity(movement.quantity_difference)}
-                                                        </td>
-                                                        <td className="px-4 py-2.5 text-muted-foreground">
-                                                            {movement.supplier?.name ?? 'Internal'}
-                                                        </td>
-                                                        <td className="px-4 py-2.5 text-foreground max-w-[200px] truncate" title={movement.reason}>
-                                                            {movement.reason}
-                                                        </td>
-                                                        <td className="px-3 py-2.5 text-muted-foreground">
-                                                            {movement.creator?.name ?? 'Sistem'}
-                                                        </td>
-                                                        <td className="px-3 py-2.5 text-center">
-                                                            <Button
-                                                                type="button"
-                                                                variant="outline"
-                                                                size="sm"
-                                                                onClick={() => setDetailMovement(movement)}
-                                                                className="h-7 px-2 text-xs gap-1 hover:bg-primary/5 hover:text-primary"
-                                                                title="Lihat rincian item transaksi ini"
+                                                            <td className="px-3 py-2.5 text-center font-mono text-muted-foreground">
+                                                                {rowNo}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 font-mono text-[11px] whitespace-nowrap text-muted-foreground">
+                                                                {movement.created_at
+                                                                    ? new Date(
+                                                                          movement.created_at,
+                                                                      ).toLocaleString(
+                                                                          'id-ID',
+                                                                          {
+                                                                              day: '2-digit',
+                                                                              month: '2-digit',
+                                                                              year: 'numeric',
+                                                                              hour: '2-digit',
+                                                                              minute: '2-digit',
+                                                                          },
+                                                                      )
+                                                                    : '—'}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 font-mono text-xs whitespace-nowrap">
+                                                                {movement.batch_number ? (
+                                                                    <span className="inline-flex items-center rounded-md border border-border/50 bg-muted px-2 py-0.5 text-[11px] font-semibold text-foreground">
+                                                                        {
+                                                                            movement.batch_number
+                                                                        }
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-muted-foreground">
+                                                                        —
+                                                                    </span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-center">
+                                                                {getMovementTypeBadge(
+                                                                    movement.movement_type,
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-2.5">
+                                                                {totalItems >
+                                                                1 ? (
+                                                                    <div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <span className="font-semibold text-foreground">
+                                                                                {
+                                                                                    totalItems
+                                                                                }{' '}
+                                                                                Item
+                                                                                Barang
+                                                                            </span>
+                                                                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                                                                Kolektif
+                                                                            </span>
+                                                                        </div>
+                                                                        <p
+                                                                            className="max-w-xs truncate text-[11px] text-muted-foreground"
+                                                                            title={movement.items
+                                                                                ?.map(
+                                                                                    (
+                                                                                        i,
+                                                                                    ) =>
+                                                                                        i.name,
+                                                                                )
+                                                                                .join(
+                                                                                    ', ',
+                                                                                )}
+                                                                        >
+                                                                            {movement.items
+                                                                                ?.slice(
+                                                                                    0,
+                                                                                    2,
+                                                                                )
+                                                                                .map(
+                                                                                    (
+                                                                                        i,
+                                                                                    ) =>
+                                                                                        i.name,
+                                                                                )
+                                                                                .join(
+                                                                                    ', ',
+                                                                                )}
+                                                                            {(movement
+                                                                                .items
+                                                                                ?.length ??
+                                                                                0) >
+                                                                            2
+                                                                                ? `, +${(movement.items?.length ?? 0) - 2} lainnya`
+                                                                                : ''}
+                                                                        </p>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div>
+                                                                        <p className="font-semibold text-foreground">
+                                                                            {movement
+                                                                                .items?.[0]
+                                                                                ?.name ??
+                                                                                movement
+                                                                                    .item
+                                                                                    ?.name}
+                                                                        </p>
+                                                                        <p className="font-mono text-[11px] text-muted-foreground">
+                                                                            {movement
+                                                                                .items?.[0]
+                                                                                ?.sku ??
+                                                                                movement
+                                                                                    .item
+                                                                                    ?.sku}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                            <td
+                                                                className={`px-3 py-2.5 text-right font-mono font-bold tabular-nums ${
+                                                                    diff < 0
+                                                                        ? 'text-rose-600 dark:text-rose-400'
+                                                                        : 'text-emerald-600 dark:text-emerald-400'
+                                                                }`}
                                                             >
-                                                                <Eye className="size-3" />
-                                                                Detail
-                                                            </Button>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
+                                                                {diff > 0
+                                                                    ? `+${formatQuantity(movement.quantity_difference)}`
+                                                                    : formatQuantity(
+                                                                          movement.quantity_difference,
+                                                                      )}
+                                                            </td>
+                                                            <td className="px-4 py-2.5 text-muted-foreground">
+                                                                {movement
+                                                                    .supplier
+                                                                    ?.name ??
+                                                                    'Internal'}
+                                                            </td>
+                                                            <td
+                                                                className="max-w-[200px] truncate px-4 py-2.5 text-foreground"
+                                                                title={
+                                                                    movement.reason
+                                                                }
+                                                            >
+                                                                {
+                                                                    movement.reason
+                                                                }
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-muted-foreground">
+                                                                {movement
+                                                                    .creator
+                                                                    ?.name ??
+                                                                    'Sistem'}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-center">
+                                                                <Button
+                                                                    type="button"
+                                                                    variant="outline"
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        setDetailMovement(
+                                                                            movement,
+                                                                        )
+                                                                    }
+                                                                    className="h-7 gap-1 px-2 text-xs hover:bg-primary/5 hover:text-primary"
+                                                                    title="Lihat rincian item transaksi ini"
+                                                                >
+                                                                    <Eye className="size-3" />
+                                                                    Detail
+                                                                </Button>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                },
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -882,33 +1103,43 @@ export default function InventoryIndex({
 
             {/* Modal: Tambah Stok Kolektif (Bulk Stock) */}
             <Dialog open={bulkModalOpen} onOpenChange={setBulkModalOpen}>
-                <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader className="pb-1 border-b border-border/40">
+                <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                    <DialogHeader className="border-b border-border/40 pb-1">
                         <DialogTitle className="flex items-center gap-2 text-base font-semibold">
                             <PlusCircle className="size-4 text-primary" />
                             Tambah Stok Kolektif
                         </DialogTitle>
                     </DialogHeader>
 
-                    <form onSubmit={handleBulkSubmit} className="space-y-4 pt-1">
+                    <form
+                        onSubmit={handleBulkSubmit}
+                        className="space-y-4 pt-1"
+                    >
                         {bulkError && (
-                            <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive flex items-center gap-2">
+                            <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2.5 text-xs text-destructive">
                                 <AlertCircle className="size-4 shrink-0" />
                                 <span>{bulkError}</span>
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-medium text-foreground">Tipe Penyesuaian</Label>
+                                <Label className="text-xs font-medium text-foreground">
+                                    Tipe Penyesuaian
+                                </Label>
                                 <select
                                     value={bulkMovementType}
-                                    onChange={(e) => setBulkMovementType(e.target.value)}
+                                    onChange={(e) =>
+                                        setBulkMovementType(e.target.value)
+                                    }
                                     className="form-select-custom h-9 w-full text-xs"
                                     required
                                 >
                                     {movementTypes.map((type) => (
-                                        <option key={type.value} value={type.value}>
+                                        <option
+                                            key={type.value}
+                                            value={type.value}
+                                        >
                                             {type.label}
                                         </option>
                                     ))}
@@ -916,13 +1147,19 @@ export default function InventoryIndex({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-medium text-foreground">Supplier</Label>
+                                <Label className="text-xs font-medium text-foreground">
+                                    Supplier
+                                </Label>
                                 <select
                                     value={bulkSupplierId}
-                                    onChange={(e) => setBulkSupplierId(e.target.value)}
+                                    onChange={(e) =>
+                                        setBulkSupplierId(e.target.value)
+                                    }
                                     className="form-select-custom h-9 w-full text-xs"
                                 >
-                                    <option value="">Tanpa supplier / Internal</option>
+                                    <option value="">
+                                        Tanpa supplier / Internal
+                                    </option>
                                     {suppliers.map((s) => (
                                         <option key={s.id} value={s.id}>
                                             {s.code} — {s.name}
@@ -932,12 +1169,16 @@ export default function InventoryIndex({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-medium text-foreground">Alasan Penambahan *</Label>
+                                <Label className="text-xs font-medium text-foreground">
+                                    Alasan Penambahan *
+                                </Label>
                                 <Input
                                     value={bulkReason}
-                                    onChange={(e) => setBulkReason(e.target.value)}
+                                    onChange={(e) =>
+                                        setBulkReason(e.target.value)
+                                    }
                                     required
                                     placeholder="Alasan penambahan stok"
                                     className="h-9 text-xs"
@@ -945,10 +1186,14 @@ export default function InventoryIndex({
                             </div>
 
                             <div className="space-y-1.5">
-                                <Label className="text-xs font-medium text-foreground">No. Referensi / Catatan</Label>
+                                <Label className="text-xs font-medium text-foreground">
+                                    No. Referensi / Catatan
+                                </Label>
                                 <Input
                                     value={bulkNotes}
-                                    onChange={(e) => setBulkNotes(e.target.value)}
+                                    onChange={(e) =>
+                                        setBulkNotes(e.target.value)
+                                    }
                                     placeholder="No. surat jalan, nota, dll."
                                     className="h-9 text-xs"
                                 />
@@ -966,7 +1211,7 @@ export default function InventoryIndex({
                                     variant="outline"
                                     size="sm"
                                     onClick={handleAddBulkRow}
-                                    className="h-7 text-xs font-medium gap-1"
+                                    className="h-7 gap-1 text-xs font-medium"
                                 >
                                     <Plus className="size-3" />
                                     Tambah Baris
@@ -975,31 +1220,57 @@ export default function InventoryIndex({
 
                             <div className="overflow-x-auto rounded-lg border border-border/60">
                                 <table className="w-full min-w-[360px] text-left text-xs">
-                                    <thead className="bg-muted/40 font-semibold text-muted-foreground uppercase text-[11px] border-b border-border/50">
+                                    <thead className="border-b border-border/50 bg-muted/40 text-[11px] font-semibold text-muted-foreground uppercase">
                                         <tr>
-                                            <th className="px-3 py-2">Barang</th>
-                                            <th className="px-3 py-2 w-36 text-right">Jumlah (+Qty)</th>
-                                            <th className="px-2 py-2 w-10 text-center"></th>
+                                            <th className="px-3 py-2">
+                                                Barang
+                                            </th>
+                                            <th className="w-36 px-3 py-2 text-right">
+                                                Jumlah (+Qty)
+                                            </th>
+                                            <th className="w-10 px-2 py-2 text-center"></th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/50">
                                         {bulkRows.length === 0 ? (
                                             <tr>
-                                                <td colSpan={3} className="p-4 text-center text-muted-foreground">
-                                                    Belum ada baris barang. Klik &quot;Tambah Baris&quot;.
+                                                <td
+                                                    colSpan={3}
+                                                    className="p-4 text-center text-muted-foreground"
+                                                >
+                                                    Belum ada baris barang. Klik
+                                                    &quot;Tambah Baris&quot;.
                                                 </td>
                                             </tr>
                                         ) : (
                                             bulkRows.map((row, index) => {
-                                                const currentItem = allItems.find((it) => it.id === row.item_id);
+                                                const currentItem =
+                                                    allItems.find(
+                                                        (it) =>
+                                                            it.id ===
+                                                            row.item_id,
+                                                    );
                                                 return (
-                                                    <tr key={index} className="hover:bg-muted/10">
+                                                    <tr
+                                                        key={index}
+                                                        className="hover:bg-muted/10"
+                                                    >
                                                         <td className="px-3 py-2">
                                                             <CatalogItemSelect
                                                                 name={`bulk_items[${index}][item_id]`}
-                                                                value={String(row.item_id || '')}
-                                                                onChange={(itemId) =>
-                                                                    handleBulkItemChange(index, Number(itemId))
+                                                                value={String(
+                                                                    row.item_id ||
+                                                                        '',
+                                                                )}
+                                                                onChange={(
+                                                                    itemId,
+                                                                ) =>
+                                                                    handleBulkItemChange(
+                                                                        index,
+                                                                        Number(
+                                                                            itemId,
+                                                                        ),
+                                                                    )
                                                                 }
                                                                 items={allItems}
                                                                 required
@@ -1013,15 +1284,30 @@ export default function InventoryIndex({
                                                                     type="number"
                                                                     min="1"
                                                                     step="1"
-                                                                    value={row.quantity}
-                                                                    onChange={(e) =>
-                                                                        handleBulkQtyChange(index, Number(e.target.value))
+                                                                    value={
+                                                                        row.quantity
+                                                                    }
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) =>
+                                                                        handleBulkQtyChange(
+                                                                            index,
+                                                                            Number(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            ),
+                                                                        )
                                                                     }
                                                                     required
-                                                                    className="h-9 w-24 text-right font-mono font-bold text-xs tabular-nums"
+                                                                    className="h-9 w-24 text-right font-mono text-xs font-bold tabular-nums"
                                                                 />
-                                                                <span className="font-mono text-muted-foreground text-[11px] w-8 text-left truncate">
-                                                                    {currentItem?.unit.symbol}
+                                                                <span className="w-8 truncate text-left font-mono text-[11px] text-muted-foreground">
+                                                                    {
+                                                                        currentItem
+                                                                            ?.unit
+                                                                            .symbol
+                                                                    }
                                                                 </span>
                                                             </div>
                                                         </td>
@@ -1030,7 +1316,11 @@ export default function InventoryIndex({
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                onClick={() => handleRemoveBulkRow(index)}
+                                                                onClick={() =>
+                                                                    handleRemoveBulkRow(
+                                                                        index,
+                                                                    )
+                                                                }
                                                                 className="size-7 text-muted-foreground hover:text-destructive"
                                                             >
                                                                 <Trash2 className="size-3.5" />
@@ -1045,12 +1335,18 @@ export default function InventoryIndex({
                             </div>
 
                             {/* Summary Footer */}
-                            <div className="flex items-center justify-between rounded-lg bg-muted/20 px-3 py-2.5 text-xs border border-border/50">
+                            <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5 text-xs">
                                 <span className="text-muted-foreground">
-                                    Total: <strong className="text-foreground font-mono">{bulkRows.length} item</strong>
+                                    Total:{' '}
+                                    <strong className="font-mono text-foreground">
+                                        {bulkRows.length} item
+                                    </strong>
                                 </span>
                                 <span className="text-muted-foreground">
-                                    Total Unit: <strong className="font-mono font-bold text-primary">+{totalBulkQuantity}</strong>
+                                    Total Unit:{' '}
+                                    <strong className="font-mono font-bold text-primary">
+                                        +{totalBulkQuantity}
+                                    </strong>
                                 </span>
                             </div>
                         </div>
@@ -1067,10 +1363,14 @@ export default function InventoryIndex({
                             <Button
                                 type="submit"
                                 size="sm"
-                                disabled={bulkSubmitting || bulkRows.length === 0}
+                                disabled={
+                                    bulkSubmitting || bulkRows.length === 0
+                                }
                                 className="font-medium"
                             >
-                                {bulkSubmitting ? 'Menyimpan...' : 'Simpan Semua Stok (+)'}
+                                {bulkSubmitting
+                                    ? 'Menyimpan...'
+                                    : 'Simpan Semua Stok (+)'}
                             </Button>
                         </DialogFooter>
                     </form>
@@ -1112,7 +1412,7 @@ export default function InventoryIndex({
                                 value={stockModalItem.id}
                             />
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div className="space-y-1">
                                     <Label className="text-xs font-semibold">
                                         Jumlah Stok Fisik Baru *
@@ -1123,7 +1423,8 @@ export default function InventoryIndex({
                                         min="0"
                                         step="1"
                                         defaultValue={
-                                            stockModalItem.stocks[0]?.quantity ?? '0'
+                                            stockModalItem.stocks[0]
+                                                ?.quantity ?? '0'
                                         }
                                         required
                                         className="h-9 text-xs font-medium tabular-nums"
@@ -1252,12 +1553,19 @@ export default function InventoryIndex({
                             />
 
                             <div className="rounded-lg border bg-muted/20 p-2.5 text-xs text-muted-foreground">
-                                Standar default katalog master: <strong className="font-mono text-foreground">{formatQuantity(standardModalItem.min_stock ?? 0)} {standardModalItem.unit.symbol}</strong>
+                                Standar default katalog master:{' '}
+                                <strong className="font-mono text-foreground">
+                                    {formatQuantity(
+                                        standardModalItem.min_stock ?? 0,
+                                    )}{' '}
+                                    {standardModalItem.unit.symbol}
+                                </strong>
                             </div>
 
                             <div className="space-y-1">
                                 <Label className="text-xs font-semibold">
-                                    Batas Standar Minimum Pusat ({standardModalItem.unit.symbol})
+                                    Batas Standar Minimum Pusat (
+                                    {standardModalItem.unit.symbol})
                                 </Label>
                                 <Input
                                     name="standard_quantity"
@@ -1265,7 +1573,8 @@ export default function InventoryIndex({
                                     min="0"
                                     step="1"
                                     defaultValue={
-                                        standardModalItem.stock_standards[0]?.standard_quantity ??
+                                        standardModalItem.stock_standards[0]
+                                            ?.standard_quantity ??
                                         standardModalItem.min_stock ??
                                         '0'
                                     }
@@ -1297,9 +1606,12 @@ export default function InventoryIndex({
             </Dialog>
 
             {/* Modal Detail Transaksi Tambah Stok */}
-            <Dialog open={!!detailMovement} onOpenChange={(open) => !open && setDetailMovement(null)}>
-                <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden">
-                    <DialogHeader className="p-5 pb-3 border-b border-border/50 bg-muted/20">
+            <Dialog
+                open={!!detailMovement}
+                onOpenChange={(open) => !open && setDetailMovement(null)}
+            >
+                <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden p-0 sm:max-w-2xl">
+                    <DialogHeader className="border-b border-border/50 bg-muted/20 p-5 pb-3">
                         <div className="flex items-start justify-between gap-3">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
@@ -1315,7 +1627,9 @@ export default function InventoryIndex({
                                 <DialogDescription className="text-xs text-muted-foreground">
                                     Waktu:{' '}
                                     {detailMovement?.created_at
-                                        ? new Date(detailMovement.created_at).toLocaleString('id-ID', {
+                                        ? new Date(
+                                              detailMovement.created_at,
+                                          ).toLocaleString('id-ID', {
                                               day: '2-digit',
                                               month: 'long',
                                               year: 'numeric',
@@ -1325,37 +1639,71 @@ export default function InventoryIndex({
                                         : '—'}
                                 </DialogDescription>
                             </div>
-                            {detailMovement && getMovementTypeBadge(detailMovement.movement_type)}
+                            {detailMovement &&
+                                getMovementTypeBadge(
+                                    detailMovement.movement_type,
+                                )}
                         </div>
 
                         {/* Metadata Summary */}
-                        <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-lg border border-border/60 bg-background/80 p-2.5 text-xs">
+                        <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-border/60 bg-background/80 p-2.5 text-xs sm:grid-cols-4">
                             <div>
-                                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Supplier</span>
-                                <p className="font-medium text-foreground truncate">{detailMovement?.supplier?.name ?? 'Internal'}</p>
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                                    Supplier
+                                </span>
+                                <p className="truncate font-medium text-foreground">
+                                    {detailMovement?.supplier?.name ??
+                                        'Internal'}
+                                </p>
                             </div>
                             <div>
-                                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Petugas</span>
-                                <p className="font-medium text-foreground truncate">{detailMovement?.creator?.name ?? 'Sistem'}</p>
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                                    Petugas
+                                </span>
+                                <p className="truncate font-medium text-foreground">
+                                    {detailMovement?.creator?.name ?? 'Sistem'}
+                                </p>
                             </div>
                             <div>
-                                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Total Item</span>
-                                <p className="font-semibold text-foreground">{detailMovement?.total_items ?? (detailMovement?.items?.length || 1)} Item</p>
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                                    Total Item
+                                </span>
+                                <p className="font-semibold text-foreground">
+                                    {detailMovement?.total_items ??
+                                        (detailMovement?.items?.length ||
+                                            1)}{' '}
+                                    Item
+                                </p>
                             </div>
                             <div>
-                                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Total Perubahan</span>
+                                <span className="text-[10px] font-semibold text-muted-foreground uppercase">
+                                    Total Perubahan
+                                </span>
                                 <p className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                    {Number(detailMovement?.quantity_difference ?? 0) > 0 ? `+` : ''}
-                                    {formatQuantity(detailMovement?.quantity_difference ?? 0)}
+                                    {Number(
+                                        detailMovement?.quantity_difference ??
+                                            0,
+                                    ) > 0
+                                        ? `+`
+                                        : ''}
+                                    {formatQuantity(
+                                        detailMovement?.quantity_difference ??
+                                            0,
+                                    )}
                                 </p>
                             </div>
                         </div>
 
                         {detailMovement?.reason && (
                             <div className="mt-2 text-xs text-muted-foreground">
-                                <span className="font-medium text-foreground">Alasan:</span> {detailMovement.reason}
+                                <span className="font-medium text-foreground">
+                                    Alasan:
+                                </span>{' '}
+                                {detailMovement.reason}
                                 {detailMovement.notes && (
-                                    <span className="ml-2">({detailMovement.notes})</span>
+                                    <span className="ml-2">
+                                        ({detailMovement.notes})
+                                    </span>
                                 )}
                             </div>
                         )}
@@ -1363,61 +1711,112 @@ export default function InventoryIndex({
 
                     {/* Items Table */}
                     <div className="flex-1 overflow-y-auto p-5 pt-3">
-                        <h4 className="mb-2 text-xs font-semibold text-foreground uppercase tracking-wider">
-                            Daftar Item Barang ({detailMovement?.items?.length ?? (detailMovement ? 1 : 0)})
+                        <h4 className="mb-2 text-xs font-semibold tracking-wider text-foreground uppercase">
+                            Daftar Item Barang (
+                            {detailMovement?.items?.length ??
+                                (detailMovement ? 1 : 0)}
+                            )
                         </h4>
                         <div className="overflow-x-auto rounded-lg border border-border/60">
                             <table className="w-full text-left text-xs">
                                 <thead className="border-b border-border/60 bg-muted/40 font-semibold text-muted-foreground">
                                     <tr>
-                                        <th className="w-10 px-3 py-2 text-center">#</th>
-                                        <th className="px-3 py-2">Item Barang</th>
-                                        <th className="px-2 py-2 text-center">Satuan</th>
-                                        <th className="px-3 py-2 text-right">Stok Sebelum</th>
-                                        <th className="px-3 py-2 text-right">Perubahan</th>
-                                        <th className="px-3 py-2 text-right">Stok Akhir</th>
-                                        <th className="px-3 py-2 text-right">Biaya / Pcs</th>
+                                        <th className="w-10 px-3 py-2 text-center">
+                                            #
+                                        </th>
+                                        <th className="px-3 py-2">
+                                            Item Barang
+                                        </th>
+                                        <th className="px-2 py-2 text-center">
+                                            Satuan
+                                        </th>
+                                        <th className="px-3 py-2 text-right">
+                                            Stok Sebelum
+                                        </th>
+                                        <th className="px-3 py-2 text-right">
+                                            Perubahan
+                                        </th>
+                                        <th className="px-3 py-2 text-right">
+                                            Stok Akhir
+                                        </th>
+                                        <th className="px-3 py-2 text-right">
+                                            Biaya / Pcs
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/50">
-                                    {(detailMovement?.items && detailMovement.items.length > 0
+                                    {(detailMovement?.items &&
+                                    detailMovement.items.length > 0
                                         ? detailMovement.items
                                         : [
                                               {
                                                   id: detailMovement?.id ?? 0,
-                                                  item_id: detailMovement?.item?.id ?? 0,
-                                                  sku: detailMovement?.item?.sku ?? '—',
-                                                  name: detailMovement?.item?.name ?? '—',
-                                                  unit: detailMovement?.item?.unit ?? 'pcs',
-                                                  previous_quantity: Number(detailMovement?.previous_quantity ?? 0),
-                                                  new_quantity: Number(detailMovement?.new_quantity ?? 0),
-                                                  quantity_difference: Number(detailMovement?.quantity_difference ?? 0),
+                                                  item_id:
+                                                      detailMovement?.item
+                                                          ?.id ?? 0,
+                                                  sku:
+                                                      detailMovement?.item
+                                                          ?.sku ?? '—',
+                                                  name:
+                                                      detailMovement?.item
+                                                          ?.name ?? '—',
+                                                  unit:
+                                                      detailMovement?.item
+                                                          ?.unit ?? 'pcs',
+                                                  previous_quantity: Number(
+                                                      detailMovement?.previous_quantity ??
+                                                          0,
+                                                  ),
+                                                  new_quantity: Number(
+                                                      detailMovement?.new_quantity ??
+                                                          0,
+                                                  ),
+                                                  quantity_difference: Number(
+                                                      detailMovement?.quantity_difference ??
+                                                          0,
+                                                  ),
                                                   unit_cost: null,
                                               },
                                           ]
                                     ).map((itm, idx) => (
-                                        <tr key={itm.id || idx} className="hover:bg-muted/10">
+                                        <tr
+                                            key={itm.id || idx}
+                                            className="hover:bg-muted/10"
+                                        >
                                             <td className="px-3 py-2 text-center font-mono text-muted-foreground">
                                                 {idx + 1}
                                             </td>
                                             <td className="px-3 py-2">
-                                                <p className="font-semibold text-foreground">{itm.name}</p>
-                                                <p className="font-mono text-[10px] text-muted-foreground">{itm.sku}</p>
+                                                <p className="font-semibold text-foreground">
+                                                    {itm.name}
+                                                </p>
+                                                <p className="font-mono text-[10px] text-muted-foreground">
+                                                    {itm.sku}
+                                                </p>
                                             </td>
-                                            <td className="px-2 py-2 text-center text-muted-foreground font-mono">
+                                            <td className="px-2 py-2 text-center font-mono text-muted-foreground">
                                                 {itm.unit}
                                             </td>
                                             <td className="px-3 py-2 text-right font-mono text-muted-foreground tabular-nums">
-                                                {formatQuantity(itm.previous_quantity)}
+                                                {formatQuantity(
+                                                    itm.previous_quantity,
+                                                )}
                                             </td>
-                                            <td className="px-3 py-2 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                                                {itm.quantity_difference > 0 ? `+${formatQuantity(itm.quantity_difference)}` : formatQuantity(itm.quantity_difference)}
+                                            <td className="px-3 py-2 text-right font-mono font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
+                                                {itm.quantity_difference > 0
+                                                    ? `+${formatQuantity(itm.quantity_difference)}`
+                                                    : formatQuantity(
+                                                          itm.quantity_difference,
+                                                      )}
                                             </td>
                                             <td className="px-3 py-2 text-right font-mono font-semibold text-foreground tabular-nums">
-                                                {formatQuantity(itm.new_quantity)}
+                                                {formatQuantity(
+                                                    itm.new_quantity,
+                                                )}
                                             </td>
                                             <td className="px-3 py-2 text-right font-mono text-muted-foreground tabular-nums">
-                                                {itm.unit_cost !== null && itm.unit_cost !== undefined
+                                                {itm.unit_cost !== null &&
+                                                itm.unit_cost !== undefined
                                                     ? `Rp ${Number(itm.unit_cost).toLocaleString('id-ID')}`
                                                     : '—'}
                                             </td>
@@ -1428,12 +1827,12 @@ export default function InventoryIndex({
                         </div>
                     </div>
 
-                    <DialogFooter className="p-3 border-t border-border/50 bg-muted/10">
+                    <DialogFooter className="border-t border-border/50 bg-muted/10 p-3">
                         <Button
                             variant="secondary"
                             size="sm"
                             onClick={() => setDetailMovement(null)}
-                            className="h-8 text-xs font-medium px-4"
+                            className="h-8 px-4 text-xs font-medium"
                         >
                             Tutup
                         </Button>
