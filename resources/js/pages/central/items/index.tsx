@@ -49,6 +49,7 @@ type Item = {
     name: string;
     cost_price?: number | null;
     min_stock?: number | null;
+    target_stock?: number | null;
     is_active: boolean;
     category: Option;
     unit: Option;
@@ -180,7 +181,10 @@ export default function ItemIndex({
                                                 Harga Pokok Acuan
                                             </th>
                                             <th className="px-3 py-2.5 text-right">
-                                                Min. Stok
+                                                Min. Kritis
+                                            </th>
+                                            <th className="px-3 py-2.5 text-right">
+                                                Target Penambahan
                                             </th>
                                             <th className="px-3 py-2.5 text-center">
                                                 Status
@@ -223,9 +227,14 @@ export default function ItemIndex({
                                                         item.cost_price || 0,
                                                     ).toLocaleString('id-ID')}
                                                 </td>
-                                                <td className="px-3 py-2.5 text-right font-mono text-[11px] text-muted-foreground tabular-nums">
+                                                <td className="px-3 py-2.5 text-right font-mono text-[11px] text-rose-600 dark:text-rose-400 font-semibold tabular-nums">
                                                     {Number(
                                                         item.min_stock || 0,
+                                                    ).toLocaleString('id-ID')}
+                                                </td>
+                                                <td className="px-3 py-2.5 text-right font-mono text-[11px] text-primary font-semibold tabular-nums">
+                                                    {Number(
+                                                        item.target_stock || 0,
                                                     ).toLocaleString('id-ID')}
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center">
@@ -390,7 +399,7 @@ export default function ItemIndex({
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                         <div className="space-y-1">
                                             <Label className="text-xs font-medium">
                                                 Harga Pokok Acuan (Rp)
@@ -410,7 +419,7 @@ export default function ItemIndex({
 
                                         <div className="space-y-1">
                                             <Label className="text-xs font-medium">
-                                                Standar Min. Stok Global
+                                                Min. Kritis (Batas Bawah)
                                             </Label>
                                             <Input
                                                 name="min_stock"
@@ -422,6 +431,23 @@ export default function ItemIndex({
                                             />
                                             <InputError
                                                 message={errors.min_stock}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <Label className="text-xs font-medium">
+                                                Target Penambahan (Ideal)
+                                            </Label>
+                                            <Input
+                                                name="target_stock"
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                placeholder="0"
+                                                className="h-8.5 font-mono text-xs"
+                                            />
+                                            <InputError
+                                                message={errors.target_stock}
                                             />
                                         </div>
                                     </div>
@@ -568,7 +594,7 @@ export default function ItemIndex({
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                                             <div className="space-y-1">
                                                 <Label className="text-xs font-medium">
                                                     Harga Pokok Acuan (Rp)
@@ -594,7 +620,7 @@ export default function ItemIndex({
 
                                             <div className="space-y-1">
                                                 <Label className="text-xs font-medium">
-                                                    Standar Min. Stok Global
+                                                    Min. Kritis (Batas Bawah)
                                                 </Label>
                                                 <Input
                                                     name="min_stock"
@@ -612,6 +638,29 @@ export default function ItemIndex({
                                                 />
                                                 <InputError
                                                     message={errors.min_stock}
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <Label className="text-xs font-medium">
+                                                    Target Penambahan (Ideal)
+                                                </Label>
+                                                <Input
+                                                    name="target_stock"
+                                                    type="number"
+                                                    min="0"
+                                                    step="1"
+                                                    defaultValue={
+                                                        editingItem.target_stock
+                                                            ? Number(
+                                                                  editingItem.target_stock,
+                                                              )
+                                                            : 0
+                                                    }
+                                                    className="h-8.5 font-mono text-xs"
+                                                />
+                                                <InputError
+                                                    message={errors.target_stock}
                                                 />
                                             </div>
                                         </div>

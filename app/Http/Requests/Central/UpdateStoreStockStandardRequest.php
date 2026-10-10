@@ -20,14 +20,17 @@ class UpdateStoreStockStandardRequest extends FormRequest
             'store_id' => ['required', Rule::exists('stores', 'id')->where('is_active', true)],
             'item_id' => ['required', Rule::exists('items', 'id')->where('is_active', true)],
             'standard_quantity' => ['required', 'integer', 'min:0'],
+            'min_quantity' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'standard_quantity.integer' => 'Stok standar wajib berupa bilangan bulat.',
-            'standard_quantity.min' => 'Stok standar tidak boleh negatif.',
+            'standard_quantity.integer' => 'Target stok penambahan wajib berupa bilangan bulat.',
+            'standard_quantity.min' => 'Target stok penambahan tidak boleh negatif.',
+            'min_quantity.integer' => 'Standar stok minimum wajib berupa bilangan bulat.',
+            'min_quantity.min' => 'Standar stok minimum tidak boleh negatif.',
         ];
     }
 }

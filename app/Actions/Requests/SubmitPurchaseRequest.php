@@ -4,6 +4,7 @@ namespace App\Actions\Requests;
 
 use App\Enums\PurchaseRequestItemType;
 use App\Enums\PurchaseRequestStatus;
+use App\Models\Item;
 use App\Models\PurchaseRequest;
 use App\Models\StoreStock;
 use App\Models\StoreStockStandard;
@@ -28,7 +29,11 @@ class SubmitPurchaseRequest
                     continue;
                 }
                 $current = StoreStock::query()->where('store_id', $request->store_id)->where('item_id', $line->item_id)->lockForUpdate()->value('quantity') ?? 0;
-                $standard = StoreStockStandard::query()->where('store_id', $request->store_id)->where('item_id', $line->item_id)->lockForUpdate()->value('standard_quantity') ?? 0;
+                $storeStandard = StoreStockStandard::query()->where('store_id', $request->store_id)->where('item_id', $line->item_id)->lockForUpdate()->value('standard_quantity');
+                $itemMaster = Item::query()->where('id', $line->item_id)->first(['target_stock', 'min_stock']);
+                $standard = $storeStandard !== null && (int) $storeStandard > 0
+                    ? (int) $storeStandard
+                    : (int) ($itemMaster?->target_stock ?? $itemMaster?->min_stock ?? 0);
                 $line->update([
                     'current_stock_snapshot' => $current,
                     'standard_stock_snapshot' => $standard,

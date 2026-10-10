@@ -12,14 +12,18 @@ class UpdateStoreStockStandard
 {
     public function __construct(private ActivityLogger $logger) {}
 
-    public function handle(Store $store, Item $item, string $quantity): StoreStockStandard
+    public function handle(Store $store, Item $item, string $quantity, ?string $minQuantity = null): StoreStockStandard
     {
-        return DB::transaction(function () use ($store, $item, $quantity): StoreStockStandard {
+        return DB::transaction(function () use ($store, $item, $quantity, $minQuantity): StoreStockStandard {
             $standard = StoreStockStandard::query()->whereBelongsTo($store)->whereBelongsTo($item)->lockForUpdate()->first();
-            $old = $standard?->only(['standard_quantity']);
+            $old = $standard?->only(['standard_quantity', 'min_quantity']);
             $standard ??= new StoreStockStandard(['store_id' => $store->id, 'item_id' => $item->id]);
-            $standard->fill(['standard_quantity' => $quantity])->save();
-            $this->logger->log('stock_standard.updated', $standard, $old, ['standard_quantity' => $quantity]);
+            $payload = ['standard_quantity' => $quantity];
+            if ($minQuantity !== null) {
+                $payload['min_quantity'] = $minQuantity !== '' ? $minQuantity : null;
+            }
+            $standard->fill($payload)->save();
+            $this->logger->log('stock_standard.updated', $standard, $old, $payload);
 
             return $standard;
         }, 3);

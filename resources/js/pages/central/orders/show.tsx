@@ -57,6 +57,7 @@ type OrderItem = {
 
 type ReceiptItem = {
     id: number;
+    purchase_order_item_id?: number;
     received_quantity: number;
 };
 
@@ -184,6 +185,15 @@ export default function OrderShow({
         (acc, item) => acc + Number(item.quantity || 0),
         0,
     );
+    const totalReceivedQuantityCount = purchaseOrder.items.reduce((acc, item) => {
+        const received = (purchaseOrder.receipts ?? []).reduce((sum, receipt) => {
+            const itemSum = (receipt.items ?? [])
+                .filter((ri) => ri.purchase_order_item_id === item.id)
+                .reduce((s, ri) => s + Number(ri.received_quantity || 0), 0);
+            return sum + itemSum;
+        }, 0);
+        return acc + received;
+    }, 0);
 
     const targetStore =
         purchaseOrder.purchase_request?.store ??
@@ -392,7 +402,7 @@ export default function OrderShow({
                 <Card className="border-border/70 shadow-xs">
                     <CardHeader className="flex flex-row items-center justify-between border-b border-border/60 px-5 py-3.5">
                         <CardTitle className="font-serif text-base font-bold text-foreground">
-                            Rincian Item & Alokasi Toko
+                            Rincian Item & Penerimaan
                         </CardTitle>
                         <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                             <Badge
@@ -405,8 +415,16 @@ export default function OrderShow({
                                 variant="secondary"
                                 className="font-mono text-xs"
                             >
-                                Total: {formatQuantity(totalQuantityCount)} Unit
+                                Dipesan: {formatQuantity(totalQuantityCount)} Unit
                             </Badge>
+                            {totalReceivedQuantityCount > 0 && (
+                                <Badge
+                                    variant="outline"
+                                    className="border-emerald-500/30 bg-emerald-500/10 font-mono text-xs text-emerald-700 dark:text-emerald-400"
+                                >
+                                    Diterima: {formatQuantity(totalReceivedQuantityCount)} Unit
+                                </Badge>
+                            )}
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
@@ -417,13 +435,15 @@ export default function OrderShow({
                                         <th className="w-12 px-4 py-3 text-center">
                                             #
                                         </th>
-                                        <th className="px-4 py-3">Barang</th>
-                                        <th className="px-4 py-3">Tipe</th>
-                                        <th className="px-4 py-3">
-                                            Alokasi Permintaan
+                                        <th className="px-4 py-3">Barang & Tipe</th>
+                                        <th className="px-4 py-3 text-right">
+                                            Dipesan
                                         </th>
                                         <th className="px-4 py-3 text-right">
-                                            Kuantitas
+                                            Diterima (Receipt)
+                                        </th>
+                                        <th className="w-32 px-4 py-3 text-center">
+                                            Status
                                         </th>
                                     </tr>
                                 </thead>
@@ -433,7 +453,33 @@ export default function OrderShow({
                                             item.item_type === 'STOCK'
                                                 ? item.item?.name
                                                 : item.name;
-                                        const sku = item.item?.sku;
+
+                                        const itemReceived = (purchaseOrder.receipts ?? []).reduce(
+                                            (sum, receipt) => {
+                                                const itemSum = (receipt.items ?? [])
+                                                    .filter(
+                                                        (ri) =>
+                                                            ri.purchase_order_item_id ===
+                                                            item.id,
+                                                    )
+                                                    .reduce(
+                                                        (s, ri) =>
+                                                            s +
+                                                            Number(
+                                                                ri.received_quantity ||
+                                                                    0,
+                                                            ),
+                                                        0,
+                                                    );
+                                                return sum + itemSum;
+                                            },
+                                            0,
+                                        );
+
+                                        const isFullyReceived =
+                                            itemReceived >= Number(item.quantity);
+                                        const isPartiallyReceived =
+                                            itemReceived > 0 && !isFullyReceived;
 
                                         return (
                                             <tr
@@ -444,85 +490,31 @@ export default function OrderShow({
                                                     {index + 1}
                                                 </td>
                                                 <td className="px-4 py-3">
-                                                    <p className="font-serif font-bold text-foreground">
-                                                        {itemName ??
-                                                            'Item Tanpa Nama'}
-                                                    </p>
-                                                    {sku && (
-                                                        <p className="font-mono text-xs text-muted-foreground">
-                                                            SKU: {sku}
-                                                        </p>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    {item.item_type ===
-                                                    'STOCK' ? (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="border-amber-500/30 bg-amber-500/5 text-[11px] text-amber-700 dark:text-amber-400"
-                                                        >
-                                                            Stok Reguler
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge
-                                                            variant="outline"
-                                                            className="border-purple-500/30 bg-purple-500/5 text-[11px] text-purple-700 dark:text-purple-400"
-                                                        >
-                                                            Permintaan Khusus
-                                                        </Badge>
-                                                    )}
-                                                </td>
-                                                <td className="px-4 py-3">
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {item.allocations
-                                                            .length > 0 ? (
-                                                            item.allocations.map(
-                                                                (
-                                                                    allocation,
-                                                                ) => (
-                                                                    <span
-                                                                        key={
-                                                                            allocation.id
-                                                                        }
-                                                                        className="inline-flex items-center gap-1.5 rounded-md border border-border/70 bg-card px-2 py-0.5 font-mono text-xs shadow-2xs"
-                                                                    >
-                                                                        <Store className="size-3 text-muted-foreground" />
-                                                                        <span className="font-semibold text-foreground">
-                                                                            {
-                                                                                allocation
-                                                                                    .purchase_request_item
-                                                                                    .purchase_request
-                                                                                    .store
-                                                                                    .code
-                                                                            }
-                                                                        </span>
-                                                                        <span className="text-muted-foreground">
-                                                                            (
-                                                                            {
-                                                                                allocation
-                                                                                    .purchase_request_item
-                                                                                    .purchase_request
-                                                                                    .number
-                                                                            }
-                                                                            )
-                                                                        </span>
-                                                                        <strong className="text-primary">
-                                                                            {formatQuantity(
-                                                                                allocation.allocated_quantity,
-                                                                            )}
-                                                                        </strong>
-                                                                    </span>
-                                                                ),
-                                                            )
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="font-serif font-bold text-foreground">
+                                                            {itemName ??
+                                                                'Item Tanpa Nama'}
+                                                        </span>
+                                                        {item.item_type ===
+                                                        'STOCK' ? (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="border-amber-500/30 bg-amber-500/5 text-[10px] font-medium text-amber-700 dark:text-amber-400"
+                                                            >
+                                                                Stok Reguler
+                                                            </Badge>
                                                         ) : (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                —
-                                                            </span>
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="border-purple-500/30 bg-purple-500/5 text-[10px] font-medium text-purple-700 dark:text-purple-400"
+                                                            >
+                                                                Permintaan Khusus
+                                                            </Badge>
                                                         )}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
-                                                    <span className="font-mono text-sm font-bold text-foreground">
+                                                    <span className="font-mono text-sm font-semibold text-foreground">
                                                         {formatQuantity(
                                                             item.quantity,
                                                         )}{' '}
@@ -531,6 +523,46 @@ export default function OrderShow({
                                                         {item.unit.symbol}
                                                     </span>
                                                 </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <span
+                                                        className={`font-mono text-sm font-semibold ${
+                                                            itemReceived > 0
+                                                                ? 'text-emerald-600 dark:text-emerald-400'
+                                                                : 'text-muted-foreground'
+                                                        }`}
+                                                    >
+                                                        {formatQuantity(
+                                                            itemReceived,
+                                                        )}{' '}
+                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {item.unit.symbol}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-center">
+                                                    {isFullyReceived ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="border-emerald-500/30 bg-emerald-500/10 text-[11px] font-medium text-emerald-700 dark:text-emerald-300"
+                                                        >
+                                                            Lengkap
+                                                        </Badge>
+                                                    ) : isPartiallyReceived ? (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="border-amber-500/30 bg-amber-500/10 text-[11px] font-medium text-amber-700 dark:text-amber-300"
+                                                        >
+                                                            Sebagian
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge
+                                                            variant="outline"
+                                                            className="border-border/70 text-[11px] font-normal text-muted-foreground"
+                                                        >
+                                                            Belum Diterima
+                                                        </Badge>
+                                                    )}
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -538,7 +570,7 @@ export default function OrderShow({
                                 <tfoot>
                                     <tr className="border-t-2 border-border/80 bg-muted/30 font-medium">
                                         <td
-                                            colSpan={4}
+                                            colSpan={2}
                                             className="px-4 py-3 text-right text-xs tracking-wider text-muted-foreground uppercase"
                                         >
                                             Total:
@@ -553,6 +585,17 @@ export default function OrderShow({
                                                 Unit
                                             </span>
                                         </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <span className="font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
+                                                {formatQuantity(
+                                                    totalReceivedQuantityCount,
+                                                )}
+                                            </span>
+                                            <span className="ml-1 text-xs text-muted-foreground">
+                                                Unit
+                                            </span>
+                                        </td>
+                                        <td></td>
                                     </tr>
                                 </tfoot>
                             </table>

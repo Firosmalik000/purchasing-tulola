@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { Calendar, Store, Building2 } from 'lucide-react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
+import { CriticalStockNotification } from '@/components/notifications/critical-stock-notification';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
@@ -30,7 +31,8 @@ export function AppSidebarHeader({
                 </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+                <CriticalStockNotification />
                 <ThemeToggle />
                 <div className="hidden items-center gap-2.5 sm:flex">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

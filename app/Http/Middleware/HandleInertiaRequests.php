@@ -58,6 +58,9 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'toast' => fn () => $request->session()->get('toast'),
             ],
+            'criticalStock' => fn () => $request->user()
+                ? app(\App\Services\CriticalStockService::class)->getSummaryForUser($request->user())
+                : ['count' => 0, 'items' => []],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

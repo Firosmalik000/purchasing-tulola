@@ -23,6 +23,7 @@ class ItemRequest extends FormRequest
             'unit_id' => ['required', Rule::exists('units', 'id')->where('is_active', true)],
             'cost_price' => ['nullable', 'integer', 'min:0'],
             'min_stock' => ['nullable', 'integer', 'min:0'],
+            'target_stock' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['required', 'boolean'],
         ];
     }
@@ -32,6 +33,7 @@ class ItemRequest extends FormRequest
         return [
             'cost_price.integer' => 'Harga modal wajib berupa bilangan bulat.',
             'min_stock.integer' => 'Stok minimum wajib berupa bilangan bulat.',
+            'target_stock.integer' => 'Standar target penambahan stok wajib berupa bilangan bulat.',
         ];
     }
 }

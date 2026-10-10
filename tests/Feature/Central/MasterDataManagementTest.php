@@ -27,11 +27,38 @@ class MasterDataManagementTest extends TestCase
         $this->actingAs($user)->post(route('central.items.store'), [
             'sku' => 'CLN-TISSUE-BASAH', 'name' => 'Tissue Basah',
             'item_category_id' => $category->id, 'unit_id' => $unit->id,
-            'cost_price' => 25000, 'min_stock' => 5, 'is_active' => true,
+            'cost_price' => 25000, 'min_stock' => 5, 'target_stock' => 20, 'is_active' => true,
         ])->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('items', ['sku' => 'CLN-TISSUE-BASAH', 'cost_price' => 25000, 'min_stock' => 5]);
+        $this->assertDatabaseHas('items', ['sku' => 'CLN-TISSUE-BASAH', 'cost_price' => 25000, 'min_stock' => 5, 'target_stock' => 20]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'item.created']);
+    }
+
+    public function test_critical_stock_service_detects_items_at_or_below_min_stock(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $store = \App\Models\Store::create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Packaging', 'code' => 'PKG', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+
+        $item = Item::create([
+            'sku' => 'PKG-BOX-01', 'name' => 'Box Perhiasan',
+            'item_category_id' => $category->id, 'unit_id' => $unit->id,
+            'min_stock' => 10, 'target_stock' => 50, 'is_active' => true,
+        ]);
+
+        \App\Models\StoreStock::create([
+            'store_id' => $store->id,
+            'item_id' => $item->id,
+            'quantity' => 4,
+        ]);
+
+        $summary = app(\App\Services\CriticalStockService::class)->getSummaryForUser($admin);
+        $this->assertGreaterThanOrEqual(1, $summary['count']);
+        $this->assertEquals('PKG-BOX-01', $summary['items'][0]['sku']);
+        $this->assertEquals(4, $summary['items'][0]['current_stock']);
+        $this->assertEquals(10, $summary['items'][0]['min_stock']);
+        $this->assertEquals(50, $summary['items'][0]['target_stock']);
     }
 
     public function test_store_pic_cannot_manage_master_data(): void

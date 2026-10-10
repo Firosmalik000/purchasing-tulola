@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['sku', 'name', 'item_category_id', 'unit_id', 'cost_price', 'min_stock', 'is_active'])]
+#[Fillable(['sku', 'name', 'item_category_id', 'unit_id', 'cost_price', 'min_stock', 'target_stock', 'is_active'])]
 class Item extends Model
 {
     protected function casts(): array
@@ -15,6 +15,7 @@ class Item extends Model
         return [
             'cost_price' => 'integer',
             'min_stock' => 'integer',
+            'target_stock' => 'integer',
             'is_active' => 'boolean',
         ];
     }

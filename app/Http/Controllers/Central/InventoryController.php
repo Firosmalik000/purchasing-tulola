@@ -171,7 +171,7 @@ class InventoryController extends Controller
             'allItems' => Item::query()->where('is_active', true)
                 ->with('unit:id,symbol')
                 ->orderBy('name')
-                ->get(['id', 'sku', 'name', 'unit_id', 'cost_price', 'min_stock']),
+                ->get(['id', 'sku', 'name', 'unit_id', 'cost_price', 'min_stock', 'target_stock']),
             'movements' => $paginatedTransactions,
             'suppliers' => Supplier::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
             'movementTypes' => collect([
@@ -245,7 +245,12 @@ class InventoryController extends Controller
 
     public function updateStandard(UpdateStoreStockStandardRequest $request, UpdateStoreStockStandard $action): RedirectResponse
     {
-        $action->handle(Store::findOrFail($request->integer('store_id')), Item::findOrFail($request->integer('item_id')), (string) $request->input('standard_quantity'));
+        $action->handle(
+            Store::findOrFail($request->integer('store_id')),
+            Item::findOrFail($request->integer('item_id')),
+            (string) $request->input('standard_quantity'),
+            $request->has('min_quantity') ? (string) $request->input('min_quantity') : null,
+        );
 
         return back()->with('success', 'Stok standar berhasil diperbarui.');
     }
