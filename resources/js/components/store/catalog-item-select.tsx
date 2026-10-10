@@ -6,6 +6,11 @@ import {
     useRef,
     useState,
 } from 'react';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 export type CatalogCategory = {
@@ -57,7 +62,6 @@ export function CatalogItemSelect({
     const [activeCategory, setActiveCategory] = useState<string>('ALL');
     const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
-    const containerRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const optionsListRef = useRef<HTMLDivElement>(null);
 
@@ -151,62 +155,27 @@ export function CatalogItemSelect({
         return groups;
     }, [filteredItems]);
 
-    // Auto focus search input when opened
-    useEffect(() => {
-        if (isOpen) {
-            setHighlightedIndex(-1);
-            const timer = setTimeout(() => {
-                searchInputRef.current?.focus();
-            }, 50);
-            return () => clearTimeout(timer);
-        } else {
+    const handleOpenChange = (open: boolean) => {
+        setIsOpen(open);
+        if (!open) {
             setSearch('');
             setActiveCategory('ALL');
+            setHighlightedIndex(-1);
         }
-    }, [isOpen]);
-
-    // Close on click outside
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (
-                containerRef.current &&
-                !containerRef.current.contains(event.target as Node)
-            ) {
-                setIsOpen(false);
-            }
-        }
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    // Close on Escape
-    useEffect(() => {
-        function handleKeyDown(event: globalThis.KeyboardEvent) {
-            if (event.key === 'Escape' && isOpen) {
-                setIsOpen(false);
-            }
-        }
-        window.addEventListener('keydown', handleKeyDown);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-        };
-    }, [isOpen]);
+    };
 
     const handleSelect = (item: CatalogItem) => {
         onChange(String(item.id), item);
-        setIsOpen(false);
+        handleOpenChange(false);
     };
 
     const handleClear = (e: React.MouseEvent) => {
+        e.preventDefault();
         e.stopPropagation();
         onChange('', undefined);
     };
 
-    // Keyboard navigation
+    // Keyboard navigation inside search input
     const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
         if (filteredItems.length === 0) return;
 
@@ -246,7 +215,7 @@ export function CatalogItemSelect({
     }, [highlightedIndex]);
 
     return (
-        <div ref={containerRef} className={cn('relative w-full', className)}>
+        <div className={cn('relative w-full', className)}>
             {/* Hidden input for form submission */}
             <input
                 type="hidden"
@@ -255,75 +224,80 @@ export function CatalogItemSelect({
                 required={required}
             />
 
-            {/* Trigger Button */}
-            <button
-                type="button"
-                disabled={disabled}
-                onClick={() => setIsOpen(!isOpen)}
-                className={cn(
-                    'group flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-xs shadow-2xs transition-colors outline-none',
-                    'focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30',
-                    isOpen && 'border-primary ring-2 ring-primary/20',
-                    error
-                        ? 'border-destructive'
-                        : 'border-input hover:border-muted-foreground/40 hover:bg-muted/10',
-                    disabled && 'cursor-not-allowed bg-muted/40 opacity-50',
-                )}
-                aria-haspopup="listbox"
-                aria-expanded={isOpen}
-            >
-                {selectedItem ? (
-                    <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-                        <span className="truncate font-medium text-foreground">
-                            {selectedItem.name}
-                        </span>
-                        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-                            {selectedItem.sku}
-                        </span>
-                    </div>
-                ) : (
-                    <span className="truncate text-muted-foreground">
-                        {placeholder}
-                    </span>
-                )}
-
-                <div className="flex shrink-0 items-center gap-1">
-                    {selectedItem && !disabled && (
-                        <span
-                            role="button"
-                            tabIndex={0}
-                            onClick={handleClear}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
-                                    handleClear(
-                                        e as unknown as React.MouseEvent,
-                                    );
-                                }
-                            }}
-                            className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                            title="Reset"
-                        >
-                            <X className="size-3.5" />
-                        </span>
-                    )}
-                    <ChevronDown
+            <Popover open={isOpen} onOpenChange={handleOpenChange}>
+                <PopoverTrigger asChild>
+                    <button
+                        type="button"
+                        disabled={disabled}
                         className={cn(
-                            'size-3.5 text-muted-foreground transition-transform duration-150',
-                            isOpen && 'rotate-180 text-foreground',
+                            'group flex h-9 w-full items-center justify-between gap-2 rounded-md border bg-background px-3 text-left text-xs shadow-2xs transition-colors outline-none',
+                            'focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30',
+                            isOpen && 'border-primary ring-2 ring-primary/20',
+                            error
+                                ? 'border-destructive'
+                                : 'border-input hover:border-muted-foreground/40 hover:bg-muted/10',
+                            disabled &&
+                                'cursor-not-allowed bg-muted/40 opacity-50',
                         )}
-                    />
-                </div>
-            </button>
+                        aria-haspopup="listbox"
+                        aria-expanded={isOpen}
+                    >
+                        {selectedItem ? (
+                            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                                <span className="truncate font-medium text-foreground">
+                                    {selectedItem.name}
+                                </span>
+                                <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+                                    {selectedItem.sku}
+                                </span>
+                            </div>
+                        ) : (
+                            <span className="truncate text-muted-foreground">
+                                {placeholder}
+                            </span>
+                        )}
 
-            {/* Dropdown Popover */}
-            {isOpen && (
-                <div
-                    className={cn(
-                        'absolute top-full left-0 z-50 mt-1 flex w-full flex-col overflow-hidden rounded-md border border-border/80 bg-popover text-popover-foreground shadow-lg backdrop-blur-md',
-                        'max-w-[calc(100vw-2rem)] min-w-[260px] sm:max-w-[500px] sm:min-w-[360px]',
-                        'animate-in fade-in-0 zoom-in-95',
-                    )}
+                        <div className="flex shrink-0 items-center gap-1">
+                            {selectedItem && !disabled && (
+                                <span
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={handleClear}
+                                    onKeyDown={(e) => {
+                                        if (
+                                            e.key === 'Enter' ||
+                                            e.key === ' '
+                                        ) {
+                                            e.preventDefault();
+                                            handleClear(
+                                                e as unknown as React.MouseEvent,
+                                            );
+                                        }
+                                    }}
+                                    className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    title="Reset"
+                                >
+                                    <X className="size-3.5" />
+                                </span>
+                            )}
+                            <ChevronDown
+                                className={cn(
+                                    'size-3.5 text-muted-foreground transition-transform duration-150',
+                                    isOpen && 'rotate-180 text-foreground',
+                                )}
+                            />
+                        </div>
+                    </button>
+                </PopoverTrigger>
+
+                <PopoverContent
+                    align="start"
+                    sideOffset={4}
+                    className="z-[70] flex w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0 shadow-xl sm:min-w-[360px] sm:max-w-[480px]"
+                    onOpenAutoFocus={(e) => {
+                        e.preventDefault();
+                        searchInputRef.current?.focus();
+                    }}
                 >
                     {/* Filter Input */}
                     <div className="border-b border-border/50 bg-muted/20 p-2">
@@ -392,7 +366,7 @@ export function CatalogItemSelect({
                     {/* Options List */}
                     <div
                         ref={optionsListRef}
-                        className="max-h-64 overflow-y-auto p-1 text-xs"
+                        className="max-h-60 overflow-y-auto p-1 text-xs"
                     >
                         {filteredItems.length === 0 ? (
                             <div className="py-6 text-center text-xs text-muted-foreground">
@@ -462,8 +436,8 @@ export function CatalogItemSelect({
                             ))
                         )}
                     </div>
-                </div>
-            )}
+                </PopoverContent>
+            </Popover>
         </div>
     );
 }
