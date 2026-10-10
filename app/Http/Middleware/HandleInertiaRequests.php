@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\CriticalStockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Middleware;
@@ -59,7 +60,7 @@ class HandleInertiaRequests extends Middleware
                 'toast' => fn () => $request->session()->get('toast'),
             ],
             'criticalStock' => fn () => $request->user()
-                ? app(\App\Services\CriticalStockService::class)->getSummaryForUser($request->user())
+                ? app(CriticalStockService::class)->getSummaryForUser($request->user())
                 : ['count' => 0, 'items' => []],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];

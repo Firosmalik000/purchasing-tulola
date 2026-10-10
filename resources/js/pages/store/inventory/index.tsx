@@ -1,5 +1,11 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { AlertCircle, CheckCircle2, Clock, Store, Warehouse } from 'lucide-react';
+import {
+    AlertCircle,
+    CheckCircle2,
+    Clock,
+    Store,
+    Warehouse,
+} from 'lucide-react';
 import { PageHeader } from '@/components/common/page-header';
 import {
     PaginationLinks,
@@ -17,7 +23,10 @@ type Item = {
     target_stock?: number | null;
     unit: { symbol: string };
     stocks: { quantity: number }[];
-    stock_standards: { standard_quantity: number; min_quantity?: number | null }[];
+    stock_standards: {
+        standard_quantity: number;
+        min_quantity?: number | null;
+    }[];
 };
 type Props = {
     stores: StoreType[];
@@ -91,7 +100,11 @@ export default function StoreInventory({
                     {(() => {
                         const criticalCount = items.data.filter((item) => {
                             const cur = Number(item.stocks[0]?.quantity ?? 0);
-                            const minC = Number(item.stock_standards[0]?.min_quantity ?? item.min_stock ?? 0);
+                            const minC = Number(
+                                item.stock_standards[0]?.min_quantity ??
+                                    item.min_stock ??
+                                    0,
+                            );
                             return minC > 0 && cur <= minC;
                         }).length;
 
@@ -100,12 +113,15 @@ export default function StoreInventory({
                                 <div className="flex items-center gap-2 font-medium">
                                     <AlertCircle className="size-4 shrink-0 text-rose-600 dark:text-rose-400" />
                                     <span>
-                                        <strong>Peringatan Stok Kritis:</strong> Terdapat {criticalCount} item di bawah standar minimal yang perlu diajukan permintaan (PR).
+                                        <strong>Peringatan Stok Kritis:</strong>{' '}
+                                        Terdapat {criticalCount} item di bawah
+                                        standar minimal yang perlu diajukan
+                                        permintaan (PR).
                                     </span>
                                 </div>
                                 <Link
                                     href="/store/requests/create"
-                                    className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline"
+                                    className="text-[11px] font-semibold text-rose-600 hover:underline dark:text-rose-400"
                                 >
                                     Buat PR Sekarang &rarr;
                                 </Link>
@@ -156,17 +172,24 @@ export default function StoreInventory({
                                         </tr>
                                     ) : (
                                         items.data.map((item, index) => {
-                                            const stock =
-                                                Number(item.stocks[0]?.quantity ?? 0);
+                                            const stock = Number(
+                                                item.stocks[0]?.quantity ?? 0,
+                                            );
                                             const storeMin =
-                                                item.stock_standards[0]?.min_quantity;
-                                            const minCritical =
-                                                Number(storeMin ?? item.min_stock ?? 0);
+                                                item.stock_standards[0]
+                                                    ?.min_quantity;
+                                            const minCritical = Number(
+                                                storeMin ?? item.min_stock ?? 0,
+                                            );
 
                                             const storeTarget =
-                                                item.stock_standards[0]?.standard_quantity;
-                                            const targetStock =
-                                                Number(storeTarget ?? item.target_stock ?? minCritical);
+                                                item.stock_standards[0]
+                                                    ?.standard_quantity;
+                                            const targetStock = Number(
+                                                storeTarget ??
+                                                    item.target_stock ??
+                                                    minCritical,
+                                            );
 
                                             const suggested = Math.max(
                                                 targetStock - stock,
@@ -203,10 +226,12 @@ export default function StoreInventory({
                                                     <td className="px-3 py-3 text-center font-mono text-muted-foreground">
                                                         {item.unit.symbol}
                                                     </td>
-                                                    <td className={`px-4 py-3 text-right font-mono font-bold tabular-nums ${isCritical ? 'text-rose-600 dark:text-rose-400 font-extrabold' : 'text-foreground'}`}>
+                                                    <td
+                                                        className={`px-4 py-3 text-right font-mono font-bold tabular-nums ${isCritical ? 'font-extrabold text-rose-600 dark:text-rose-400' : 'text-foreground'}`}
+                                                    >
                                                         {formatQuantity(stock)}
                                                     </td>
-                                                    <td className="px-4 py-3 text-right font-mono text-rose-600 dark:text-rose-400 font-medium tabular-nums">
+                                                    <td className="px-4 py-3 text-right font-mono font-medium text-rose-600 tabular-nums dark:text-rose-400">
                                                         {formatQuantity(
                                                             minCritical,
                                                         )}
@@ -231,17 +256,17 @@ export default function StoreInventory({
                                                     </td>
                                                     <td className="px-3 py-3 text-center">
                                                         {isCritical ? (
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                                                            <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
                                                                 <AlertCircle className="size-3" />
                                                                 Kritis (≤ Min)
                                                             </span>
                                                         ) : isNeedRestock ? (
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                                            <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
                                                                 <Clock className="size-3" />
                                                                 Perlu Restock
                                                             </span>
                                                         ) : (
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                                                                 <CheckCircle2 className="size-3" />
                                                                 Aman
                                                             </span>

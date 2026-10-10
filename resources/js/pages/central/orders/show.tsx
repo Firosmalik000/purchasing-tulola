@@ -185,15 +185,24 @@ export default function OrderShow({
         (acc, item) => acc + Number(item.quantity || 0),
         0,
     );
-    const totalReceivedQuantityCount = purchaseOrder.items.reduce((acc, item) => {
-        const received = (purchaseOrder.receipts ?? []).reduce((sum, receipt) => {
-            const itemSum = (receipt.items ?? [])
-                .filter((ri) => ri.purchase_order_item_id === item.id)
-                .reduce((s, ri) => s + Number(ri.received_quantity || 0), 0);
-            return sum + itemSum;
-        }, 0);
-        return acc + received;
-    }, 0);
+    const totalReceivedQuantityCount = purchaseOrder.items.reduce(
+        (acc, item) => {
+            const received = (purchaseOrder.receipts ?? []).reduce(
+                (sum, receipt) => {
+                    const itemSum = (receipt.items ?? [])
+                        .filter((ri) => ri.purchase_order_item_id === item.id)
+                        .reduce(
+                            (s, ri) => s + Number(ri.received_quantity || 0),
+                            0,
+                        );
+                    return sum + itemSum;
+                },
+                0,
+            );
+            return acc + received;
+        },
+        0,
+    );
 
     const targetStore =
         purchaseOrder.purchase_request?.store ??
@@ -415,14 +424,17 @@ export default function OrderShow({
                                 variant="secondary"
                                 className="font-mono text-xs"
                             >
-                                Dipesan: {formatQuantity(totalQuantityCount)} Unit
+                                Dipesan: {formatQuantity(totalQuantityCount)}{' '}
+                                Unit
                             </Badge>
                             {totalReceivedQuantityCount > 0 && (
                                 <Badge
                                     variant="outline"
                                     className="border-emerald-500/30 bg-emerald-500/10 font-mono text-xs text-emerald-700 dark:text-emerald-400"
                                 >
-                                    Diterima: {formatQuantity(totalReceivedQuantityCount)} Unit
+                                    Diterima:{' '}
+                                    {formatQuantity(totalReceivedQuantityCount)}{' '}
+                                    Unit
                                 </Badge>
                             )}
                         </div>
@@ -435,7 +447,9 @@ export default function OrderShow({
                                         <th className="w-12 px-4 py-3 text-center">
                                             #
                                         </th>
-                                        <th className="px-4 py-3">Barang & Tipe</th>
+                                        <th className="px-4 py-3">
+                                            Barang & Tipe
+                                        </th>
                                         <th className="px-4 py-3 text-right">
                                             Dipesan
                                         </th>
@@ -454,32 +468,35 @@ export default function OrderShow({
                                                 ? item.item?.name
                                                 : item.name;
 
-                                        const itemReceived = (purchaseOrder.receipts ?? []).reduce(
-                                            (sum, receipt) => {
-                                                const itemSum = (receipt.items ?? [])
-                                                    .filter(
-                                                        (ri) =>
-                                                            ri.purchase_order_item_id ===
-                                                            item.id,
-                                                    )
-                                                    .reduce(
-                                                        (s, ri) =>
-                                                            s +
-                                                            Number(
-                                                                ri.received_quantity ||
-                                                                    0,
-                                                            ),
-                                                        0,
-                                                    );
-                                                return sum + itemSum;
-                                            },
-                                            0,
-                                        );
+                                        const itemReceived = (
+                                            purchaseOrder.receipts ?? []
+                                        ).reduce((sum, receipt) => {
+                                            const itemSum = (
+                                                receipt.items ?? []
+                                            )
+                                                .filter(
+                                                    (ri) =>
+                                                        ri.purchase_order_item_id ===
+                                                        item.id,
+                                                )
+                                                .reduce(
+                                                    (s, ri) =>
+                                                        s +
+                                                        Number(
+                                                            ri.received_quantity ||
+                                                                0,
+                                                        ),
+                                                    0,
+                                                );
+                                            return sum + itemSum;
+                                        }, 0);
 
                                         const isFullyReceived =
-                                            itemReceived >= Number(item.quantity);
+                                            itemReceived >=
+                                            Number(item.quantity);
                                         const isPartiallyReceived =
-                                            itemReceived > 0 && !isFullyReceived;
+                                            itemReceived > 0 &&
+                                            !isFullyReceived;
 
                                         return (
                                             <tr
@@ -508,7 +525,8 @@ export default function OrderShow({
                                                                 variant="outline"
                                                                 className="border-purple-500/30 bg-purple-500/5 text-[10px] font-medium text-purple-700 dark:text-purple-400"
                                                             >
-                                                                Permintaan Khusus
+                                                                Permintaan
+                                                                Khusus
                                                             </Badge>
                                                         )}
                                                     </div>

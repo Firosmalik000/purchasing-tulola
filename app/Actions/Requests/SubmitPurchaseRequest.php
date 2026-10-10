@@ -33,7 +33,7 @@ class SubmitPurchaseRequest
                 $itemMaster = Item::query()->where('id', $line->item_id)->first(['target_stock', 'min_stock']);
                 $standard = $storeStandard !== null && (int) $storeStandard > 0
                     ? (int) $storeStandard
-                    : (int) ($itemMaster?->target_stock ?? $itemMaster?->min_stock ?? 0);
+                    : (int) ($itemMaster->target_stock ?? $itemMaster->min_stock ?? 0);
                 $line->update([
                     'current_stock_snapshot' => $current,
                     'standard_stock_snapshot' => $standard,

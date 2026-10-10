@@ -293,7 +293,7 @@ export function CatalogItemSelect({
                 <PopoverContent
                     align="start"
                     sideOffset={4}
-                    className="z-[70] flex w-[var(--radix-popover-trigger-width)] min-w-[280px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0 shadow-xl sm:min-w-[360px] sm:max-w-[480px]"
+                    className="z-[70] flex w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-2rem)] min-w-[280px] flex-col overflow-hidden p-0 shadow-xl sm:max-w-[480px] sm:min-w-[360px]"
                     onOpenAutoFocus={(e) => {
                         e.preventDefault();
                         searchInputRef.current?.focus();

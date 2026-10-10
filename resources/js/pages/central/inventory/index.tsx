@@ -59,7 +59,10 @@ type Item = {
         average_unit_cost: string;
         total_value: string;
     }[];
-    stock_standards: { standard_quantity: string; min_quantity?: string | null }[];
+    stock_standards: {
+        standard_quantity: string;
+        min_quantity?: string | null;
+    }[];
 };
 type SimpleItem = {
     id: number;
@@ -527,8 +530,14 @@ export default function InventoryIndex({
 
                         {(() => {
                             const criticalCount = items.data.filter((item) => {
-                                const cur = Number(item.stocks[0]?.quantity ?? 0);
-                                const minC = Number(item.stock_standards[0]?.min_quantity ?? item.min_stock ?? 0);
+                                const cur = Number(
+                                    item.stocks[0]?.quantity ?? 0,
+                                );
+                                const minC = Number(
+                                    item.stock_standards[0]?.min_quantity ??
+                                        item.min_stock ??
+                                        0,
+                                );
                                 return minC > 0 && cur <= minC;
                             }).length;
 
@@ -537,7 +546,10 @@ export default function InventoryIndex({
                                     <div className="flex items-center gap-2 font-medium">
                                         <AlertCircle className="size-4 shrink-0 text-rose-600 dark:text-rose-400" />
                                         <span>
-                                            <strong>Perhatian:</strong> Terdapat {criticalCount} item dengan stok kritis (di bawah atau sama dengan standar minimal).
+                                            <strong>Perhatian:</strong> Terdapat{' '}
+                                            {criticalCount} item dengan stok
+                                            kritis (di bawah atau sama dengan
+                                            standar minimal).
                                         </span>
                                     </div>
                                     <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
@@ -645,18 +657,23 @@ export default function InventoryIndex({
                                                         <td className="px-3 py-3 text-center font-mono text-muted-foreground">
                                                             {item.unit.symbol}
                                                         </td>
-                                                        <td className={`px-4 py-3 text-right font-mono font-bold tabular-nums ${isCritical ? 'text-rose-600 dark:text-rose-400 font-extrabold' : 'text-foreground'}`}>
+                                                        <td
+                                                            className={`px-4 py-3 text-right font-mono font-bold tabular-nums ${isCritical ? 'font-extrabold text-rose-600 dark:text-rose-400' : 'text-foreground'}`}
+                                                        >
                                                             {formatQuantity(
                                                                 current,
                                                             )}
                                                         </td>
-                                                        <td className="px-4 py-3 text-right font-mono text-rose-600 dark:text-rose-400 font-medium tabular-nums">
+                                                        <td className="px-4 py-3 text-right font-mono font-medium text-rose-600 tabular-nums dark:text-rose-400">
                                                             <span>
                                                                 {formatQuantity(
                                                                     minCritical,
                                                                 )}
                                                             </span>
-                                                            {storeMinStandard !== undefined && storeMinStandard !== null ? (
+                                                            {storeMinStandard !==
+                                                                undefined &&
+                                                            storeMinStandard !==
+                                                                null ? (
                                                                 <span
                                                                     className="ml-1 text-[10px] text-primary"
                                                                     title="Override khusus toko"
@@ -696,17 +713,19 @@ export default function InventoryIndex({
                                                         </td>
                                                         <td className="px-3 py-3 text-center">
                                                             {isCritical ? (
-                                                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                                                                <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
                                                                     <AlertCircle className="size-3" />
-                                                                    Kritis (≤ Min)
+                                                                    Kritis (≤
+                                                                    Min)
                                                                 </span>
                                                             ) : isNeedRestock ? (
-                                                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+                                                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
                                                                     <Clock className="size-3" />
-                                                                    Perlu Restock
+                                                                    Perlu
+                                                                    Restock
                                                                 </span>
                                                             ) : (
-                                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                                                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                                                                     <CheckCircle2 className="size-3" />
                                                                     Aman
                                                                 </span>
@@ -1598,7 +1617,8 @@ export default function InventoryIndex({
                 <DialogContent className="sm:max-w-sm">
                     <DialogHeader>
                         <DialogTitle className="text-base font-semibold">
-                            Atur Standar Stok Khusus ({activeStore?.code ?? 'Pusat'})
+                            Atur Standar Stok Khusus (
+                            {activeStore?.code ?? 'Pusat'})
                         </DialogTitle>
                         <DialogDescription className="text-xs">
                             {standardModalItem
@@ -1625,7 +1645,7 @@ export default function InventoryIndex({
                                 value={standardModalItem.id}
                             />
 
-                            <div className="rounded-lg border bg-muted/30 p-2.5 text-xs text-muted-foreground space-y-1">
+                            <div className="space-y-1 rounded-lg border bg-muted/30 p-2.5 text-xs text-muted-foreground">
                                 <div>
                                     Standar default master: Min Kritis{' '}
                                     <strong className="font-mono text-rose-600 dark:text-rose-400">
@@ -1648,7 +1668,8 @@ export default function InventoryIndex({
 
                             <div className="space-y-1">
                                 <Label className="text-xs font-semibold">
-                                    Batas Standar Min. Kritis ({standardModalItem.unit.symbol})
+                                    Batas Standar Min. Kritis (
+                                    {standardModalItem.unit.symbol})
                                 </Label>
                                 <Input
                                     name="min_quantity"
@@ -1665,13 +1686,15 @@ export default function InventoryIndex({
                                     className="h-9 text-xs font-medium tabular-nums"
                                 />
                                 <p className="text-[10px] text-muted-foreground">
-                                    Batas alarm stok kritis (merah) khusus toko ini.
+                                    Batas alarm stok kritis (merah) khusus toko
+                                    ini.
                                 </p>
                             </div>
 
                             <div className="space-y-1">
                                 <Label className="text-xs font-semibold">
-                                    Target Acuan Penambahan Stok ({standardModalItem.unit.symbol})
+                                    Target Acuan Penambahan Stok (
+                                    {standardModalItem.unit.symbol})
                                 </Label>
                                 <Input
                                     name="standard_quantity"
@@ -1689,7 +1712,8 @@ export default function InventoryIndex({
                                     className="h-9 text-xs font-medium tabular-nums"
                                 />
                                 <p className="text-[10px] text-muted-foreground">
-                                    Target kuantitas ideal saat penambahan stok / restock.
+                                    Target kuantitas ideal saat penambahan stok
+                                    / restock.
                                 </p>
                             </div>
 

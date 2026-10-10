@@ -5,9 +5,12 @@ namespace Tests\Feature\Central;
 use App\Enums\UserRole;
 use App\Models\Item;
 use App\Models\ItemCategory;
+use App\Models\Store;
+use App\Models\StoreStock;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
+use App\Services\CriticalStockService;
 use Database\Seeders\ItemCategorySeeder;
 use Database\Seeders\ItemSeeder;
 use Database\Seeders\UnitSeeder;
@@ -37,7 +40,7 @@ class MasterDataManagementTest extends TestCase
     public function test_critical_stock_service_detects_items_at_or_below_min_stock(): void
     {
         $admin = User::factory()->centralAdmin()->create();
-        $store = \App\Models\Store::create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+        $store = Store::create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
         $category = ItemCategory::create(['name' => 'Packaging', 'code' => 'PKG', 'is_active' => true]);
         $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
 
@@ -47,18 +50,34 @@ class MasterDataManagementTest extends TestCase
             'min_stock' => 10, 'target_stock' => 50, 'is_active' => true,
         ]);
 
-        \App\Models\StoreStock::create([
+        StoreStock::create([
             'store_id' => $store->id,
             'item_id' => $item->id,
             'quantity' => 4,
         ]);
 
-        $summary = app(\App\Services\CriticalStockService::class)->getSummaryForUser($admin);
-        $this->assertGreaterThanOrEqual(1, $summary['count']);
+        // Buat toko cabang dengan stok 0
+        $branchStore = Store::create(['code' => 'PP', 'name' => 'Pacific Place', 'is_active' => true]);
+        StoreStock::create([
+            'store_id' => $branchStore->id,
+            'item_id' => $item->id,
+            'quantity' => 0,
+        ]);
+
+        $summary = app(CriticalStockService::class)->getSummaryForUser($admin);
+        // Hanya mendeteksi stok Gudang Pusat (HO-JKT), cabang (PP) tidak diikutkan
+        $this->assertEquals(1, $summary['count']);
         $this->assertEquals('PKG-BOX-01', $summary['items'][0]['sku']);
+        $this->assertEquals($store->id, $summary['items'][0]['store_id']);
         $this->assertEquals(4, $summary['items'][0]['current_stock']);
         $this->assertEquals(10, $summary['items'][0]['min_stock']);
         $this->assertEquals(50, $summary['items'][0]['target_stock']);
+
+        // Akun Store PIC tidak menerima notifikasi stok kritis karena cabang tidak tracking stok
+        $pic = User::factory()->storePic()->create();
+        $picSummary = app(CriticalStockService::class)->getSummaryForUser($pic);
+        $this->assertEquals(0, $picSummary['count']);
+        $this->assertEmpty($picSummary['items']);
     }
 
     public function test_store_pic_cannot_manage_master_data(): void
