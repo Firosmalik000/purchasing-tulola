@@ -23,7 +23,8 @@ class CreateDraftOrderForRequest
             return $existing;
         }
 
-        $request->loadMissing(['items.item', 'items.unit']);
+        $request->unsetRelation('items');
+        $request->load(['items.item', 'items.unit']);
         $approved = $request->items->filter(fn ($item) => $item->approved_quantity > 0);
         if ($approved->isEmpty()) {
             throw ValidationException::withMessages(['items' => 'Order membutuhkan minimal satu item yang disetujui.']);

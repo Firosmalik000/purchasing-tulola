@@ -49,4 +49,16 @@ class Item extends Model
     {
         return $this->hasMany(PurchaseOrderItem::class);
     }
+
+    /** @return HasMany<PurchaseRequestItem, $this> */
+    public function purchaseRequestItems(): HasMany
+    {
+        return $this->hasMany(PurchaseRequestItem::class);
+    }
+
+    /** @return HasMany<StockMovement, $this> */
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class);
+    }
 }

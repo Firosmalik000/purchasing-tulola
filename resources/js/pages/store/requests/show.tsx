@@ -25,6 +25,7 @@ import {
 } from '@/components/common/workflow-stepper';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
 import { formatQuantity } from '@/lib/utils';
 
 type RequestItem = {
@@ -114,6 +115,17 @@ export default function RequestShow({
                                     <Form
                                         action={`/store/requests/${purchaseRequest.id}/submit`}
                                         method="post"
+                                        onError={(errors) => {
+                                            const message =
+                                                (errors.stock as string) ||
+                                                (errors.request as string) ||
+                                                (Object.values(errors)[0] as string);
+                                            if (message) {
+                                                toast.error(message, {
+                                                    style: { whiteSpace: 'pre-line' },
+                                                });
+                                            }
+                                        }}
                                     >
                                         {({ processing }) => (
                                             <Button

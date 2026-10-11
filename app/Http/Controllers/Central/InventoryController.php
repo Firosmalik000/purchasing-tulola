@@ -18,15 +18,18 @@ use App\Models\StockMovement;
 use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\Supplier;
+use App\Services\InventoryStockReportService;
 use App\Support\Paging;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class InventoryController extends Controller
 {
@@ -253,5 +256,44 @@ class InventoryController extends Controller
         );
 
         return back()->with('success', 'Stok standar berhasil diperbarui.');
+    }
+
+    public function print(Request $request, InventoryStockReportService $service): HttpResponse
+    {
+        Gate::authorize('viewAny', StoreStock::class);
+        $search = $request->string('search')->toString();
+        $report = $service->buildReportData(search: $search, actor: $request->user());
+
+        return response()->view('reports.inventory-stock', [
+            'report' => $report,
+            'print' => true,
+        ]);
+    }
+
+    public function pdf(Request $request, InventoryStockReportService $service): HttpResponse
+    {
+        Gate::authorize('viewAny', StoreStock::class);
+        $search = $request->string('search')->toString();
+        $report = $service->buildReportData(search: $search, actor: $request->user());
+
+        return $service->downloadPdf($report);
+    }
+
+    public function excel(Request $request, InventoryStockReportService $service): StreamedResponse
+    {
+        Gate::authorize('viewAny', StoreStock::class);
+        $search = $request->string('search')->toString();
+        $report = $service->buildReportData(search: $search, actor: $request->user());
+
+        return $service->downloadExcel($report);
+    }
+
+    public function csv(Request $request, InventoryStockReportService $service): StreamedResponse
+    {
+        Gate::authorize('viewAny', StoreStock::class);
+        $search = $request->string('search')->toString();
+        $report = $service->buildReportData(search: $search, actor: $request->user());
+
+        return $service->downloadCsv($report);
     }
 }

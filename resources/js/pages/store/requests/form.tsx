@@ -10,7 +10,8 @@ import {
     Sparkles,
     Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import { toast } from 'sonner';
 import { PageHeader } from '@/components/common/page-header';
 import InputError from '@/components/input-error';
 import {
@@ -111,10 +112,84 @@ export default function RequestForm({
     const [submitAction, setSubmitAction] = useState<'draft' | 'submit'>(
         'draft',
     );
+    const submitActionRef = useRef<'draft' | 'submit'>('draft');
 
     const action = purchaseRequest
         ? `/store/requests/${purchaseRequest.id}`
         : '/store/requests';
+
+    const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        if (submitActionRef.current === 'submit') {
+            const invalidItems: {
+                name: string;
+                requestedQty: number;
+                centralStock: number;
+            }[] = [];
+
+            for (const line of stockLines) {
+                if (!line.item_id) continue;
+                const item = items.find(
+                    (i) => String(i.id) === String(line.item_id),
+                );
+                if (!item) continue;
+                const centralStock = item.central_stock ?? 0;
+                const requestedQty = parseInt(line.requested_quantity, 10) || 0;
+
+                if (requestedQty > centralStock) {
+                    invalidItems.push({
+                        name: item.name,
+                        requestedQty,
+                        centralStock,
+                    });
+                }
+            }
+
+            if (invalidItems.length > 0) {
+                e.preventDefault();
+                if (invalidItems.length === 1) {
+                    const item = invalidItems[0];
+                    if (item.centralStock <= 0) {
+                        toast.error(
+                            `Item "${item.name}" yang di-request sedang tidak ada stok di Kantor Pusat.`,
+                            { duration: 5000 },
+                        );
+                    } else {
+                        toast.error(
+                            `Stok item "${item.name}" di Kantor Pusat tidak mencukupi (Tersedia: ${item.centralStock}, Diminta: ${item.requestedQty}).`,
+                            { duration: 5000 },
+                        );
+                    }
+                } else {
+                    const details = invalidItems
+                        .map(
+                            (i) =>
+                                `• ${i.name} (Tersedia: ${i.centralStock}, Diminta: ${i.requestedQty})`,
+                        )
+                        .join('\n');
+                    toast.error(
+                        `Terdapat ${invalidItems.length} item yang stoknya tidak mencukupi di Kantor Pusat:\n${details}`,
+                        {
+                            duration: 6000,
+                            style: { whiteSpace: 'pre-line' },
+                        },
+                    );
+                }
+            }
+        }
+    };
+
+    const handleFormError = (errors: Record<string, string>) => {
+        const errorMsg =
+            (errors.stock as string) ||
+            (errors.stock_items as string) ||
+            (errors.items as string) ||
+            (Object.values(errors)[0] as string);
+        if (errorMsg) {
+            toast.error(errorMsg, {
+                style: { whiteSpace: 'pre-line' },
+            });
+        }
+    };
 
     const updateStock = (
         key: number,
@@ -190,6 +265,8 @@ export default function RequestForm({
                     method="post"
                     encType="multipart/form-data"
                     className="space-y-5"
+                    onSubmit={handleFormSubmit}
+                    onError={handleFormError}
                 >
                     {({ processing, errors }) => (
                         <>
@@ -785,7 +862,10 @@ export default function RequestForm({
                                     type="submit"
                                     variant="secondary"
                                     disabled={processing}
-                                    onClick={() => setSubmitAction('draft')}
+                                    onClick={() => {
+                                        submitActionRef.current = 'draft';
+                                        setSubmitAction('draft');
+                                    }}
                                 >
                                     {processing && submitAction === 'draft'
                                         ? 'Menyimpan...'
@@ -797,7 +877,10 @@ export default function RequestForm({
                                     type="submit"
                                     disabled={processing}
                                     className="font-medium"
-                                    onClick={() => setSubmitAction('submit')}
+                                    onClick={() => {
+                                        submitActionRef.current = 'submit';
+                                        setSubmitAction('submit');
+                                    }}
                                 >
                                     <Send className="mr-1.5 size-4" />
                                     {processing && submitAction === 'submit'

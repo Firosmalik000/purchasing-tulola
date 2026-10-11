@@ -1,4 +1,4 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, router } from '@inertiajs/react';
 import {
     Boxes,
     Layers,
@@ -7,6 +7,7 @@ import {
     Plus,
     Ruler,
     Search,
+    Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
@@ -23,6 +24,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -31,6 +34,7 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -79,6 +83,8 @@ export default function ItemIndex({
     const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
     const [createUnitOpen, setCreateUnitOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | null>(null);
+    const [deletingItem, setDeletingItem] = useState<Item | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const currentPage = items.current_page || 1;
     const perPage = items.per_page || 15;
@@ -284,6 +290,18 @@ export default function ItemIndex({
                                                             >
                                                                 <Pencil className="mr-2 size-3.5" />
                                                                 Edit Item
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    setDeletingItem(
+                                                                        item,
+                                                                    )
+                                                                }
+                                                                className="cursor-pointer text-destructive focus:text-destructive"
+                                                            >
+                                                                <Trash2 className="mr-2 size-3.5" />
+                                                                Hapus Item
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -711,6 +729,88 @@ export default function ItemIndex({
                     </Dialog>
                 )}
 
+                {/* Dialog: Delete Item Confirmation */}
+                {deletingItem && (
+                    <Dialog
+                        open={!!deletingItem}
+                        onOpenChange={(open) => {
+                            if (!open && !isDeleting) {
+                                setDeletingItem(null);
+                            }
+                        }}
+                    >
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center gap-2 text-base font-semibold text-destructive">
+                                    <Trash2 className="size-4" />
+                                    Hapus Item Katalog
+                                </DialogTitle>
+                                <DialogDescription className="text-xs text-muted-foreground">
+                                    Apakah Anda yakin ingin menghapus item ini dari katalog? Tindakan ini tidak dapat dibatalkan.
+                                </DialogDescription>
+                            </DialogHeader>
+
+                            <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/30 p-3 text-xs">
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Kode SKU:</span>
+                                    <span className="font-mono font-semibold text-foreground">
+                                        {deletingItem.sku}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Nama Item:</span>
+                                    <span className="font-semibold text-foreground">
+                                        {deletingItem.name}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Kategori:</span>
+                                    <span className="text-foreground">
+                                        {deletingItem.category.name}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <p className="text-[11px] text-muted-foreground">
+                                * Item yang memiliki histori transaksi (permintaan, pemesanan, atau pergerakan stok) tidak dapat dihapus dan disarankan untuk dinonaktifkan.
+                            </p>
+
+                            <DialogFooter className="gap-2 sm:gap-0 pt-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-8 text-xs"
+                                    disabled={isDeleting}
+                                    onClick={() => setDeletingItem(null)}
+                                >
+                                    Batal
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="h-8 text-xs font-medium"
+                                    disabled={isDeleting}
+                                    onClick={() => {
+                                        setIsDeleting(true);
+                                        router.delete(
+                                            `/central/items/${deletingItem.id}`,
+                                            {
+                                                preserveScroll: true,
+                                                onSuccess: () => setDeletingItem(null),
+                                                onFinish: () => setIsDeleting(false),
+                                            },
+                                        );
+                                    }}
+                                >
+                                    {isDeleting ? 'Menghapus...' : 'Ya, Hapus Item'}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                )}
+
                 {/* Dialog: Category Manager */}
                 <Dialog
                     open={createCategoryOpen}
@@ -729,23 +829,33 @@ export default function ItemIndex({
                                 className="space-y-2.5 rounded-lg border border-border/50 bg-muted/20 p-3"
                                 resetOnSuccess
                             >
-                                {({ processing }) => (
+                                {({ errors, processing }) => (
                                     <>
                                         <p className="text-xs font-semibold">
                                             Tambah Kategori Baru
                                         </p>
                                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                            <Input
-                                                name="name"
-                                                placeholder="Nama Kategori *"
-                                                required
-                                                className="h-8 text-xs"
-                                            />
-                                            <Input
-                                                name="code"
-                                                placeholder="Kode (opsional)"
-                                                className="h-8 text-xs"
-                                            />
+                                            <div>
+                                                <Input
+                                                    name="name"
+                                                    placeholder="Nama Kategori *"
+                                                    required
+                                                    className="h-8 text-xs"
+                                                />
+                                                <InputError
+                                                    message={errors.name}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Input
+                                                    name="code"
+                                                    placeholder="Kode (opsional)"
+                                                    className="h-8 text-xs"
+                                                />
+                                                <InputError
+                                                    message={errors.code}
+                                                />
+                                            </div>
                                         </div>
                                         <Button
                                             size="sm"
@@ -802,24 +912,34 @@ export default function ItemIndex({
                                 className="space-y-2.5 rounded-lg border border-border/50 bg-muted/20 p-3"
                                 resetOnSuccess
                             >
-                                {({ processing }) => (
+                                {({ errors, processing }) => (
                                     <>
                                         <p className="text-xs font-semibold">
                                             Tambah Satuan Baru
                                         </p>
                                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                            <Input
-                                                name="name"
-                                                placeholder="Nama Satuan *"
-                                                required
-                                                className="h-8 text-xs"
-                                            />
-                                            <Input
-                                                name="symbol"
-                                                placeholder="Simbol (pcs/gr/kt) *"
-                                                required
-                                                className="h-8 text-xs"
-                                            />
+                                            <div>
+                                                <Input
+                                                    name="name"
+                                                    placeholder="Nama Satuan *"
+                                                    required
+                                                    className="h-8 text-xs"
+                                                />
+                                                <InputError
+                                                    message={errors.name}
+                                                />
+                                            </div>
+                                            <div>
+                                                <Input
+                                                    name="symbol"
+                                                    placeholder="Simbol (pcs/gr/kt) *"
+                                                    required
+                                                    className="h-8 text-xs"
+                                                />
+                                                <InputError
+                                                    message={errors.symbol}
+                                                />
+                                            </div>
                                         </div>
                                         <Button
                                             size="sm"

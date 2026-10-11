@@ -9,6 +9,7 @@ use App\Enums\UserRole;
 use App\Models\ActivityLog;
 use App\Models\Item;
 use App\Models\ItemCategory;
+use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
 use App\Models\Store;
@@ -113,6 +114,13 @@ class PurchaseRequestProcessingTest extends TestCase
         $this->assertDatabaseHas('purchase_orders', [
             'purchase_request_id' => $request->id,
             'status' => 'DRAFT',
+        ]);
+        $this->assertSame(10, $stockLine->fresh()->requested_quantity);
+        $this->assertSame(3, $stockLine->fresh()->approved_quantity);
+        $order = PurchaseOrder::query()->where('purchase_request_id', $request->id)->firstOrFail();
+        $this->assertDatabaseHas('purchase_order_items', [
+            'purchase_order_id' => $order->id,
+            'quantity' => 3,
         ]);
         $this->assertDatabaseHas('purchase_order_request_items', [
             'purchase_request_item_id' => $stockLine->id,

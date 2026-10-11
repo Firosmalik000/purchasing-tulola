@@ -6,11 +6,16 @@ import {
     Calendar,
     CheckCircle2,
     Clock,
+    Download,
     Eye,
+    FileDown,
+    FileSpreadsheet,
+    FileText,
     History,
     MoreHorizontal,
     Plus,
     PlusCircle,
+    Printer,
     RotateCcw,
     Search,
     Trash2,
@@ -356,6 +361,10 @@ export default function InventoryIndex({
         }
     };
 
+    const exportQuery = filters.search
+        ? `?search=${encodeURIComponent(filters.search)}`
+        : '';
+
     return (
         <>
             <Head title="Manajemen Inventaris Stok & Mutasi" />
@@ -364,14 +373,83 @@ export default function InventoryIndex({
                     badge="Inventaris Pusat"
                     title="Stok & Mutasi Pusat"
                     actions={
-                        <Button
-                            size="sm"
-                            className="h-8.5 text-xs shadow-xs"
-                            onClick={handleOpenBulkModal}
-                        >
-                            <PlusCircle className="mr-1.5 size-3.5" />
-                            Tambah Stok Kolektif
-                        </Button>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8.5 gap-1.5 text-xs shadow-xs"
+                                asChild
+                            >
+                                <a
+                                    href={`/central/inventory/print${exportQuery}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <Printer className="size-3.5 text-purple-600 dark:text-purple-400" />
+                                    <span>Cetak Lembar</span>
+                                </a>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8.5 gap-1.5 text-xs shadow-xs"
+                                asChild
+                            >
+                                <a href={`/central/inventory/pdf${exportQuery}`}>
+                                    <FileDown className="size-3.5 text-rose-600 dark:text-rose-400" />
+                                    <span>Unduh PDF</span>
+                                </a>
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8.5 gap-1.5 text-xs shadow-xs"
+                                    >
+                                        <Download className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                                        <span>Export Data</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+                                        Laporan Stok Terbaru ({activeStore?.code ?? 'HO-JKT'})
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuItem asChild>
+                                        <a
+                                            href={`/central/inventory/excel${exportQuery}`}
+                                            className="flex cursor-pointer items-center gap-2"
+                                        >
+                                            <FileSpreadsheet className="size-4 text-emerald-600" />
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">Export Excel (.xlsx)</span>
+                                                <span className="text-[10px] text-muted-foreground">Format resmi dengan styling & formula</span>
+                                            </div>
+                                        </a>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <a
+                                            href={`/central/inventory/csv${exportQuery}`}
+                                            className="flex cursor-pointer items-center gap-2"
+                                        >
+                                            <FileText className="size-4 text-sky-600" />
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">Export CSV (.csv)</span>
+                                                <span className="text-[10px] text-muted-foreground">Standar UTF-8 BOM untuk spreadsheet</span>
+                                            </div>
+                                        </a>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            <Button
+                                size="sm"
+                                className="h-8.5 text-xs shadow-xs"
+                                onClick={handleOpenBulkModal}
+                            >
+                                <PlusCircle className="mr-1.5 size-3.5" />
+                                Tambah Stok Kolektif
+                            </Button>
+                        </div>
                     }
                 />
 
@@ -516,7 +594,7 @@ export default function InventoryIndex({
                 {/* TAB 1: Posisi Saldo Stok Barang (Murni Tracking Stok) */}
                 {activeTab === 'stocks' && (
                     <Card className="border-border/70 shadow-xs">
-                        <CardHeader className="border-b border-border/50 py-3.5">
+                        <CardHeader className="flex flex-col gap-3 border-b border-border/50 py-3.5 sm:flex-row sm:items-center sm:justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                     <Warehouse className="size-3.5" />
@@ -525,6 +603,69 @@ export default function InventoryIndex({
                                     Posisi Stok Barang Pusat (
                                     {activeStore?.name ?? 'Pusat'})
                                 </CardTitle>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                                <span className="hidden text-[11px] font-medium text-muted-foreground md:inline">
+                                    Aksi Laporan:
+                                </span>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                    asChild
+                                >
+                                    <a
+                                        href={`/central/inventory/print${exportQuery}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        title="Cetak Lembar Laporan"
+                                    >
+                                        <Printer className="mr-1 size-3 text-purple-600 dark:text-purple-400" />
+                                        Cetak
+                                    </a>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                    asChild
+                                >
+                                    <a
+                                        href={`/central/inventory/pdf${exportQuery}`}
+                                        title="Unduh Dokumen PDF"
+                                    >
+                                        <FileDown className="mr-1 size-3 text-rose-600 dark:text-rose-400" />
+                                        PDF
+                                    </a>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                    asChild
+                                >
+                                    <a
+                                        href={`/central/inventory/excel${exportQuery}`}
+                                        title="Export Excel .xlsx"
+                                    >
+                                        <FileSpreadsheet className="mr-1 size-3 text-emerald-600 dark:text-emerald-400" />
+                                        Excel
+                                    </a>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                    asChild
+                                >
+                                    <a
+                                        href={`/central/inventory/csv${exportQuery}`}
+                                        title="Export CSV"
+                                    >
+                                        <FileText className="mr-1 size-3 text-sky-600 dark:text-sky-400" />
+                                        CSV
+                                    </a>
+                                </Button>
                             </div>
                         </CardHeader>
 

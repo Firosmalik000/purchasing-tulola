@@ -6,6 +6,7 @@ use App\Enums\PurchaseRequestItemType;
 use App\Enums\PurchaseRequestStatus;
 use App\Models\Item;
 use App\Models\PurchaseRequest;
+use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\StoreStockStandard;
 use App\Models\User;
@@ -22,6 +23,47 @@ class SubmitPurchaseRequest
             $request = PurchaseRequest::query()->with('items')->lockForUpdate()->findOrFail($request->id);
             if ($request->items->isEmpty()) {
                 throw ValidationException::withMessages(['request' => 'Draft harus memiliki item sebelum diajukan.']);
+            }
+
+            $centralStore = Store::centralStore();
+            if ($centralStore) {
+                $invalidItems = [];
+                foreach ($request->items as $line) {
+                    if ($line->type !== PurchaseRequestItemType::STOCK) {
+                        continue;
+                    }
+                    $currentCentral = (int) (StoreStock::query()
+                        ->where('store_id', $centralStore->id)
+                        ->where('item_id', $line->item_id)
+                        ->lockForUpdate()
+                        ->value('quantity') ?? 0);
+
+                    if ($currentCentral < $line->requested_quantity) {
+                        $item = $line->item ?? Item::query()->find($line->item_id);
+                        $invalidItems[] = [
+                            'name' => $item?->name ?? "Item #{$line->item_id}",
+                            'available' => $currentCentral,
+                            'requested' => $line->requested_quantity,
+                        ];
+                    }
+                }
+
+                if (! empty($invalidItems)) {
+                    if (count($invalidItems) === 1) {
+                        $first = $invalidItems[0];
+                        $message = $first['available'] <= 0
+                            ? "Item \"{$first['name']}\" yang di-request sedang tidak ada stok di Kantor Pusat."
+                            : "Stok item \"{$first['name']}\" di Kantor Pusat tidak mencukupi (Tersedia: {$first['available']}, Diminta: {$first['requested']}).";
+                    } else {
+                        $lines = array_map(
+                            fn ($i) => "• {$i['name']} (Tersedia: {$i['available']}, Diminta: {$i['requested']})",
+                            $invalidItems
+                        );
+                        $message = "Terdapat ".count($invalidItems)." item yang stoknya tidak mencukupi di Kantor Pusat:\n".implode("\n", $lines);
+                    }
+
+                    throw ValidationException::withMessages(['stock' => $message]);
+                }
             }
 
             foreach ($request->items as $line) {

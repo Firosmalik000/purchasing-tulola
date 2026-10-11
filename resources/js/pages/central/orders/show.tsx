@@ -5,6 +5,7 @@ import {
     Calendar,
     CheckCircle2,
     Clock,
+    FileDown,
     FileText,
     Pencil,
     Printer,
@@ -240,11 +241,33 @@ export default function OrderShow({
                         <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.print()}
+                            asChild
                             className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                         >
-                            <Printer className="size-3.5" />
-                            Cetak
+                            <a
+                                href={`/central/orders/${purchaseOrder.id}/print`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <Printer className="size-3.5" />
+                                Cetak Lembar Order
+                            </a>
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                        >
+                            <a
+                                href={`/central/orders/${purchaseOrder.id}/pdf`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <FileDown className="size-3.5" />
+                                Unduh PDF
+                            </a>
                         </Button>
 
                         {canUpdate && (

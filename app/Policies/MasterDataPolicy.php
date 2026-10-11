@@ -25,4 +25,9 @@ class MasterDataPolicy
     {
         return $user->can('manage-master-data');
     }
+
+    public function delete(User $user): bool
+    {
+        return $user->can('manage-master-data');
+    }
 }

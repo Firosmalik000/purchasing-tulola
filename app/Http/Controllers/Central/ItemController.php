@@ -8,9 +8,11 @@ use App\Http\Requests\Central\ItemRequest;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\Unit;
+use App\Services\ActivityLogger;
 use App\Support\Paging;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -44,5 +46,30 @@ class ItemController extends Controller
         $action->handle($item, $request->validated(), 'item');
 
         return back()->with('success', 'Item berhasil diperbarui.');
+    }
+
+    public function destroy(Item $item, ActivityLogger $logger): RedirectResponse
+    {
+        Gate::authorize('delete', $item);
+
+        if (
+            $item->purchaseRequestItems()->exists()
+            || $item->purchaseOrderItems()->exists()
+            || $item->stockMovements()->exists()
+            || $item->stocks()->where('quantity', '>', 0)->exists()
+        ) {
+            return back()->with('error', 'Item memiliki histori transaksi atau stok aktif dan tidak dapat dihapus. Anda dapat menonaktifkan item jika sudah tidak digunakan.');
+        }
+
+        DB::transaction(function () use ($item, $logger): void {
+            $item->stockStandards()->delete();
+            $item->stocks()->delete();
+
+            $deletedData = $item->only(['sku', 'name', 'item_category_id', 'unit_id', 'cost_price', 'min_stock', 'target_stock', 'is_active']);
+            $item->delete();
+            $logger->log('item.deleted', $item, $deletedData);
+        });
+
+        return back()->with('success', 'Item berhasil dihapus.');
     }
 }

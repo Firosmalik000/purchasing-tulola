@@ -301,6 +301,197 @@ class PurchaseRequestManagementTest extends TestCase
         $this->assertDatabaseCount('purchase_requests', 0);
     }
 
+    public function test_store_pic_can_save_and_edit_draft_even_if_central_stock_is_zero(): void
+    {
+        [$pic, $store, $item] = $this->fixtures();
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+        StoreStock::create(['store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 0]);
+
+        // 1. Can save draft without error
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 10]],
+            'action' => 'draft',
+        ])->assertSessionHasNoErrors();
+
+        $purchaseRequest = PurchaseRequest::firstOrFail();
+        $this->assertSame(PurchaseRequestStatus::DRAFT, $purchaseRequest->status);
+
+        // 2. Can edit draft without error
+        $this->actingAs($pic)->put(route('store.requests.update', $purchaseRequest), [
+            'store_id' => $store->id,
+            'notes' => 'Catatan draft diedit',
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 15]],
+            'action' => 'draft',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('Catatan draft diedit', $purchaseRequest->fresh()->notes);
+    }
+
+    public function test_store_pic_cannot_submit_request_when_central_stock_is_empty(): void
+    {
+        [$pic, $store, $item] = $this->fixtures();
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+        StoreStock::create(['store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 0]);
+
+        $response = $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 5]],
+            'action' => 'submit',
+        ]);
+
+        $response->assertSessionHasErrors(['stock', 'stock_items.0.requested_quantity']);
+        $errors = session('errors')->getBag('default');
+        $this->assertStringContainsString('sedang tidak ada stok di Kantor Pusat', $errors->first('stock'));
+        $this->assertDatabaseCount('purchase_requests', 0);
+    }
+
+    public function test_store_pic_cannot_submit_request_when_central_stock_is_less_than_requested(): void
+    {
+        [$pic, $store, $item] = $this->fixtures();
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+        StoreStock::create(['store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 3]);
+
+        $response = $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 10]],
+            'action' => 'submit',
+        ]);
+
+        $response->assertSessionHasErrors(['stock', 'stock_items.0.requested_quantity']);
+        $errors = session('errors')->getBag('default');
+        $this->assertStringContainsString('Tersedia: 3', $errors->first('stock'));
+        $this->assertStringContainsString('Diminta: 10', $errors->first('stock'));
+        $this->assertDatabaseCount('purchase_requests', 0);
+    }
+
+    public function test_store_pic_cannot_submit_multiple_items_with_insufficient_stock(): void
+    {
+        [$pic, $store, $item1, $unit] = $this->fixtures();
+        $item2 = Item::create([
+            'sku' => 'ATK-002', 'name' => 'Buku Catatan',
+            'item_category_id' => ItemCategory::firstOrFail()->id, 'unit_id' => $unit->id, 'is_active' => true,
+        ]);
+
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+        StoreStock::create(['store_id' => $centralStore->id, 'item_id' => $item1->id, 'quantity' => 0]);
+        StoreStock::create(['store_id' => $centralStore->id, 'item_id' => $item2->id, 'quantity' => 2]);
+
+        $response = $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [
+                ['item_id' => $item1->id, 'requested_quantity' => 5],
+                ['item_id' => $item2->id, 'requested_quantity' => 8],
+            ],
+            'action' => 'submit',
+        ]);
+
+        $response->assertSessionHasErrors(['stock', 'stock_items.0.requested_quantity', 'stock_items.1.requested_quantity']);
+        $errors = session('errors')->getBag('default');
+        $this->assertStringContainsString('2 item', $errors->first('stock'));
+        $this->assertStringContainsString('Pulpen', $errors->first('stock'));
+        $this->assertStringContainsString('Buku Catatan', $errors->first('stock'));
+    }
+
+    public function test_submitting_draft_validates_central_stock(): void
+    {
+        [$pic, $store, $item] = $this->fixtures();
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+        StoreStock::create(['store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 2]);
+
+        // Create draft first
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 5]],
+            'action' => 'draft',
+        ])->assertSessionHasNoErrors();
+
+        $purchaseRequest = PurchaseRequest::firstOrFail();
+        $this->assertSame(PurchaseRequestStatus::DRAFT, $purchaseRequest->status);
+
+        // Submit draft fails due to stock
+        $this->actingAs($pic)->post(route('store.requests.submit', $purchaseRequest))
+            ->assertSessionHasErrors('stock');
+
+        $this->assertSame(PurchaseRequestStatus::DRAFT, $purchaseRequest->fresh()->status);
+    }
+
+    public function test_submit_succeeds_when_requested_quantity_equals_available_central_stock(): void
+    {
+        [$pic, $store, $item] = $this->fixtures();
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+        StoreStock::create(['store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 10]);
+
+        // Request exactly 10 when 10 are available
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 10]],
+            'action' => 'submit',
+        ])->assertSessionHasNoErrors();
+
+        $purchaseRequest = PurchaseRequest::firstOrFail();
+        $this->assertSame(PurchaseRequestStatus::SUBMITTED, $purchaseRequest->status);
+    }
+
+    public function test_submit_succeeds_for_mixed_items_when_stock_items_are_sufficient(): void
+    {
+        [$pic, $store, $item, $unit] = $this->fixtures();
+        $centralStore = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+        StoreStock::create(['store_id' => $centralStore->id, 'item_id' => $item->id, 'quantity' => 20]);
+
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 5]],
+            'special_items' => [[
+                'name' => 'Banner Event Khusus',
+                'unit_id' => $unit->id,
+                'requested_quantity' => 2,
+                'reason' => 'Event ulang tahun toko',
+            ]],
+            'action' => 'submit',
+        ])->assertSessionHasNoErrors();
+
+        $purchaseRequest = PurchaseRequest::firstOrFail();
+        $this->assertSame(PurchaseRequestStatus::SUBMITTED, $purchaseRequest->status);
+    }
+
+    public function test_submit_succeeds_for_only_special_items_without_stock_items(): void
+    {
+        [$pic, $store, , $unit] = $this->fixtures();
+        Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+
+        $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'special_items' => [[
+                'name' => 'Meja Display Custom',
+                'unit_id' => $unit->id,
+                'requested_quantity' => 1,
+                'reason' => 'Renovasi interior',
+            ]],
+            'action' => 'submit',
+        ])->assertSessionHasNoErrors();
+
+        $purchaseRequest = PurchaseRequest::firstOrFail();
+        $this->assertSame(PurchaseRequestStatus::SUBMITTED, $purchaseRequest->status);
+    }
+
+    public function test_submit_fails_when_item_has_no_stock_record_at_central_warehouse(): void
+    {
+        [$pic, $store, $item] = $this->fixtures();
+        // Central store exists, but NO StoreStock record for $item
+        Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Tulola Head Office']);
+
+        $response = $this->actingAs($pic)->post(route('store.requests.store'), [
+            'store_id' => $store->id,
+            'stock_items' => [['item_id' => $item->id, 'requested_quantity' => 1]],
+            'action' => 'submit',
+        ]);
+
+        $response->assertSessionHasErrors(['stock', 'stock_items.0.requested_quantity']);
+        $errors = session('errors')->getBag('default');
+        $this->assertStringContainsString('sedang tidak ada stok di Kantor Pusat', $errors->first('stock'));
+    }
+
     /** @return array{User, Store, Item, Unit} */
     private function fixtures(): array
     {

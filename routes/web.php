@@ -38,11 +38,15 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::post('users/{user}/resend-invitation', [UserController::class, 'resendInvitation'])->name('users.resend-invitation');
         Route::post('stores/{store}/users', [StoreUserController::class, 'store'])->name('stores.users.store');
         Route::delete('stores/{store}/users/{user}', [StoreUserController::class, 'destroy'])->name('stores.users.destroy');
-        Route::resource('items', ItemController::class)->only(['index', 'store', 'update']);
+        Route::resource('items', ItemController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('item-categories', ItemCategoryController::class)->only(['store', 'update']);
         Route::resource('units', UnitController::class)->only(['store', 'update']);
         Route::resource('suppliers', SupplierController::class)->only(['index', 'store', 'update']);
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+        Route::get('inventory/print', [InventoryController::class, 'print'])->name('inventory.print');
+        Route::get('inventory/pdf', [InventoryController::class, 'pdf'])->name('inventory.pdf');
+        Route::get('inventory/excel', [InventoryController::class, 'excel'])->name('inventory.excel');
+        Route::get('inventory/csv', [InventoryController::class, 'csv'])->name('inventory.csv');
         Route::put('inventory/stock', [InventoryController::class, 'updateStock'])->name('inventory.stock.update');
         Route::post('inventory/bulk-stock', [InventoryController::class, 'bulkStock'])->name('inventory.stock.bulk');
         Route::put('inventory/standard', [InventoryController::class, 'updateStandard'])->name('inventory.standard.update');
@@ -50,6 +54,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::get('requests/{purchase_request}', [CentralPurchaseRequestController::class, 'show'])->name('requests.show');
         Route::post('requests/{purchase_request}/process', [CentralPurchaseRequestController::class, 'process'])->name('requests.process');
         Route::post('requests/{purchase_request}/reject', [CentralPurchaseRequestController::class, 'reject'])->name('requests.reject');
+        Route::get('orders/{purchase_order}/print', [PurchaseOrderController::class, 'print'])->name('orders.print');
+        Route::get('orders/{purchase_order}/pdf', [PurchaseOrderController::class, 'pdf'])->name('orders.pdf');
         Route::resource('orders', PurchaseOrderController::class)
             ->parameters(['orders' => 'purchase_order'])
             ->only(['index', 'show', 'update']);

@@ -153,6 +153,11 @@ class PurchaseRequestController extends Controller
      */
     private function formProps(Collection $stores, int $storeId): array
     {
+        $centralStore = Store::centralStore();
+        $centralStocks = $centralStore
+            ? \App\Models\StoreStock::query()->where('store_id', $centralStore->id)->pluck('quantity', 'item_id')
+            : collect();
+
         return [
             'stores' => $stores,
             'selectedStoreId' => $storeId,
@@ -168,7 +173,10 @@ class PurchaseRequestController extends Controller
                 ->orderBy('item_categories.id')
                 ->orderBy('items.name')
                 ->select('items.*')
-                ->get(),
+                ->get()
+                ->each(function (Item $item) use ($centralStocks) {
+                    $item->setAttribute('central_stock', (int) ($centralStocks[$item->id] ?? 0));
+                }),
             'units' => Unit::query()->where('is_active', true)->orderBy('name')->get(['id', 'name', 'symbol']),
             'purchaseRequest' => null,
         ];

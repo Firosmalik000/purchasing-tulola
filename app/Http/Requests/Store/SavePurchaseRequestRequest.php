@@ -3,7 +3,10 @@
 namespace App\Http\Requests\Store;
 
 use App\Enums\UserRole;
+use App\Models\Item;
 use App\Models\PurchaseRequest;
+use App\Models\Store;
+use App\Models\StoreStock;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -60,6 +63,60 @@ class SavePurchaseRequestRequest extends FormRequest
                 $allowed = $this->user()->stores()->whereKey($this->integer('store_id'))->wherePivot('is_active', true)->where('stores.is_active', true)->exists();
                 if (! $allowed) {
                     $validator->errors()->add('store_id', 'Toko tidak tersedia untuk akun Anda.');
+                }
+            }
+
+            if ($this->input('action') === 'submit' || $this->boolean('submit_immediately')) {
+                $centralStore = Store::centralStore();
+                if ($centralStore) {
+                    $stockItems = (array) $this->input('stock_items', []);
+                    $itemIds = collect($stockItems)->pluck('item_id')->filter()->all();
+                    $itemsMap = Item::query()->whereIn('id', $itemIds)->get()->keyBy('id');
+                    $centralStocks = StoreStock::query()
+                        ->where('store_id', $centralStore->id)
+                        ->whereIn('item_id', $itemIds)
+                        ->pluck('quantity', 'item_id');
+
+                    $invalidItems = [];
+                    foreach ($stockItems as $index => $line) {
+                        $itemId = (int) ($line['item_id'] ?? 0);
+                        $requestedQty = (int) ($line['requested_quantity'] ?? 0);
+                        $item = $itemsMap->get($itemId);
+                        if (! $item || $requestedQty <= 0) {
+                            continue;
+                        }
+
+                        $availableStock = (int) ($centralStocks->get($itemId) ?? 0);
+                        if ($availableStock < $requestedQty) {
+                            if ($availableStock <= 0) {
+                                $itemMsg = "Item \"{$item->name}\" yang di-request sedang tidak ada stok di Kantor Pusat.";
+                            } else {
+                                $itemMsg = "Stok item \"{$item->name}\" di Kantor Pusat tidak mencukupi (Tersedia: {$availableStock}, Diminta: {$requestedQty}).";
+                            }
+                            $validator->errors()->add("stock_items.{$index}.requested_quantity", $itemMsg);
+                            $invalidItems[] = [
+                                'name' => $item->name,
+                                'available' => $availableStock,
+                                'requested' => $requestedQty,
+                            ];
+                        }
+                    }
+
+                    if (! empty($invalidItems)) {
+                        if (count($invalidItems) === 1) {
+                            $first = $invalidItems[0];
+                            $overallMsg = $first['available'] <= 0
+                                ? "Item \"{$first['name']}\" yang di-request sedang tidak ada stok di Kantor Pusat."
+                                : "Stok item \"{$first['name']}\" di Kantor Pusat tidak mencukupi (Tersedia: {$first['available']}, Diminta: {$first['requested']}).";
+                        } else {
+                            $lines = array_map(
+                                fn ($i) => "• {$i['name']} (Tersedia: {$i['available']}, Diminta: {$i['requested']})",
+                                $invalidItems
+                            );
+                            $overallMsg = "Terdapat ".count($invalidItems)." item yang stoknya tidak mencukupi di Kantor Pusat:\n".implode("\n", $lines);
+                        }
+                        $validator->errors()->add('stock', $overallMsg);
+                    }
                 }
             }
         }];

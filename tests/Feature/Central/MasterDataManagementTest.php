@@ -2,11 +2,20 @@
 
 namespace Tests\Feature\Central;
 
+use App\Enums\PurchaseOrderStatus;
+use App\Enums\PurchaseRequestItemType;
+use App\Enums\StockMovementType;
 use App\Enums\UserRole;
 use App\Models\Item;
 use App\Models\ItemCategory;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\PurchaseRequest;
+use App\Models\PurchaseRequestItem;
+use App\Models\StockMovement;
 use App\Models\Store;
 use App\Models\StoreStock;
+use App\Models\StoreStockStandard;
 use App\Models\Supplier;
 use App\Models\Unit;
 use App\Models\User;
@@ -172,5 +181,236 @@ class MasterDataManagementTest extends TestCase
         $this->assertDatabaseHas('activity_logs', ['action' => 'unit.updated', 'entity_id' => $unit->id]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'item.updated', 'entity_id' => $item->id]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'supplier.updated', 'entity_id' => $supplier->id]);
+    }
+
+    public function test_central_admin_can_delete_unused_item(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $category = ItemCategory::create(['name' => 'Tools', 'code' => 'TLS', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'TLS-DEL-01',
+            'name' => 'Item to Delete',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('central.items.destroy', $item))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Item berhasil dihapus.');
+
+        $this->assertDatabaseMissing('items', ['id' => $item->id]);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'item.deleted',
+            'entity_id' => $item->id,
+        ]);
+    }
+
+    public function test_central_admin_can_delete_item_with_zero_stock_and_standards(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $store = Store::create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Hardware', 'code' => 'HDW', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'HDW-ZERO-01',
+            'name' => 'Zero Stock Item',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        StoreStock::create([
+            'store_id' => $store->id,
+            'item_id' => $item->id,
+            'quantity' => 0,
+        ]);
+
+        StoreStockStandard::create([
+            'store_id' => $store->id,
+            'item_id' => $item->id,
+            'standard_quantity' => 10,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('central.items.destroy', $item))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Item berhasil dihapus.');
+
+        $this->assertDatabaseMissing('items', ['id' => $item->id]);
+        $this->assertDatabaseMissing('store_stocks', ['item_id' => $item->id]);
+        $this->assertDatabaseMissing('store_stock_standards', ['item_id' => $item->id]);
+    }
+
+    public function test_central_admin_cannot_delete_item_with_active_positive_stock(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $store = Store::create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Packaging', 'code' => 'PKG', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'PKG-LOCKED',
+            'name' => 'Locked Item',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        StoreStock::create([
+            'store_id' => $store->id,
+            'item_id' => $item->id,
+            'quantity' => 10,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('central.items.destroy', $item))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('items', ['id' => $item->id]);
+    }
+
+    public function test_central_admin_cannot_delete_item_referenced_by_purchase_request(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $store = Store::create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Cleaning', 'code' => 'CLN', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'CLN-PR-LOCKED',
+            'name' => 'Item in PR',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        $pr = PurchaseRequest::factory()->create([
+            'store_id' => $store->id,
+            'requested_by' => $user->id,
+        ]);
+
+        PurchaseRequestItem::create([
+            'purchase_request_id' => $pr->id,
+            'type' => PurchaseRequestItemType::STOCK,
+            'item_id' => $item->id,
+            'unit_id' => $unit->id,
+            'requested_quantity' => 5,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('central.items.destroy', $item))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('items', ['id' => $item->id]);
+    }
+
+    public function test_central_admin_cannot_delete_item_referenced_by_purchase_order(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $supplier = Supplier::create(['code' => 'SUP-PO', 'name' => 'Supplier PO', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Stationery', 'code' => 'STY', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'STY-PO-LOCKED',
+            'name' => 'Item in PO',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        $po = PurchaseOrder::factory()->create([
+            'created_by' => $user->id,
+        ]);
+
+        PurchaseOrderItem::create([
+            'purchase_order_id' => $po->id,
+            'item_type' => 'STOCK',
+            'item_id' => $item->id,
+            'unit_id' => $unit->id,
+            'quantity' => 2,
+            'unit_price' => 25000,
+            'total' => 50000,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('central.items.destroy', $item))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('items', ['id' => $item->id]);
+    }
+
+    public function test_central_admin_cannot_delete_item_with_stock_movement_history(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $store = Store::create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Materials', 'code' => 'MAT', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Gr', 'symbol' => 'gr', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'MAT-MV-LOCKED',
+            'name' => 'Item with Movement',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        StockMovement::create([
+            'store_id' => $store->id,
+            'item_id' => $item->id,
+            'previous_quantity' => 0,
+            'new_quantity' => 0,
+            'quantity_difference' => 0,
+            'movement_type' => StockMovementType::CORRECTION->value,
+            'reason' => 'Opname saldo nol',
+            'created_by' => $user->id,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('central.items.destroy', $item))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('items', ['id' => $item->id]);
+    }
+
+    public function test_store_pic_cannot_delete_item(): void
+    {
+        $pic = User::factory()->storePic()->create();
+        $category = ItemCategory::create(['name' => 'Stationery', 'code' => 'STY', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'STY-001',
+            'name' => 'Protected Item',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($pic)
+            ->delete(route('central.items.destroy', $item))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('items', ['id' => $item->id]);
+    }
+
+    public function test_unauthenticated_user_cannot_delete_item(): void
+    {
+        $category = ItemCategory::create(['name' => 'Stationery', 'code' => 'STY', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+        $item = Item::create([
+            'sku' => 'STY-GUEST',
+            'name' => 'Guest Protected Item',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        $this->delete(route('central.items.destroy', $item))
+            ->assertRedirect(route('login'));
+
+        $this->assertDatabaseHas('items', ['id' => $item->id]);
     }
 }

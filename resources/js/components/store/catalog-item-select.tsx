@@ -32,6 +32,7 @@ export type CatalogItem = {
     item_category_id?: number | null;
     category?: CatalogCategory | null;
     unit?: CatalogUnit;
+    central_stock?: number;
 };
 
 interface CatalogItemSelectProps {
@@ -247,6 +248,18 @@ export function CatalogItemSelect({
                                 <span className="truncate font-medium text-foreground">
                                     {selectedItem.name}
                                 </span>
+                                {typeof selectedItem.central_stock === 'number' && (
+                                    <span
+                                        className={cn(
+                                            'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium tabular-nums',
+                                            selectedItem.central_stock > 0
+                                                ? 'bg-muted text-muted-foreground'
+                                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+                                        )}
+                                    >
+                                        Pusat: {selectedItem.central_stock}
+                                    </span>
+                                )}
                                 <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
                                     {selectedItem.sku}
                                 </span>
@@ -421,6 +434,18 @@ export function CatalogItemSelect({
                                                     </span>
 
                                                     <div className="flex shrink-0 items-center gap-1.5">
+                                                        {typeof item.central_stock === 'number' && (
+                                                            <span
+                                                                className={cn(
+                                                                    'rounded px-1.5 py-0.5 text-[10px] font-medium tabular-nums',
+                                                                    item.central_stock > 0
+                                                                        ? 'bg-muted text-muted-foreground'
+                                                                        : 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
+                                                                )}
+                                                            >
+                                                                Pusat: {item.central_stock}
+                                                            </span>
+                                                        )}
                                                         <span className="font-mono text-[10px] text-muted-foreground">
                                                             {item.sku}
                                                         </span>
