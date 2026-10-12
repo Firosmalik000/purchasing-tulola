@@ -517,57 +517,25 @@ export default function ItemIndex({
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                        <div className="space-y-1">
-                                            <Label className="text-xs font-medium">
-                                                Harga Pokok Acuan (Rp)
-                                            </Label>
-                                            <Input
-                                                name="cost_price"
-                                                type="number"
-                                                min="0"
-                                                step="1"
-                                                placeholder="0"
-                                                className="h-8.5 font-mono text-xs"
-                                            />
-                                            <InputError
-                                                message={errors.cost_price}
-                                            />
-                                        </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">
+                                            Harga Pokok Acuan (Rp)
+                                        </Label>
+                                        <Input
+                                            name="cost_price"
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            placeholder="0"
+                                            className="h-8.5 font-mono text-xs"
+                                        />
+                                        <InputError
+                                            message={errors.cost_price}
+                                        />
+                                    </div>
 
-                                        <div className="space-y-1">
-                                            <Label className="text-xs font-medium">
-                                                Standar Minimal (Batas Kritis)
-                                            </Label>
-                                            <Input
-                                                name="min_stock"
-                                                type="number"
-                                                min="0"
-                                                step="1"
-                                                placeholder="0"
-                                                className="h-8.5 font-mono text-xs"
-                                            />
-                                            <InputError
-                                                message={errors.min_stock}
-                                            />
-                                        </div>
-
-                                        <div className="space-y-1">
-                                            <Label className="text-xs font-medium">
-                                                Standar Stok (Standard Stock)
-                                            </Label>
-                                            <Input
-                                                name="target_stock"
-                                                type="number"
-                                                min="0"
-                                                step="1"
-                                                placeholder="0"
-                                                className="h-8.5 font-mono text-xs"
-                                            />
-                                            <InputError
-                                                message={errors.target_stock}
-                                            />
-                                        </div>
+                                    <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5 text-xs text-muted-foreground flex items-center justify-between">
+                                        <span>💡 <strong>Standar Stok & Batas Kritis</strong> diatur satu pintu melalui menu <strong>Inventaris</strong>.</span>
                                     </div>
 
                                     <label className="flex items-center gap-2 pt-1 text-xs">
@@ -712,78 +680,39 @@ export default function ItemIndex({
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                                            <div className="space-y-1">
-                                                <Label className="text-xs font-medium">
-                                                    Harga Pokok Acuan (Rp)
-                                                </Label>
-                                                <Input
-                                                    name="cost_price"
-                                                    type="number"
-                                                    min="0"
-                                                    step="1"
-                                                    defaultValue={
-                                                        editingItem.cost_price
-                                                            ? Number(
-                                                                  editingItem.cost_price,
-                                                              )
-                                                            : 0
-                                                    }
-                                                    className="h-8.5 font-mono text-xs"
-                                                />
-                                                <InputError
-                                                    message={errors.cost_price}
-                                                />
-                                            </div>
+                                    <div className="space-y-1">
+                                        <Label className="text-xs font-medium">
+                                            Harga Pokok Acuan (Rp)
+                                        </Label>
+                                        <Input
+                                            name="cost_price"
+                                            type="number"
+                                            min="0"
+                                            step="1"
+                                            defaultValue={
+                                                editingItem.cost_price
+                                                    ? Number(
+                                                          editingItem.cost_price,
+                                                      )
+                                                    : 0
+                                            }
+                                            className="h-8.5 font-mono text-xs"
+                                        />
+                                        <InputError
+                                            message={errors.cost_price}
+                                        />
+                                    </div>
 
-                                            <div className="space-y-1">
-                                                <Label className="text-xs font-medium">
-                                                    Standar Minimal (Batas Kritis)
-                                                </Label>
-                                                <Input
-                                                    name="min_stock"
-                                                    type="number"
-                                                    min="0"
-                                                    step="1"
-                                                    defaultValue={
-                                                        editingItem.min_stock
-                                                            ? Number(
-                                                                  editingItem.min_stock,
-                                                              )
-                                                            : 0
-                                                    }
-                                                    className="h-8.5 font-mono text-xs"
-                                                />
-                                                <InputError
-                                                    message={errors.min_stock}
-                                                />
-                                            </div>
-
-                                            <div className="space-y-1">
-                                                <Label className="text-xs font-medium">
-                                                    Standar Stok (Standard Stock)
-                                                </Label>
-                                                <Input
-                                                    name="target_stock"
-                                                    type="number"
-                                                    min="0"
-                                                    step="1"
-                                                    defaultValue={
-                                                        editingItem.target_stock
-                                                            ? Number(
-                                                                  editingItem.target_stock,
-                                                              )
-                                                            : 0
-                                                    }
-                                                    className="h-8.5 font-mono text-xs"
-                                                />
-                                                <InputError
-                                                    message={
-                                                        errors.target_stock
-                                                    }
-                                                />
-                                            </div>
+                                    <div className="rounded-lg border border-border/60 bg-muted/30 p-2.5 text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div>
+                                            <span className="font-medium text-foreground">Standar Stok Pusat:</span>{' '}
+                                            Minimal Kritis: <strong className="font-mono text-rose-600 dark:text-rose-400">{Number(editingItem.min_stock || 0).toLocaleString('id-ID')}</strong> |{' '}
+                                            Target Standar: <strong className="font-mono text-primary">{Number(editingItem.target_stock || 0).toLocaleString('id-ID')}</strong> {editingItem.unit.symbol}
                                         </div>
+                                        <Link href="/central/inventory" className="text-primary hover:underline font-medium text-[11px] whitespace-nowrap">
+                                            Atur di Inventaris →
+                                        </Link>
+                                    </div>
 
                                         <label className="flex items-center gap-2 pt-1 text-xs">
                                             <input
