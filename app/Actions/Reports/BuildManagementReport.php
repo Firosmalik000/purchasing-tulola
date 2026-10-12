@@ -146,20 +146,24 @@ class BuildManagementReport
                 );
             }
 
+            $quantity = $filters['store_id'] && $allocations->isNotEmpty()
+                ? $allocations->sum('allocated_quantity')
+                : $groupLines->sum('quantity');
+
             if ($firstLine->item_type === PurchaseRequestItemType::SPECIAL || ! $firstLine->item_id) {
                 $stock = '-';
                 $standard = '-';
             } else {
                 $stock = (int) $centralStocks->get($firstLine->item_id, 0);
-                $standard = (int) $centralStandards->get(
+                $configuredStandard = (int) $centralStandards->get(
                     $firstLine->item_id,
                     $firstLine->item?->target_stock ?? $firstLine->item?->min_stock ?? 0
                 );
-            }
 
-            $quantity = $filters['store_id'] && $allocations->isNotEmpty()
-                ? $allocations->sum('allocated_quantity')
-                : $groupLines->sum('quantity');
+                $standard = ($configuredStandard === 0 || $configuredStandard < $stock + (int) $quantity)
+                    ? $stock + (int) $quantity
+                    : $configuredStandard;
+            }
 
             $remarks = $allocations->groupBy(fn ($allocation) => $allocation->purchaseRequestItem->purchaseRequest->store->code)
                 ->map(fn (Collection $entries, string $code) => $code.' '.$this->quantity($entries->sum('allocated_quantity')))

@@ -287,10 +287,10 @@ export default function ItemIndex({
                                                 Harga Pokok Acuan
                                             </th>
                                             <th className="px-3 py-2.5 text-right">
-                                                Min. Kritis
+                                                Standar Minimal
                                             </th>
                                             <th className="px-3 py-2.5 text-right">
-                                                Target Penambahan
+                                                Standar Stok
                                             </th>
                                             <th className="px-3 py-2.5 text-center">
                                                 Status
@@ -537,7 +537,7 @@ export default function ItemIndex({
 
                                         <div className="space-y-1">
                                             <Label className="text-xs font-medium">
-                                                Min. Kritis (Batas Bawah)
+                                                Standar Minimal (Batas Kritis)
                                             </Label>
                                             <Input
                                                 name="min_stock"
@@ -554,7 +554,7 @@ export default function ItemIndex({
 
                                         <div className="space-y-1">
                                             <Label className="text-xs font-medium">
-                                                Target Penambahan (Ideal)
+                                                Standar Stok (Standard Stock)
                                             </Label>
                                             <Input
                                                 name="target_stock"
@@ -738,7 +738,7 @@ export default function ItemIndex({
 
                                             <div className="space-y-1">
                                                 <Label className="text-xs font-medium">
-                                                    Min. Kritis (Batas Bawah)
+                                                    Standar Minimal (Batas Kritis)
                                                 </Label>
                                                 <Input
                                                     name="min_stock"
@@ -761,7 +761,7 @@ export default function ItemIndex({
 
                                             <div className="space-y-1">
                                                 <Label className="text-xs font-medium">
-                                                    Target Penambahan (Ideal)
+                                                    Standar Stok (Standard Stock)
                                                 </Label>
                                                 <Input
                                                     name="target_stock"

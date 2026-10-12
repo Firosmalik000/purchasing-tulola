@@ -718,10 +718,10 @@ export default function InventoryIndex({
                                                 Stok Fisik
                                             </th>
                                             <th className="px-4 py-3 text-right">
-                                                Min. Kritis
+                                                Standar Minimal
                                             </th>
                                             <th className="px-4 py-3 text-right">
-                                                Target Penambahan
+                                                Standar Stok
                                             </th>
                                             <th className="px-3 py-3 text-center">
                                                 Status
@@ -916,9 +916,7 @@ export default function InventoryIndex({
                                                                         }
                                                                         className="cursor-pointer text-xs"
                                                                     >
-                                                                        Atur
-                                                                        Standar
-                                                                        Toko Ini
+                                                                        Atur Standar Stok
                                                                     </DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
@@ -1758,8 +1756,7 @@ export default function InventoryIndex({
                 <DialogContent className="sm:max-w-sm">
                     <DialogHeader>
                         <DialogTitle className="text-base font-semibold">
-                            Atur Standar Stok Khusus (
-                            {activeStore?.code ?? 'Pusat'})
+                            Atur Standar Stok ({activeStore?.name ?? 'Gudang Pusat'})
                         </DialogTitle>
                         <DialogDescription className="text-xs">
                             {standardModalItem
@@ -1788,14 +1785,14 @@ export default function InventoryIndex({
 
                             <div className="space-y-1 rounded-lg border bg-muted/30 p-2.5 text-xs text-muted-foreground">
                                 <div>
-                                    Standar default master: Min Kritis{' '}
+                                    Standar default master: Standar Minimal{' '}
                                     <strong className="font-mono text-rose-600 dark:text-rose-400">
                                         {formatQuantity(
                                             standardModalItem.min_stock ?? 0,
                                         )}
                                     </strong>
                                     {' | '}
-                                    Target Penambahan{' '}
+                                    Standar Stok{' '}
                                     <strong className="font-mono text-primary">
                                         {formatQuantity(
                                             standardModalItem.target_stock ??
@@ -1809,7 +1806,7 @@ export default function InventoryIndex({
 
                             <div className="space-y-1">
                                 <Label className="text-xs font-semibold">
-                                    Batas Standar Min. Kritis (
+                                    Standar Minimal (Batas Kritis) (
                                     {standardModalItem.unit.symbol})
                                 </Label>
                                 <Input
@@ -1827,14 +1824,13 @@ export default function InventoryIndex({
                                     className="h-9 text-xs font-medium tabular-nums"
                                 />
                                 <p className="text-[10px] text-muted-foreground">
-                                    Batas alarm stok kritis (merah) khusus toko
-                                    ini.
+                                    Batas alarm stok kritis (merah) untuk validasi pengadaan.
                                 </p>
                             </div>
 
                             <div className="space-y-1">
                                 <Label className="text-xs font-semibold">
-                                    Target Acuan Penambahan Stok (
+                                    Standar Stok (Standard Stock) (
                                     {standardModalItem.unit.symbol})
                                 </Label>
                                 <Input
@@ -1853,8 +1849,7 @@ export default function InventoryIndex({
                                     className="h-9 text-xs font-medium tabular-nums"
                                 />
                                 <p className="text-[10px] text-muted-foreground">
-                                    Target kuantitas ideal saat penambahan stok
-                                    / restock.
+                                    Target kuantitas ideal stok pusat (Qty pengajuan = Standar Stok - Stok).
                                 </p>
                             </div>
 
