@@ -1,6 +1,18 @@
 import { Form, Head, Link } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Clock, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import {
+    ArrowLeft,
+    CheckCircle2,
+    Clock,
+    XCircle,
+    Boxes,
+    Calendar,
+    Sparkles,
+    MessageSquareQuote,
+    Minus,
+    Plus,
+    AlertCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/common/page-header';
 import { SampleImagePreview } from '@/components/common/sample-image-preview';
 import {
@@ -283,6 +295,11 @@ export default function CentralRequestShow({
     );
 }
 
+type BulkAction = {
+    type: 'APPROVE_ALL' | 'BANK_ALL' | 'REJECT_ALL';
+    timestamp: number;
+} | null;
+
 function RequestSection({
     title,
     lines,
@@ -294,529 +311,891 @@ function RequestSection({
     canProcess: boolean;
     errors: Record<string, string>;
 }) {
+    const isSpecial = lines.some((l) => l.type === 'SPECIAL');
+    const [bulkAction, setBulkAction] = useState<BulkAction>(null);
+
     return (
-        <Card className="border border-border/70 shadow-xs">
-            <CardHeader className="border-b border-border/60 pb-3">
-                <CardTitle className="font-serif text-base font-bold tracking-tight">
-                    {title} ({lines.length} Item)
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 pt-4">
-                {lines.map((line) => (
-                    <div
-                        key={line.id}
-                        className="grid gap-4 rounded-xl border border-border/70 bg-card p-4 transition-all hover:border-border hover:shadow-2xs md:grid-cols-2 xl:grid-cols-6"
+        <Card
+            className={`border shadow-xs ${
+                isSpecial ? 'border-amber-500/30' : 'border-border/70'
+            }`}
+        >
+            <CardHeader className="flex flex-col gap-2.5 border-b border-border/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div className="flex items-center gap-2">
+                    {isSpecial ? (
+                        <Sparkles className="size-4 shrink-0 text-amber-500" />
+                    ) : (
+                        <Boxes className="size-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <CardTitle className="font-serif text-base font-bold tracking-tight">
+                        {title} ({lines.length} Item)
+                    </CardTitle>
+                    <Badge
+                        variant={isSpecial ? 'outline' : 'secondary'}
+                        className={
+                            isSpecial
+                                ? 'border-amber-500/40 bg-amber-500/10 text-[11px] text-amber-700 dark:text-amber-400'
+                                : 'text-[11px]'
+                        }
                     >
-                        <input
-                            type="hidden"
-                            name={`items[${line.id}][id]`}
-                            value={line.id}
-                        />
-                        <div className="flex min-w-0 gap-3 xl:col-span-2">
-                            {line.type === 'SPECIAL' &&
-                                line.sample_image_url && (
-                                    <SampleImagePreview
-                                        src={line.sample_image_url}
-                                        itemName={
-                                            line.name ?? 'permintaan khusus'
-                                        }
-                                        className="size-20"
-                                    />
-                                )}
-                            <div className="min-w-0 flex-1">
-                                <p className="font-serif text-sm font-bold text-foreground">
-                                    {line.type === 'STOCK'
-                                        ? line.item?.name
-                                        : line.name}
-                                </p>
-                                <p className="mt-0.5 text-xs text-muted-foreground">
-                                    {line.type === 'STOCK'
-                                        ? `${line.item?.sku} · Satuan: ${line.unit.symbol}`
-                                        : (line.description ??
-                                          line.unit.symbol)}
-                                </p>
-                                {line.reason && (
-                                    <p className="mt-2 rounded-md bg-muted/40 p-2 text-xs text-muted-foreground">
-                                        <strong className="text-foreground">
-                                            Alasan:
-                                        </strong>{' '}
-                                        {line.reason}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
+                        {isSpecial ? 'Permintaan Khusus' : 'Stok Reguler'}
+                    </Badge>
+                </div>
 
-                        {line.type === 'STOCK' ? (
-                            <>
-                                <Info
-                                    label="Stok Saat Ini"
-                                    value={
-                                        line.current_stock_snapshot === null
-                                            ? '—'
-                                            : formatQuantity(
-                                                  line.current_stock_snapshot,
-                                              )
-                                    }
-                                />
-                                <Info
-                                    label="Standar Toko"
-                                    value={
-                                        line.standard_stock_snapshot === null
-                                            ? '—'
-                                            : formatQuantity(
-                                                  line.standard_stock_snapshot,
-                                              )
-                                    }
-                                />
-                                <Info
-                                    label="Saran Pengadaan"
-                                    value={
-                                        line.suggested_quantity === null
-                                            ? '—'
-                                            : formatQuantity(
-                                                  line.suggested_quantity,
-                                              )
-                                    }
-                                />
-                            </>
-                        ) : (
-                            <>
-                                <Info
-                                    label="Tanggal Dibutuhkan"
-                                    value={
-                                        line.required_date
-                                            ? new Date(
-                                                  line.required_date,
-                                              ).toLocaleDateString('id-ID')
-                                            : '—'
-                                    }
-                                />
-                                <div />
-                            </>
+                {canProcess && lines.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 self-end sm:self-auto">
+                        <span className="mr-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                            Aksi Massal:
+                        </span>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                setBulkAction({
+                                    type: 'APPROVE_ALL',
+                                    timestamp: Date.now(),
+                                })
+                            }
+                            className="h-7 px-2.5 text-xs font-medium"
+                            title="Setujui penuh seluruh item dalam grup ini"
+                        >
+                            <CheckCircle2 className="mr-1 size-3 text-emerald-600 dark:text-emerald-400" />
+                            {isSpecial ? 'Kirim Semua' : 'Setujui Semua'}
+                        </Button>
+                        {isSpecial && (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    setBulkAction({
+                                        type: 'BANK_ALL',
+                                        timestamp: Date.now(),
+                                    })
+                                }
+                                className="h-7 px-2.5 text-xs font-medium"
+                                title="Tunda seluruh item ke antrean Bank Permintaan"
+                            >
+                                <Clock className="mr-1 size-3 text-amber-600 dark:text-amber-400" />
+                                Semua ke Bank
+                            </Button>
                         )}
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                                setBulkAction({
+                                    type: 'REJECT_ALL',
+                                    timestamp: Date.now(),
+                                })
+                            }
+                            className="h-7 px-2.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                            title="Tolak seluruh item dalam grup ini"
+                        >
+                            <XCircle className="mr-1 size-3" />
+                            Tolak Semua
+                        </Button>
+                    </div>
+                )}
+            </CardHeader>
 
-                        <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
-                            {canProcess ? (
-                                line.type === 'SPECIAL' ? (
-                                    <SpecialItemReviewControl
+            <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead>
+                            <tr className="border-b border-border/60 bg-muted/40 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                <th className="w-10 px-3.5 py-2.5 text-center">#</th>
+                                <th className="px-3.5 py-2.5">
+                                    {isSpecial ? 'Item / Permintaan Khusus' : 'Barang / SKU'}
+                                </th>
+                                {!isSpecial && (
+                                    <th className="px-3.5 py-2.5">Info Stok Toko</th>
+                                )}
+                                <th className="px-3.5 py-2.5 text-center">Diminta</th>
+                                <th className="px-3.5 py-2.5">
+                                    {canProcess ? 'Keputusan Disetujui' : 'Status Persetujuan'}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                            {lines.map((line, idx) =>
+                                line.type === 'STOCK' ? (
+                                    <StockItemRow
+                                        key={line.id}
                                         line={line}
+                                        index={idx}
+                                        canProcess={canProcess}
                                         errors={errors}
+                                        bulkAction={bulkAction}
                                     />
                                 ) : (
-                                    <div className="space-y-1.5">
-                                        <div className="flex items-center justify-between text-xs font-semibold">
-                                            <Label
-                                                htmlFor={`approved-${line.id}`}
-                                                className="text-xs"
-                                            >
-                                                Qty Disetujui
-                                            </Label>
-                                            <span className="text-[11px] text-muted-foreground">
-                                                Diminta:{' '}
-                                                {formatQuantity(
-                                                    line.requested_quantity,
-                                                )}
-                                            </span>
-                                        </div>
-                                        <Input
-                                            id={`approved-${line.id}`}
-                                            name={`items[${line.id}][approved_quantity]`}
-                                            type="number"
-                                            min="0"
-                                            max={line.requested_quantity}
-                                            step="1"
-                                            defaultValue={String(
-                                                Number(
-                                                    line.approved_quantity ??
-                                                        line.requested_quantity,
-                                                ),
-                                            )}
-                                            required
-                                            className="h-9 bg-card font-mono text-sm font-semibold"
-                                        />
-                                        <InputError
-                                            message={
-                                                errors[
-                                                    `items.${line.id}.approved_quantity`
-                                                ]
-                                            }
-                                        />
-                                    </div>
-                                )
-                            ) : (
-                                <div className="space-y-1.5 text-xs">
-                                    <Info
-                                        label="Kuantitas Diminta"
-                                        value={`${formatQuantity(line.requested_quantity)} ${line.unit.symbol}`}
+                                    <SpecialItemRow
+                                        key={line.id}
+                                        line={line}
+                                        index={idx}
+                                        canProcess={canProcess}
+                                        errors={errors}
+                                        bulkAction={bulkAction}
                                     />
-                                    {line.type === 'SPECIAL' &&
-                                    line.status === 'PARTIALLY_APPROVED' ? (
-                                        <div className="space-y-1 rounded-md border border-indigo-200 bg-indigo-50/50 p-2 text-[11px] dark:border-indigo-900/50 dark:bg-indigo-950/20">
-                                            <div className="flex items-center justify-between text-muted-foreground">
-                                                <span>Kirim Sekarang:</span>
-                                                <strong className="text-foreground">
-                                                    {formatQuantity(
-                                                        line.approved_quantity ?? 0,
-                                                    )}{' '}
-                                                    {line.unit.symbol}
-                                                </strong>
-                                            </div>
-                                            <div className="flex items-center justify-between text-amber-700 dark:text-amber-400">
-                                                <span>Bank Permintaan:</span>
-                                                <strong>
-                                                    {formatQuantity(
-                                                        line.bank_quantity ?? 0,
-                                                    )}{' '}
-                                                    {line.unit.symbol}
-                                                </strong>
-                                            </div>
-                                            {Number(line.requested_quantity) >
-                                                Number(line.approved_quantity ?? 0) +
-                                                    Number(line.bank_quantity ?? 0) && (
-                                                <div className="flex items-center justify-between text-destructive">
-                                                    <span>Ditolak:</span>
-                                                    <strong>
-                                                        {formatQuantity(
-                                                            Number(line.requested_quantity) -
-                                                                (Number(line.approved_quantity ?? 0) +
-                                                                    Number(line.bank_quantity ?? 0)),
-                                                        )}{' '}
-                                                        {line.unit.symbol}
-                                                    </strong>
-                                                </div>
-                                            )}
-                                            <Badge
-                                                variant="outline"
-                                                className="mt-1 border-indigo-400 bg-indigo-500/10 text-[10px] text-indigo-700 dark:text-indigo-300"
-                                            >
-                                                Disetujui Sebagian & Bank
-                                            </Badge>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <Info
-                                                label={
-                                                    line.status === 'BANK_PERMINTAAN'
-                                                        ? 'Qty Bank Permintaan'
-                                                        : 'Kuantitas Disetujui'
-                                                }
-                                                value={`${
-                                                    line.status === 'BANK_PERMINTAAN'
-                                                        ? formatQuantity(
-                                                              line.bank_quantity ??
-                                                                  line.requested_quantity,
-                                                          )
-                                                        : line.approved_quantity === null
-                                                          ? '—'
-                                                          : formatQuantity(
-                                                                line.approved_quantity,
-                                                            )
-                                                } ${line.unit.symbol}`}
-                                            />
-                                            {line.status && (
-                                                <Badge
-                                                    variant={
-                                                        line.status === 'REJECTED'
-                                                            ? 'destructive'
-                                                            : line.status === 'BANK_PERMINTAAN'
-                                                              ? 'outline'
-                                                              : 'secondary'
-                                                    }
-                                                    className={`mt-2 text-[10px] ${
-                                                        line.status === 'BANK_PERMINTAAN'
-                                                            ? 'border-amber-400 bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                                                            : ''
-                                                    }`}
-                                                >
-                                                    {line.status === 'APPROVED'
-                                                        ? 'Disetujui'
-                                                        : line.status === 'BANK_PERMINTAAN'
-                                                          ? 'Bank Permintaan'
-                                                          : 'Ditolak'}
-                                                </Badge>
-                                            )}
-                                        </>
-                                    )}
-                                </div>
+                                ),
                             )}
-                        </div>
-                    </div>
-                ))}
+                        </tbody>
+                    </table>
+                </div>
             </CardContent>
         </Card>
     );
 }
 
-function SpecialItemReviewControl({
+function StockItemRow({
     line,
+    index,
+    canProcess,
     errors,
+    bulkAction,
 }: {
     line: RequestItem;
+    index: number;
+    canProcess: boolean;
     errors: Record<string, string>;
+    bulkAction: BulkAction;
 }) {
     const requested = Number(line.requested_quantity);
-    const initialApproved = Number(line.approved_quantity ?? line.requested_quantity);
-    const initialBank = Number(line.bank_quantity ?? 0);
+    const initialApproved =
+        line.approved_quantity !== null && line.approved_quantity !== undefined
+            ? Number(line.approved_quantity)
+            : requested;
 
-    const initialDecision =
-        initialApproved > 0 && initialBank > 0
+    const [approvedQty, setApprovedQty] = useState<number>(initialApproved);
+
+    useEffect(() => {
+        if (!bulkAction) return;
+        if (bulkAction.type === 'APPROVE_ALL') {
+            setApprovedQty(requested);
+        } else if (bulkAction.type === 'REJECT_ALL') {
+            setApprovedQty(0);
+        }
+    }, [bulkAction, requested]);
+
+    const isExceeded = approvedQty > requested;
+    const remainderRejected = Math.max(0, requested - approvedQty);
+
+    return (
+        <tr className="transition-colors hover:bg-muted/15">
+            <td className="w-10 px-3.5 py-3 text-center font-mono text-xs text-muted-foreground">
+                {index + 1}
+            </td>
+            <td className="px-3.5 py-3">
+                <input
+                    type="hidden"
+                    name={`items[${line.id}][id]`}
+                    value={line.id}
+                />
+                <div className="flex items-center gap-2.5">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded border border-border/60 bg-muted/40 text-muted-foreground">
+                        <Boxes className="size-4 text-muted-foreground/80" />
+                    </div>
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-serif font-bold text-foreground">
+                                {line.item?.name}
+                            </span>
+                            <Badge
+                                variant="secondary"
+                                className="h-4 px-1.5 font-mono text-[10px]"
+                            >
+                                {line.unit.symbol}
+                            </Badge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span className="font-mono text-[11px]">
+                                {line.item?.sku}
+                            </span>
+                            {line.reason && (
+                                <>
+                                    <span className="text-border">·</span>
+                                    <span
+                                        className="truncate text-[11px] italic"
+                                        title={line.reason}
+                                    >
+                                        "{line.reason}"
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </td>
+            <td className="px-3.5 py-3 whitespace-nowrap">
+                <div className="flex items-center gap-3 text-xs">
+                    <div>
+                        <span className="block text-[10px] text-muted-foreground">
+                            Stok Saat Ini
+                        </span>
+                        <span className="font-mono font-semibold text-foreground">
+                            {line.current_stock_snapshot === null
+                                ? '—'
+                                : formatQuantity(line.current_stock_snapshot)}
+                        </span>
+                    </div>
+                    <div className="h-4 w-px bg-border/60" />
+                    <div>
+                        <span className="block text-[10px] text-muted-foreground">
+                            Standar
+                        </span>
+                        <span className="font-mono font-medium text-muted-foreground">
+                            {line.standard_stock_snapshot === null
+                                ? '—'
+                                : formatQuantity(line.standard_stock_snapshot)}
+                        </span>
+                    </div>
+                    <div className="h-4 w-px bg-border/60" />
+                    <div>
+                        <span className="block text-[10px] text-muted-foreground">
+                            Saran PR
+                        </span>
+                        <span className="font-mono font-medium text-amber-600 dark:text-amber-400">
+                            {line.suggested_quantity === null
+                                ? '—'
+                                : formatQuantity(line.suggested_quantity)}
+                        </span>
+                    </div>
+                </div>
+            </td>
+            <td className="px-3.5 py-3 text-center whitespace-nowrap">
+                <Badge
+                    variant="outline"
+                    className="font-mono text-xs font-semibold px-2 py-0.5"
+                >
+                    {formatQuantity(requested)} {line.unit.symbol}
+                </Badge>
+            </td>
+            <td className="px-3.5 py-3">
+                {canProcess ? (
+                    <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Quick Buttons */}
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    type="button"
+                                    variant={
+                                        approvedQty === requested
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    size="sm"
+                                    onClick={() => setApprovedQty(requested)}
+                                    className="h-7 px-2 text-[11px] font-medium"
+                                    title="Setujui penuh"
+                                >
+                                    <CheckCircle2 className="mr-1 size-3" />
+                                    Semua
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant={
+                                        approvedQty === 0
+                                            ? 'destructive'
+                                            : 'outline'
+                                    }
+                                    size="sm"
+                                    onClick={() => setApprovedQty(0)}
+                                    className="h-7 px-2 text-[11px] font-medium"
+                                    title="Tolak item ini"
+                                >
+                                    <XCircle className="mr-1 size-3" />
+                                    0
+                                </Button>
+                            </div>
+
+                            {/* Stepper */}
+                            <div className="flex items-center rounded-md border border-input bg-background shadow-2xs">
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setApprovedQty(
+                                            Math.max(0, approvedQty - 1),
+                                        )
+                                    }
+                                    disabled={approvedQty <= 0}
+                                    className="flex size-7 items-center justify-center rounded-l-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                                    aria-label="Kurangi kuantitas disetujui"
+                                >
+                                    <Minus className="size-3" />
+                                </button>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    max={requested}
+                                    step="1"
+                                    value={approvedQty}
+                                    onChange={(e) => {
+                                        const val = parseInt(
+                                            e.target.value,
+                                            10,
+                                        );
+                                        setApprovedQty(
+                                            isNaN(val) ? 0 : Math.max(0, val),
+                                        );
+                                    }}
+                                    className="h-7 w-12 border-0 p-0 text-center font-mono text-xs font-bold shadow-none focus-visible:ring-0"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setApprovedQty(
+                                            Math.min(
+                                                requested,
+                                                approvedQty + 1,
+                                            ),
+                                        )
+                                    }
+                                    disabled={approvedQty >= requested}
+                                    className="flex size-7 items-center justify-center rounded-r-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                                    aria-label="Tambah kuantitas disetujui"
+                                >
+                                    <Plus className="size-3" />
+                                </button>
+                            </div>
+                            <span className="text-xs font-medium text-muted-foreground">
+                                {line.unit.symbol}
+                            </span>
+
+                            {/* Status Badge */}
+                            <div>
+                                {isExceeded ? (
+                                    <span className="text-[11px] font-semibold text-destructive">
+                                        ⚠️ Melebihi ({approvedQty}/{requested})
+                                    </span>
+                                ) : approvedQty === requested ? (
+                                    <Badge
+                                        variant="outline"
+                                        className="h-6 border-emerald-500/40 bg-emerald-500/10 text-[11px] text-emerald-700 dark:text-emerald-400"
+                                    >
+                                        Disetujui Penuh
+                                    </Badge>
+                                ) : approvedQty === 0 ? (
+                                    <Badge
+                                        variant="destructive"
+                                        className="h-6 text-[11px]"
+                                    >
+                                        Ditolak
+                                    </Badge>
+                                ) : (
+                                    <Badge
+                                        variant="outline"
+                                        className="h-6 border-amber-500/40 bg-amber-500/10 text-[11px] text-amber-700 dark:text-amber-400"
+                                    >
+                                        {approvedQty} Disetujui ({remainderRejected} Tolak)
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+
+                        <input
+                            type="hidden"
+                            name={`items[${line.id}][approved_quantity]`}
+                            value={approvedQty}
+                        />
+                        <input
+                            type="hidden"
+                            name={`items[${line.id}][bank_quantity]`}
+                            value="0"
+                        />
+                        <input
+                            type="hidden"
+                            name={`items[${line.id}][decision]`}
+                            value={approvedQty > 0 ? 'APPROVED' : 'REJECTED'}
+                        />
+                        <InputError
+                            message={
+                                errors[`items.${line.id}.approved_quantity`]
+                            }
+                        />
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-semibold text-foreground">
+                            {formatQuantity(Number(line.approved_quantity ?? 0))} {line.unit.symbol}
+                        </span>
+                        {line.status === 'APPROVED' && (
+                            <Badge
+                                variant="outline"
+                                className="border-emerald-500/40 bg-emerald-500/10 text-[11px] text-emerald-700 dark:text-emerald-400"
+                            >
+                                Disetujui Penuh
+                            </Badge>
+                        )}
+                        {line.status === 'PARTIALLY_APPROVED' && (
+                            <Badge
+                                variant="outline"
+                                className="border-amber-500/40 bg-amber-500/10 text-[11px] text-amber-700 dark:text-amber-400"
+                            >
+                                Disetujui Sebagian
+                            </Badge>
+                        )}
+                        {line.status === 'REJECTED' && (
+                            <Badge variant="destructive" className="text-[11px]">
+                                Ditolak
+                            </Badge>
+                        )}
+                        {!line.status && (
+                            <Badge variant="secondary" className="text-[11px]">
+                                Menunggu Peninjauan
+                            </Badge>
+                        )}
+                    </div>
+                )}
+            </td>
+        </tr>
+    );
+}
+
+function SpecialItemRow({
+    line,
+    index,
+    canProcess,
+    errors,
+    bulkAction,
+}: {
+    line: RequestItem;
+    index: number;
+    canProcess: boolean;
+    errors: Record<string, string>;
+    bulkAction: BulkAction;
+}) {
+    const requested = Number(line.requested_quantity);
+    const initialApproved =
+        line.approved_quantity !== null && line.approved_quantity !== undefined
+            ? Number(line.approved_quantity)
+            : requested;
+    const initialBank =
+        line.bank_quantity !== null && line.bank_quantity !== undefined
+            ? Number(line.bank_quantity)
+            : 0;
+
+    const [approvedQty, setApprovedQty] = useState<number>(initialApproved);
+    const [bankQty, setBankQty] = useState<number>(initialBank);
+
+    useEffect(() => {
+        if (!bulkAction) return;
+        if (bulkAction.type === 'APPROVE_ALL') {
+            setApprovedQty(requested);
+            setBankQty(0);
+        } else if (bulkAction.type === 'BANK_ALL') {
+            setApprovedQty(0);
+            setBankQty(requested);
+        } else if (bulkAction.type === 'REJECT_ALL') {
+            setApprovedQty(0);
+            setBankQty(0);
+        }
+    }, [bulkAction, requested]);
+
+    const totalAllocated = approvedQty + bankQty;
+    const isExceeded = totalAllocated > requested;
+    const remainderRejected = Math.max(0, requested - totalAllocated);
+
+    const calculatedDecision =
+        approvedQty > 0 && bankQty > 0
             ? 'SPLIT'
-            : line.status === 'BANK_PERMINTAAN' || initialBank > 0
+            : bankQty > 0 && approvedQty === 0
               ? 'BANK_PERMINTAAN'
-              : initialApproved === 0
+              : approvedQty === 0 && bankQty === 0
                 ? 'REJECTED'
                 : 'APPROVED';
 
-    const [decision, setDecision] = useState<
-        'APPROVED' | 'BANK_PERMINTAAN' | 'SPLIT' | 'REJECTED'
-    >(initialDecision);
-    const [approvedQty, setApprovedQty] = useState(
-        String(initialApproved > 0 ? initialApproved : requested),
-    );
-    const [bankQty, setBankQty] = useState(
-        String(initialBank > 0 ? initialBank : 1),
-    );
-
-    const handleDecisionChange = (
-        newDecision: 'APPROVED' | 'BANK_PERMINTAAN' | 'SPLIT' | 'REJECTED',
-    ) => {
-        setDecision(newDecision);
-        if (newDecision === 'APPROVED') {
-            setApprovedQty(String(requested));
-            setBankQty('0');
-        } else if (newDecision === 'BANK_PERMINTAAN') {
-            setApprovedQty('0');
-            setBankQty(String(requested));
-        } else if (newDecision === 'SPLIT') {
-            const defaultApproved = Math.max(1, Math.floor(requested / 2));
-            const defaultBank = Math.max(1, requested - defaultApproved);
-            setApprovedQty(String(defaultApproved));
-            setBankQty(String(defaultBank));
-        } else if (newDecision === 'REJECTED') {
-            setApprovedQty('0');
-            setBankQty('0');
-        }
-    };
-
-    const currentApprovedNum = Number(approvedQty) || 0;
-    const currentBankNum = Number(bankQty) || 0;
-    const remainderRejected = Math.max(0, requested - currentApprovedNum - currentBankNum);
-    const isExceeded = currentApprovedNum + currentBankNum > requested;
-
     return (
-        <div className="space-y-2">
-            <input
-                type="hidden"
-                name={`items[${line.id}][decision]`}
-                value={decision}
-            />
-            <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-                        Keputusan Item
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                        Diminta: {formatQuantity(line.requested_quantity)} {line.unit.symbol}
-                    </span>
-                </div>
-                <div className="grid grid-cols-4 gap-1">
-                    <button
-                        type="button"
-                        onClick={() => handleDecisionChange('APPROVED')}
-                        className={`rounded px-1 py-1 text-[11px] font-medium border transition-colors ${
-                            decision === 'APPROVED'
-                                ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                                : 'bg-background hover:bg-muted text-muted-foreground border-border'
-                        }`}
-                    >
-                        Kirim
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleDecisionChange('BANK_PERMINTAAN')}
-                        className={`rounded px-1 py-1 text-[11px] font-medium border transition-colors ${
-                            decision === 'BANK_PERMINTAAN'
-                                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                                : 'bg-background hover:bg-muted text-muted-foreground border-border'
-                        }`}
-                        title="Tunda ke Bank Permintaan (menunggu ketersediaan stok)"
-                    >
-                        Bank Req
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleDecisionChange('SPLIT')}
-                        className={`rounded px-1 py-1 text-[11px] font-medium border transition-colors ${
-                            decision === 'SPLIT'
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                                : 'bg-background hover:bg-muted text-muted-foreground border-border'
-                        }`}
-                        title="Bagi: Sebagian kirim sekarang, sebagian tunda, sebagian tolak"
-                    >
-                        Sebagian
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => handleDecisionChange('REJECTED')}
-                        className={`rounded px-1 py-1 text-[11px] font-medium border transition-colors ${
-                            decision === 'REJECTED'
-                                ? 'bg-destructive text-destructive-foreground border-destructive shadow-xs'
-                                : 'bg-background hover:bg-muted text-muted-foreground border-border'
-                        }`}
-                    >
-                        Tolak
-                    </button>
-                </div>
-            </div>
-
-            {decision === 'APPROVED' && (
-                <div className="space-y-1">
-                    <Label
-                        htmlFor={`approved-${line.id}`}
-                        className="text-[11px] font-medium"
-                    >
-                        Qty Disetujui (Kirim Sekarang)
-                    </Label>
-                    <Input
-                        id={`approved-${line.id}`}
-                        name={`items[${line.id}][approved_quantity]`}
-                        type="number"
-                        min="0"
-                        max={line.requested_quantity}
-                        step="1"
-                        value={approvedQty}
-                        onChange={(e) => setApprovedQty(e.target.value)}
-                        required
-                        className="h-8 bg-card font-mono text-xs font-semibold"
-                    />
-                    <input
-                        type="hidden"
-                        name={`items[${line.id}][bank_quantity]`}
-                        value="0"
-                    />
-                </div>
-            )}
-
-            {decision === 'BANK_PERMINTAAN' && (
-                <div className="space-y-1">
-                    <Label
-                        htmlFor={`bank-${line.id}`}
-                        className="text-[11px] font-medium text-amber-700 dark:text-amber-400"
-                    >
-                        Qty Bank Permintaan (Menunggu Stok)
-                    </Label>
-                    <input
-                        type="hidden"
-                        name={`items[${line.id}][approved_quantity]`}
-                        value="0"
-                    />
-                    <Input
-                        id={`bank-${line.id}`}
-                        name={`items[${line.id}][bank_quantity]`}
-                        type="number"
-                        min="1"
-                        max={line.requested_quantity}
-                        step="1"
-                        value={bankQty}
-                        onChange={(e) => setBankQty(e.target.value)}
-                        required
-                        className="h-8 bg-card font-mono text-xs font-semibold"
-                    />
-                    <p className="text-[10px] text-muted-foreground">
-                        Disimpan di antrean Bank Permintaan tanpa membuat PO sekarang.
-                    </p>
-                </div>
-            )}
-
-            {decision === 'SPLIT' && (
-                <div className="space-y-2 rounded-md border border-indigo-200/80 bg-indigo-50/30 p-2 dark:border-indigo-900/50 dark:bg-indigo-950/20">
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                            <Label
-                                htmlFor={`approved-${line.id}`}
-                                className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400"
-                            >
-                                Kirim Sekarang
-                            </Label>
-                            <Input
-                                id={`approved-${line.id}`}
-                                name={`items[${line.id}][approved_quantity]`}
-                                type="number"
-                                min="0"
-                                max={line.requested_quantity}
-                                step="1"
-                                value={approvedQty}
-                                onChange={(e) => setApprovedQty(e.target.value)}
-                                required
-                                className="h-7 bg-card font-mono text-xs font-semibold"
-                            />
+        <tr className="transition-colors hover:bg-muted/15">
+            <td className="w-10 px-3.5 py-3 text-center font-mono text-xs text-muted-foreground align-top sm:align-middle">
+                {index + 1}
+            </td>
+            <td className="px-3.5 py-3">
+                <input
+                    type="hidden"
+                    name={`items[${line.id}][id]`}
+                    value={line.id}
+                />
+                <div className="flex items-start gap-2.5">
+                    {line.sample_image_url ? (
+                        <SampleImagePreview
+                            src={line.sample_image_url}
+                            itemName={line.name ?? 'permintaan khusus'}
+                            className="size-11 shrink-0 rounded-md border border-border/70 object-cover shadow-2xs"
+                        />
+                    ) : (
+                        <div className="flex size-11 shrink-0 flex-col items-center justify-center rounded-md border border-dashed border-border/80 bg-muted/30 text-muted-foreground">
+                            <Sparkles className="size-3.5 text-amber-500/70" />
+                            <span className="text-[8px]">No Foto</span>
                         </div>
-                        <div className="space-y-1">
-                            <Label
-                                htmlFor={`bank-${line.id}`}
-                                className="text-[10px] font-medium text-amber-700 dark:text-amber-400"
-                            >
-                                Bank Permintaan
-                            </Label>
-                            <Input
-                                id={`bank-${line.id}`}
-                                name={`items[${line.id}][bank_quantity]`}
-                                type="number"
-                                min="0"
-                                max={line.requested_quantity}
-                                step="1"
-                                value={bankQty}
-                                onChange={(e) => setBankQty(e.target.value)}
-                                required
-                                className="h-7 bg-card font-mono text-xs font-semibold"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between rounded border border-border/50 bg-background/80 px-2 py-1 text-[11px]">
-                        <span className="text-muted-foreground">Sisa Ditolak:</span>
-                        <span
-                            className={`font-mono font-bold ${
-                                remainderRejected > 0
-                                    ? 'text-destructive'
-                                    : 'text-muted-foreground'
-                            }`}
-                        >
-                            {remainderRejected} {line.unit.symbol}
-                        </span>
-                    </div>
-
-                    {isExceeded && (
-                        <p className="text-[10px] font-medium text-destructive">
-                            Total kuantitas ({currentApprovedNum + currentBankNum}) melebihi permintaan ({requested}).
-                        </p>
                     )}
+                    <div className="min-w-0 space-y-0.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="font-serif font-bold text-foreground">
+                                {line.name}
+                            </span>
+                            <Badge
+                                variant="secondary"
+                                className="h-4 px-1.5 font-mono text-[10px]"
+                            >
+                                Satuan: {line.unit.symbol}
+                            </Badge>
+                            {line.required_date && (
+                                <Badge
+                                    variant="outline"
+                                    className="h-4 gap-1 border-amber-500/30 bg-amber-500/5 px-1.5 text-[10px] text-amber-700 dark:text-amber-400"
+                                >
+                                    <Calendar className="size-2.5" />
+                                    Butuh:{' '}
+                                    {new Date(
+                                        line.required_date,
+                                    ).toLocaleDateString('id-ID', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric',
+                                    })}
+                                </Badge>
+                            )}
+                        </div>
+                        <p className="line-clamp-1 text-xs text-muted-foreground">
+                            {line.description || 'Permintaan khusus non-katalog'}
+                        </p>
+                        {line.reason && (
+                            <div className="inline-flex max-w-full items-center gap-1.5 rounded border border-amber-500/20 bg-amber-500/5 px-2 py-0.5 text-xs text-foreground/90">
+                                <MessageSquareQuote className="size-3 shrink-0 text-amber-600 dark:text-amber-400" />
+                                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                                    Alasan:
+                                </span>
+                                <span className="truncate text-[10px] italic">
+                                    "{line.reason}"
+                                </span>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            )}
+            </td>
+            <td className="px-3.5 py-3 text-center whitespace-nowrap align-top sm:align-middle">
+                <Badge
+                    variant="outline"
+                    className="font-mono text-xs font-semibold px-2 py-0.5"
+                >
+                    {formatQuantity(requested)} {line.unit.symbol}
+                </Badge>
+            </td>
+            <td className="px-3.5 py-3 align-top sm:align-middle">
+                {canProcess ? (
+                    <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                            {/* Quick buttons */}
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    type="button"
+                                    variant={
+                                        approvedQty === requested &&
+                                        bankQty === 0
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    size="sm"
+                                    onClick={() => {
+                                        setApprovedQty(requested);
+                                        setBankQty(0);
+                                    }}
+                                    className="h-7 px-2 text-[11px] font-medium"
+                                    title="Kirim semua sekarang"
+                                >
+                                    <CheckCircle2 className="mr-1 size-3" />
+                                    Kirim
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant={
+                                        approvedQty === 0 &&
+                                        bankQty === requested
+                                            ? 'default'
+                                            : 'outline'
+                                    }
+                                    size="sm"
+                                    onClick={() => {
+                                        setApprovedQty(0);
+                                        setBankQty(requested);
+                                    }}
+                                    className={`h-7 px-2 text-[11px] font-medium ${
+                                        approvedQty === 0 &&
+                                        bankQty === requested
+                                            ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                            : ''
+                                    }`}
+                                    title="Simpan semua ke antrean Bank Permintaan"
+                                >
+                                    <Clock className="mr-1 size-3" />
+                                    Bank
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant={
+                                        approvedQty === 0 && bankQty === 0
+                                            ? 'destructive'
+                                            : 'outline'
+                                    }
+                                    size="sm"
+                                    onClick={() => {
+                                        setApprovedQty(0);
+                                        setBankQty(0);
+                                    }}
+                                    className="h-7 px-2 text-[11px] font-medium"
+                                    title="Tolak item ini"
+                                >
+                                    <XCircle className="mr-1 size-3" />
+                                    Tolak
+                                </Button>
+                            </div>
 
-            {decision === 'REJECTED' && (
-                <div className="rounded-md border border-destructive/20 bg-destructive/10 p-2 text-center text-[11px] font-medium text-destructive">
-                    <input
-                        type="hidden"
-                        name={`items[${line.id}][approved_quantity]`}
-                        value="0"
-                    />
-                    <input
-                        type="hidden"
-                        name={`items[${line.id}][bank_quantity]`}
-                        value="0"
-                    />
-                    Item ditolak sepenuhnya
-                </div>
-            )}
+                            {/* Steppers */}
+                            <div className="flex items-center gap-2">
+                                {/* Kirim Stepper */}
+                                <div className="flex items-center gap-1 rounded border border-border/60 bg-card px-1.5 py-0.5 shadow-2xs">
+                                    <span
+                                        className="size-2 shrink-0 rounded-full bg-emerald-500"
+                                        title="Kirim Sekarang"
+                                    />
+                                    <span className="text-[11px] font-medium text-foreground">
+                                        Kirim:
+                                    </span>
+                                    <div className="flex items-center">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setApprovedQty(
+                                                    Math.max(
+                                                        0,
+                                                        approvedQty - 1,
+                                                    ),
+                                                )
+                                            }
+                                            disabled={approvedQty <= 0}
+                                            className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
+                                            aria-label="Kurangi kuantitas kirim"
+                                        >
+                                            <Minus className="size-2.5" />
+                                        </button>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            max={requested}
+                                            value={approvedQty}
+                                            onChange={(e) => {
+                                                const val = parseInt(
+                                                    e.target.value,
+                                                    10,
+                                                );
+                                                setApprovedQty(
+                                                    isNaN(val)
+                                                        ? 0
+                                                        : Math.max(0, val),
+                                                );
+                                            }}
+                                            className="h-6 w-9 border-0 p-0 text-center font-mono text-xs font-bold shadow-none focus-visible:ring-0"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setApprovedQty(
+                                                    Math.min(
+                                                        requested,
+                                                        approvedQty + 1,
+                                                    ),
+                                                )
+                                            }
+                                            disabled={approvedQty >= requested}
+                                            className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
+                                            aria-label="Tambah kuantitas kirim"
+                                        >
+                                            <Plus className="size-2.5" />
+                                        </button>
+                                    </div>
+                                </div>
 
-            <InputError
-                message={
-                    errors[`items.${line.id}.approved_quantity`] ||
-                    errors[`items.${line.id}.bank_quantity`]
-                }
-            />
-        </div>
+                                {/* Bank Stepper */}
+                                <div className="flex items-center gap-1 rounded border border-border/60 bg-card px-1.5 py-0.5 shadow-2xs">
+                                    <span
+                                        className="size-2 shrink-0 rounded-full bg-amber-500"
+                                        title="Bank Permintaan"
+                                    />
+                                    <span className="text-[11px] font-medium text-foreground">
+                                        Bank:
+                                    </span>
+                                    <div className="flex items-center">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setBankQty(
+                                                    Math.max(0, bankQty - 1),
+                                                )
+                                            }
+                                            disabled={bankQty <= 0}
+                                            className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
+                                            aria-label="Kurangi kuantitas bank"
+                                        >
+                                            <Minus className="size-2.5" />
+                                        </button>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            max={requested}
+                                            value={bankQty}
+                                            onChange={(e) => {
+                                                const val = parseInt(
+                                                    e.target.value,
+                                                    10,
+                                                );
+                                                setBankQty(
+                                                    isNaN(val)
+                                                        ? 0
+                                                        : Math.max(0, val),
+                                                );
+                                            }}
+                                            className="h-6 w-9 border-0 p-0 text-center font-mono text-xs font-bold shadow-none focus-visible:ring-0"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setBankQty(
+                                                    Math.min(
+                                                        requested,
+                                                        bankQty + 1,
+                                                    ),
+                                                )
+                                            }
+                                            disabled={bankQty >= requested}
+                                            className="flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted disabled:pointer-events-none disabled:opacity-30"
+                                            aria-label="Tambah kuantitas bank"
+                                        >
+                                            <Plus className="size-2.5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Status Badge */}
+                            <div>
+                                {isExceeded ? (
+                                    <span className="text-[11px] font-semibold text-destructive">
+                                        ⚠️ Melebihi ({totalAllocated}/{requested})
+                                    </span>
+                                ) : approvedQty === requested &&
+                                  bankQty === 0 ? (
+                                    <Badge
+                                        variant="outline"
+                                        className="h-6 border-emerald-500/40 bg-emerald-500/10 text-[11px] text-emerald-700 dark:text-emerald-400"
+                                    >
+                                        Kirim Penuh
+                                    </Badge>
+                                ) : approvedQty === 0 &&
+                                  bankQty === requested ? (
+                                    <Badge
+                                        variant="outline"
+                                        className="h-6 border-amber-500/40 bg-amber-500/10 text-[11px] text-amber-700 dark:text-amber-400"
+                                    >
+                                        Masuk Bank
+                                    </Badge>
+                                ) : approvedQty === 0 && bankQty === 0 ? (
+                                    <Badge
+                                        variant="destructive"
+                                        className="h-6 text-[11px]"
+                                    >
+                                        Ditolak
+                                    </Badge>
+                                ) : (
+                                    <Badge
+                                        variant="outline"
+                                        className="h-6 border-indigo-500/40 bg-indigo-500/10 text-[11px] text-indigo-700 dark:text-indigo-400"
+                                    >
+                                        {approvedQty} Kirim · {bankQty} Bank
+                                        {remainderRejected > 0
+                                            ? ` · ${remainderRejected} Tolak`
+                                            : ''}
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+
+                        <input
+                            type="hidden"
+                            name={`items[${line.id}][decision]`}
+                            value={calculatedDecision}
+                        />
+                        <input
+                            type="hidden"
+                            name={`items[${line.id}][approved_quantity]`}
+                            value={approvedQty}
+                        />
+                        <input
+                            type="hidden"
+                            name={`items[${line.id}][bank_quantity]`}
+                            value={bankQty}
+                        />
+                        <InputError
+                            message={
+                                errors[`items.${line.id}.approved_quantity`] ||
+                                errors[`items.${line.id}.bank_quantity`]
+                            }
+                        />
+                    </div>
+                ) : (
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                            Kirim:{' '}
+                            <strong className="font-mono text-emerald-700 dark:text-emerald-400">
+                                {formatQuantity(Number(line.approved_quantity ?? 0))}
+                            </strong>
+                        </span>
+                        <span className="text-border">·</span>
+                        <span className="text-xs text-muted-foreground">
+                            Bank:{' '}
+                            <strong className="font-mono text-amber-700 dark:text-amber-400">
+                                {formatQuantity(Number(line.bank_quantity ?? 0))}
+                            </strong>
+                        </span>
+                        {line.status === 'APPROVED' && (
+                            <Badge
+                                variant="outline"
+                                className="border-emerald-500/40 bg-emerald-500/10 text-[11px] text-emerald-700 dark:text-emerald-400"
+                            >
+                                Kirim Penuh
+                            </Badge>
+                        )}
+                        {line.status === 'BANK_PERMINTAAN' && (
+                            <Badge
+                                variant="outline"
+                                className="border-amber-500/40 bg-amber-500/10 text-[11px] text-amber-700 dark:text-amber-400"
+                            >
+                                Masuk Bank
+                            </Badge>
+                        )}
+                        {line.status === 'PARTIALLY_APPROVED' && (
+                            <Badge
+                                variant="outline"
+                                className="border-indigo-500/40 bg-indigo-500/10 text-[11px] text-indigo-700 dark:text-indigo-400"
+                            >
+                                Sebagian & Bank
+                            </Badge>
+                        )}
+                        {line.status === 'REJECTED' && (
+                            <Badge variant="destructive" className="text-[11px]">
+                                Ditolak
+                            </Badge>
+                        )}
+                        {!line.status && (
+                            <Badge variant="secondary" className="text-[11px]">
+                                Menunggu Peninjauan
+                            </Badge>
+                        )}
+                    </div>
+                )}
+            </td>
+        </tr>
     );
 }
 

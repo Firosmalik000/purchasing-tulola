@@ -49,7 +49,11 @@ class IncomingOrderController extends Controller
                 'receipts' => fn ($query) => $query->where('store_id', $store->id)->where('status', ReceiptStatus::CONFIRMED),
                 'receipts.items:id,receipt_id,purchase_order_item_id,purchase_request_item_id,received_quantity',
             ])
-            ->latest('order_date')->paginate(Paging::perPage($request))->withQueryString()
+            ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [PurchaseOrderStatus::DRAFT->value])
+            ->latest('order_date')
+            ->latest('created_at')
+            ->latest('id')
+            ->paginate(Paging::perPage($request))->withQueryString()
             ->through(fn (PurchaseOrder $order) => $this->summary($order));
 
         return Inertia::render('store/incoming/index', [

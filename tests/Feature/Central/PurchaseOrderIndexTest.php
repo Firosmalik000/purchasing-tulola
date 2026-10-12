@@ -74,4 +74,48 @@ class PurchaseOrderIndexTest extends TestCase
             ->where('orders.data.0.status', PurchaseOrderStatus::DRAFT->value)
         );
     }
+
+    public function test_multiple_draft_orders_are_sorted_above_completed_orders_even_with_older_dates(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $store = Store::factory()->create();
+
+        $req1 = PurchaseRequest::factory()->create(['store_id' => $store->id]);
+        $req2 = PurchaseRequest::factory()->create(['store_id' => $store->id]);
+        $req3 = PurchaseRequest::factory()->create(['store_id' => $store->id]);
+
+        $olderDraft = PurchaseOrder::factory()->create([
+            'number' => 'PO-DRAFT-OLD',
+            'purchase_request_id' => $req1->id,
+            'order_date' => now()->subDays(3)->toDateString(),
+            'status' => PurchaseOrderStatus::DRAFT,
+            'created_by' => $admin->id,
+        ]);
+
+        $newerDraft = PurchaseOrder::factory()->create([
+            'number' => 'PO-DRAFT-NEW',
+            'purchase_request_id' => $req2->id,
+            'order_date' => now()->toDateString(),
+            'status' => PurchaseOrderStatus::DRAFT,
+            'created_by' => $admin->id,
+        ]);
+
+        $completed = PurchaseOrder::factory()->create([
+            'number' => 'PO-COMPLETED-RECENT',
+            'purchase_request_id' => $req3->id,
+            'order_date' => now()->toDateString(),
+            'status' => PurchaseOrderStatus::COMPLETED,
+            'created_by' => $admin->id,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('central.orders.index'));
+
+        $response->assertOk();
+        $response->assertInertia(fn (Assert $page) => $page
+            ->component('central/orders/index')
+            ->where('orders.data.0.id', $newerDraft->id)
+            ->where('orders.data.1.id', $olderDraft->id)
+            ->where('orders.data.2.id', $completed->id)
+        );
+    }
 }

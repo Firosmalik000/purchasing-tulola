@@ -41,7 +41,9 @@ class PurchaseOrderController extends Controller
                     ->orWhereHas('purchaseRequest', fn ($requests) => $requests->where('number', 'like', "%{$keyword}%")
                         ->orWhereHas('store', fn ($stores) => $stores->where('name', 'like', "%{$keyword}%")->orWhere('code', 'like', "%{$keyword}%")))))
                 ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [PurchaseOrderStatus::DRAFT->value])
-                ->latest()
+                ->latest('order_date')
+                ->latest('created_at')
+                ->latest('id')
                 ->paginate(Paging::perPage($request))->withQueryString(),
             'statuses' => collect(PurchaseOrderStatus::cases())->map(fn ($status) => ['value' => $status->value, 'label' => $status->label()]),
             'filters' => [

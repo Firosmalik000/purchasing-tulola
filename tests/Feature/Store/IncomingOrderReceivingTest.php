@@ -60,6 +60,42 @@ class IncomingOrderReceivingTest extends TestCase
             ->where('purchaseRequest.purchase_order.status', PurchaseOrderStatus::DRAFT->value));
     }
 
+    public function test_store_sees_draft_orders_sorted_first_above_completed_orders(): void
+    {
+        [$order, $pic, $store, $item] = $this->singleStoreOrder();
+        $order->update([
+            'status' => PurchaseOrderStatus::COMPLETED,
+            'order_date' => now()->toDateString(),
+        ]);
+
+        $creator = User::factory()->create(['role' => UserRole::CENTRAL_ADMIN]);
+        $secondRequest = $this->orderedRequest($store, $pic, $item, Unit::firstOrFail(), 5);
+        $draftOrderOld = PurchaseOrder::factory()->create([
+            'status' => PurchaseOrderStatus::DRAFT,
+            'created_by' => $creator->id,
+            'order_date' => now()->subDays(2)->toDateString(),
+        ]);
+        $orderItem = $draftOrderOld->items()->create([
+            'item_type' => PurchaseRequestItemType::STOCK,
+            'item_id' => $item->id,
+            'unit_id' => Unit::firstOrFail()->id,
+            'quantity' => 5,
+        ]);
+        $orderItem->allocations()->create([
+            'purchase_request_item_id' => $secondRequest->items()->firstOrFail()->id,
+            'allocated_quantity' => 5,
+        ]);
+
+        $response = $this->actingAs($pic)->get(route('store.incoming.index', ['store_id' => $store->id]));
+        $response->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('store/incoming/index')
+            ->where('orders.data.0.id', $draftOrderOld->id)
+            ->where('orders.data.0.status', PurchaseOrderStatus::DRAFT->value)
+            ->where('orders.data.1.id', $order->id)
+            ->where('orders.data.1.status', PurchaseOrderStatus::COMPLETED->value)
+        );
+    }
+
     public function test_store_only_sees_its_own_allocations_from_a_shared_order(): void
     {
         [$order, $firstPic, $firstStore, , $firstAllocation, $secondRequestNumber] = $this->sharedOrder();
