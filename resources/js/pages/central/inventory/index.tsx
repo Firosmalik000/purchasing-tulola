@@ -806,50 +806,13 @@ export default function InventoryIndex({
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-3 text-right font-mono font-medium text-rose-600 tabular-nums dark:text-rose-400">
-                                                            <span>
-                                                                {formatQuantity(
-                                                                    minCritical,
-                                                                )}
-                                                            </span>
-                                                            {storeMinStandard !==
-                                                                undefined &&
-                                                            storeMinStandard !==
-                                                                null ? (
-                                                                <span
-                                                                    className="ml-1 text-[10px] text-primary"
-                                                                    title="Override khusus toko"
-                                                                >
-                                                                    (toko)
-                                                                </span>
-                                                            ) : (
-                                                                <span
-                                                                    className="ml-1 text-[10px] text-muted-foreground"
-                                                                    title="Standar global master item"
-                                                                >
-                                                                    (master)
-                                                                </span>
+                                                            {formatQuantity(
+                                                                minCritical,
                                                             )}
                                                         </td>
                                                         <td className="px-4 py-3 text-right font-mono text-foreground tabular-nums">
-                                                            <span>
-                                                                {formatQuantity(
-                                                                    targetStock,
-                                                                )}
-                                                            </span>
-                                                            {storeTargetStandard ? (
-                                                                <span
-                                                                    className="ml-1 text-[10px] text-primary"
-                                                                    title="Target khusus toko"
-                                                                >
-                                                                    (toko)
-                                                                </span>
-                                                            ) : (
-                                                                <span
-                                                                    className="ml-1 text-[10px] text-muted-foreground"
-                                                                    title="Target global master item"
-                                                                >
-                                                                    (master)
-                                                                </span>
+                                                            {formatQuantity(
+                                                                targetStock,
                                                             )}
                                                         </td>
                                                         <td className="px-3 py-3 text-center">

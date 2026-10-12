@@ -286,12 +286,6 @@ export default function ItemIndex({
                                             <th className="px-3 py-2.5 text-right">
                                                 Harga Pokok Acuan
                                             </th>
-                                            <th className="px-3 py-2.5 text-right">
-                                                Standar Minimal
-                                            </th>
-                                            <th className="px-3 py-2.5 text-right">
-                                                Standar Stok
-                                            </th>
                                             <th className="px-3 py-2.5 text-center">
                                                 Status
                                             </th>
@@ -331,16 +325,6 @@ export default function ItemIndex({
                                                     Rp{' '}
                                                     {Number(
                                                         item.cost_price || 0,
-                                                    ).toLocaleString('id-ID')}
-                                                </td>
-                                                <td className="px-3 py-2.5 text-right font-mono text-[11px] font-semibold text-rose-600 tabular-nums dark:text-rose-400">
-                                                    {Number(
-                                                        item.min_stock || 0,
-                                                    ).toLocaleString('id-ID')}
-                                                </td>
-                                                <td className="px-3 py-2.5 text-right font-mono text-[11px] font-semibold text-primary tabular-nums">
-                                                    {Number(
-                                                        item.target_stock || 0,
                                                     ).toLocaleString('id-ID')}
                                                 </td>
                                                 <td className="px-3 py-2.5 text-center">
