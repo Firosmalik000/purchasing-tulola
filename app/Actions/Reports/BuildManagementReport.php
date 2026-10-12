@@ -82,7 +82,7 @@ class BuildManagementReport
             ->where('status', '!=', PurchaseOrderStatus::CANCELLED)
             ->with([
                 'creator:id,name',
-                'items.item:id,sku,name,item_category_id',
+                'items.item:id,sku,name,item_category_id,min_stock,target_stock',
                 'items.unit:id,symbol',
                 'items.allocations.purchaseRequestItem.purchaseRequest.store:id,code,name',
                 'items.allocations.purchaseRequestItem.purchaseRequest.requester:id,name',
@@ -155,14 +155,15 @@ class BuildManagementReport
                 $standard = '-';
             } else {
                 $stock = (int) $centralStocks->get($firstLine->item_id, 0);
-                $configuredStandard = (int) $centralStandards->get(
-                    $firstLine->item_id,
-                    $firstLine->item?->target_stock ?? $firstLine->item?->min_stock ?? 0
-                );
 
-                $standard = ($configuredStandard === 0 || $configuredStandard < $stock + (int) $quantity)
-                    ? $stock + (int) $quantity
-                    : $configuredStandard;
+                $hoStandard = (int) ($centralStandards->get($firstLine->item_id) ?? 0);
+                $masterStandard = (int) ($firstLine->item?->target_stock ?? $firstLine->item?->min_stock ?? 0);
+
+                $configuredStandard = $hoStandard > 0 ? $hoStandard : $masterStandard;
+
+                $standard = $configuredStandard > 0
+                    ? $configuredStandard
+                    : ($stock + (int) $quantity);
             }
 
             $remarks = $allocations->groupBy(fn ($allocation) => $allocation->purchaseRequestItem->purchaseRequest->store->code)

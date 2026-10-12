@@ -25,6 +25,15 @@ class UpdateStoreStockStandard
             $standard->fill($payload)->save();
             $this->logger->log('stock_standard.updated', $standard, $old, $payload);
 
+            $centralStore = Store::centralStore();
+            if ($centralStore && $store->id === $centralStore->id) {
+                $item->target_stock = (int) $quantity;
+                if ($minQuantity !== null) {
+                    $item->min_stock = $minQuantity !== '' ? (int) $minQuantity : 0;
+                }
+                $item->saveQuietly();
+            }
+
             return $standard;
         }, 3);
     }

@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Central\ItemRequest;
 use App\Models\Item;
 use App\Models\ItemCategory;
+use App\Models\Store;
+use App\Models\StoreStockStandard;
 use App\Models\Unit;
 use App\Services\ActivityLogger;
 use App\Support\Paging;
@@ -53,7 +55,9 @@ class ItemController extends Controller
 
     public function store(ItemRequest $request, SaveMasterData $action): RedirectResponse
     {
-        $action->handle(new Item, $request->validated(), 'item');
+        /** @var Item $item */
+        $item = $action->handle(new Item, $request->validated(), 'item');
+        $this->syncCentralStandard($item);
 
         return back()->with('success', 'Item berhasil ditambahkan.');
     }
@@ -61,8 +65,27 @@ class ItemController extends Controller
     public function update(ItemRequest $request, Item $item, SaveMasterData $action): RedirectResponse
     {
         $action->handle($item, $request->validated(), 'item');
+        $this->syncCentralStandard($item);
 
         return back()->with('success', 'Item berhasil diperbarui.');
+    }
+
+    private function syncCentralStandard(Item $item): void
+    {
+        $centralStore = Store::centralStore();
+        if ($centralStore) {
+            $target = $item->target_stock ?? $item->min_stock ?? 0;
+            $min = $item->min_stock ?? 0;
+            if ($target > 0 || $min > 0) {
+                StoreStockStandard::updateOrCreate(
+                    ['store_id' => $centralStore->id, 'item_id' => $item->id],
+                    [
+                        'standard_quantity' => $target,
+                        'min_quantity' => $min,
+                    ]
+                );
+            }
+        }
     }
 
     public function destroy(Item $item, ActivityLogger $logger): RedirectResponse
