@@ -57,6 +57,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::post('requests/{purchase_request}/process', [CentralPurchaseRequestController::class, 'process'])->name('requests.process');
         Route::post('requests/{purchase_request}/reject', [CentralPurchaseRequestController::class, 'reject'])->name('requests.reject');
         Route::get('bank-requests', [BankRequestController::class, 'index'])->name('bank-requests.index');
+        Route::get('bank-requests/excel', [BankRequestController::class, 'excel'])->name('bank-requests.excel');
+        Route::get('bank-requests/csv', [BankRequestController::class, 'csv'])->name('bank-requests.csv');
         Route::post('bank-requests/orders', [BankRequestController::class, 'createOrder'])->name('bank-requests.create-order');
         Route::get('orders/{purchase_order}/print', [PurchaseOrderController::class, 'print'])->name('orders.print');
         Route::get('orders/{purchase_order}/pdf', [PurchaseOrderController::class, 'pdf'])->name('orders.pdf');

@@ -35,7 +35,7 @@ class ManagementReportRequest extends FormRequest
         return [
             'report' => (string) ($validated['report'] ?? ManagementReportType::PURCHASING_REQUEST->value),
             'date_from' => (string) ($validated['date_from'] ?? now()->startOfMonth()->toDateString()),
-            'date_to' => (string) ($validated['date_to'] ?? now()->toDateString()),
+            'date_to' => (string) ($validated['date_to'] ?? now()->endOfMonth()->toDateString()),
             'store_id' => isset($validated['store_id']) ? (int) $validated['store_id'] : null,
             'category_id' => isset($validated['category_id']) ? (int) $validated['category_id'] : null,
             'order_id' => isset($validated['order_id']) ? (int) $validated['order_id'] : null,

@@ -5,13 +5,16 @@ import {
     Building2,
     Calendar,
     CheckCircle2,
+    ChevronDown,
     Clock,
+    Download,
+    FileSpreadsheet,
     FileText,
     RotateCcw,
     Search,
     ShoppingCart,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/common/empty-state';
 import { PageHeader } from '@/components/common/page-header';
 import {
@@ -23,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
     Dialog,
     DialogContent,
@@ -31,6 +35,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatQuantity } from '@/lib/utils';
@@ -130,16 +140,35 @@ export default function BankRequestIndex({
         ),
     );
 
+    const exportQuery = useMemo(() => {
+        const params = new URLSearchParams();
+        if (filters.store_id) params.set('store_id', filters.store_id);
+        if (filters.keyword) params.set('keyword', filters.keyword);
+        if (filters.date_from) params.set('date_from', filters.date_from);
+        if (filters.date_to) params.set('date_to', filters.date_to);
+        const qs = params.toString();
+        return qs ? `?${qs}` : '';
+    }, [filters]);
+
     const handleCreateOrder = (e: React.FormEvent) => {
         e.preventDefault();
         if (selectedIds.length === 0) return;
+
+        // Convert DD/MM/YYYY to YYYY-MM-DD if needed
+        let normalizedExpectedDate = expectedDate || null;
+        if (normalizedExpectedDate) {
+            const match = normalizedExpectedDate.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+            if (match) {
+                normalizedExpectedDate = `${match[3]}-${match[2].padStart(2, '0')}-${match[1].padStart(2, '0')}`;
+            }
+        }
 
         setSubmitting(true);
         router.post(
             '/central/bank-requests/orders',
             {
                 items: selectedIds.map((id) => ({ id })),
-                expected_date: expectedDate || null,
+                expected_date: normalizedExpectedDate,
                 notes: notes || null,
             },
             {
@@ -163,16 +192,65 @@ export default function BankRequestIndex({
                     badge="Pengadaan"
                     title="Bank Permintaan"
                     actions={
-                        selectedIds.length > 0 ? (
-                            <Button
-                                size="sm"
-                                onClick={() => setCreateOrderOpen(true)}
-                                className="shadow-xs gap-1.5 font-medium"
-                            >
-                                <ShoppingCart className="size-4" />
-                                Buat PO ({selectedIds.length} Item Terpilih)
-                            </Button>
-                        ) : undefined
+                        <div className="flex flex-wrap items-center gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8.5 gap-1.5 text-xs shadow-2xs font-medium cursor-pointer"
+                                    >
+                                        <Download className="size-3.5 text-muted-foreground" />
+                                        Export Data
+                                        <ChevronDown className="size-3 text-muted-foreground opacity-70" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-60">
+                                    <DropdownMenuItem asChild>
+                                        <a
+                                            href={`/central/bank-requests/excel${exportQuery}`}
+                                            className="flex cursor-pointer items-center gap-2.5 py-1.5"
+                                        >
+                                            <FileSpreadsheet className="size-4 text-emerald-600 shrink-0" />
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-xs text-foreground">
+                                                    Export Excel (.xlsx)
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    Format resmi, border tabel & kolom rapi
+                                                </span>
+                                            </div>
+                                        </a>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem asChild>
+                                        <a
+                                            href={`/central/bank-requests/csv${exportQuery}`}
+                                            className="flex cursor-pointer items-center gap-2.5 py-1.5"
+                                        >
+                                            <FileText className="size-4 text-sky-600 shrink-0" />
+                                            <div className="flex flex-col">
+                                                <span className="font-semibold text-xs text-foreground">
+                                                    Export CSV (.csv)
+                                                </span>
+                                                <span className="text-[10px] text-muted-foreground">
+                                                    Standar UTF-8 BOM teks data mentah
+                                                </span>
+                                            </div>
+                                        </a>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                            {selectedIds.length > 0 && (
+                                <Button
+                                    size="sm"
+                                    onClick={() => setCreateOrderOpen(true)}
+                                    className="h-8.5 shadow-xs gap-1.5 font-medium text-xs"
+                                >
+                                    <ShoppingCart className="size-3.5" />
+                                    Buat PO ({selectedIds.length} Item Terpilih)
+                                </Button>
+                            )}
+                        </div>
                     }
                 />
 
@@ -268,21 +346,19 @@ export default function BankRequestIndex({
                                 </select>
                             </div>
                             <div>
-                                <Input
-                                    type="date"
+                                <DatePicker
                                     name="date_from"
                                     defaultValue={filters.date_from}
-                                    className="h-8.5 text-xs font-mono"
-                                    title="Dari Tanggal Pengajuan"
+                                    placeholder="Dari DD/MM/YYYY"
+                                    title="Dari Tanggal Pengajuan (DD/MM/YYYY)"
                                 />
                             </div>
                             <div>
-                                <Input
-                                    type="date"
+                                <DatePicker
                                     name="date_to"
                                     defaultValue={filters.date_to}
-                                    className="h-8.5 text-xs font-mono"
-                                    title="Sampai Tanggal Pengajuan"
+                                    placeholder="Sampai DD/MM/YYYY"
+                                    title="Sampai Tanggal Pengajuan (DD/MM/YYYY)"
                                 />
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -555,12 +631,11 @@ export default function BankRequestIndex({
                                 <Label htmlFor="expected_date" className="text-xs">
                                     Target Tanggal Tiba (Opsional)
                                 </Label>
-                                <Input
-                                    id="expected_date"
-                                    type="date"
+                                <DatePicker
                                     value={expectedDate}
-                                    onChange={(e) => setExpectedDate(e.target.value)}
-                                    className="h-8.5 text-xs font-mono"
+                                    onChange={setExpectedDate}
+                                    placeholder="DD/MM/YYYY"
+                                    title="Target Tanggal Tiba (DD/MM/YYYY)"
                                 />
                             </div>
 

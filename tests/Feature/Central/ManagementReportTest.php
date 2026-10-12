@@ -36,18 +36,54 @@ class ManagementReportTest extends TestCase
 
         $this->actingAs($user)->get(route('central.reports.index', [
             'report' => ManagementReportType::PURCHASING_REQUEST->value,
-            'order_id' => $order->id,
             'date_from' => now()->startOfMonth()->toDateString(),
             'date_to' => now()->toDateString(),
         ]))->assertOk()->assertInertia(fn (Assert $page) => $page
             ->component('central/reports/index')
             ->has('reportTypes', count(ManagementReportType::cases()))
             ->where('report.context.Order No', $order->number)
-            ->where('report.rows.0.stock', 'PP 3, PIM 4')
-            ->where('report.rows.0.standard_stock', 'PP 5, PIM 6')
+            ->missing('report.context.Ship To')
+            ->where('report.rows.0.stock', 10)
+            ->where('report.rows.0.standard_stock', 20)
             ->where('report.rows.0.remarks', 'PP 2, PIM 4')
             ->where('report.rows.1.stock', '-')
             ->where('report.rows.1.standard_stock', '-'));
+    }
+
+    public function test_management_report_purchasing_request_consolidates_monthly_orders_when_order_id_is_not_specified(): void
+    {
+        [$user, $order, $pp] = $this->reportScenario();
+        $pim = Store::query()->where('code', 'PIM')->firstOrFail();
+        $unit = Unit::query()->firstOrFail();
+        $item = Item::query()->where('sku', 'ATK-001')->firstOrFail();
+        $requester = User::query()->where('name', 'Store Requester')->firstOrFail();
+
+        $secondOrder = PurchaseOrder::factory()->create([
+            'number' => 'ORD/2026/10/0011',
+            'order_date' => now()->toDateString(),
+            'status' => PurchaseOrderStatus::ORDERED,
+            'created_by' => $user->id,
+        ]);
+        $extraPpRequest = $this->requestLine($pp, $requester, $unit, $item, 3, 3, 5);
+        $extraOrderLine = $this->orderLine($secondOrder, $unit, PurchaseRequestItemType::STOCK, $item, null, 3);
+        $extraOrderLine->allocations()->create(['purchase_request_item_id' => $extraPpRequest->id, 'allocated_quantity' => 3]);
+
+        $this->actingAs($user)->get(route('central.reports.index', [
+            'report' => ManagementReportType::PURCHASING_REQUEST->value,
+        ]))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->component('central/reports/index')
+            ->where('filters.date_from', now()->startOfMonth()->toDateString())
+            ->where('filters.date_to', now()->endOfMonth()->toDateString())
+            ->where('report.context.Order No', 'Konsolidasi (2 PO)')
+            ->missing('report.context.Ship To')
+            ->where('report.rows.0.item', 'Pulpen')
+            ->where('report.rows.0.quantity', 9)
+            ->where('report.rows.0.remarks', 'PP 5, PIM 4')
+            ->where('report.rows.0.stock', 10)
+            ->where('report.rows.0.standard_stock', 20)
+            ->where('report.rows.1.item', 'Display Acrylic')
+            ->where('report.rows.1.quantity', 1)
+            ->where('report.rows.1.remarks', 'PP 1'));
     }
 
     public function test_every_phase_ten_report_type_renders(): void
@@ -142,6 +178,9 @@ class ManagementReportTest extends TestCase
         StoreStock::create(['store_id' => $pim->id, 'item_id' => $item->id, 'quantity' => 4]);
         StoreStockStandard::create(['store_id' => $pp->id, 'item_id' => $item->id, 'standard_quantity' => 5]);
         StoreStockStandard::create(['store_id' => $pim->id, 'item_id' => $item->id, 'standard_quantity' => 6]);
+        $central = Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta']);
+        StoreStock::create(['store_id' => $central->id, 'item_id' => $item->id, 'quantity' => 10]);
+        StoreStockStandard::create(['store_id' => $central->id, 'item_id' => $item->id, 'standard_quantity' => 20]);
         StockMovement::create(['store_id' => $pp->id, 'item_id' => $item->id, 'previous_quantity' => 1, 'new_quantity' => 3, 'quantity_difference' => 2, 'movement_type' => StockMovementType::MANUAL_UPDATE, 'reason' => 'Stock opname', 'created_by' => $user->id]);
         $receipt = Receipt::create(['number' => 'RCV/2026/10/0001', 'purchase_order_id' => $order->id, 'store_id' => $pp->id, 'received_by' => $requester->id, 'received_at' => now(), 'status' => 'CONFIRMED']);
         $receipt->items()->create(['purchase_order_item_id' => $stockOrderLine->id, 'purchase_request_item_id' => $first->id, 'ordered_quantity' => 2, 'received_quantity' => 1]);

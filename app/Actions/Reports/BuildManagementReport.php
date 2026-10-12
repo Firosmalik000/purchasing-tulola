@@ -13,6 +13,7 @@ use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
 use App\Models\ReceiptItem;
 use App\Models\StockMovement;
+use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\StoreStockStandard;
 use Illuminate\Database\Eloquent\Builder;
@@ -80,57 +81,134 @@ class BuildManagementReport
         $query = PurchaseOrder::query()
             ->where('status', '!=', PurchaseOrderStatus::CANCELLED)
             ->with([
-                'creator:id,name', 'items.item:id,sku,name,item_category_id', 'items.unit:id,symbol',
+                'creator:id,name',
+                'items.item:id,sku,name,item_category_id',
+                'items.unit:id,symbol',
                 'items.allocations.purchaseRequestItem.purchaseRequest.store:id,code,name',
                 'items.allocations.purchaseRequestItem.purchaseRequest.requester:id,name',
             ]);
         $this->dateRange($query, 'order_date', $filters);
-        $query->when($filters['order_id'], fn ($orders, $id) => $orders->whereKey($id));
-        $order = $query->latest('order_date')->latest('id')->first();
+        $query->when($filters['store_id'], function ($orders, $storeId) {
+            $orders->whereHas('items.allocations.purchaseRequestItem.purchaseRequest', fn ($requests) => $requests->where('store_id', $storeId));
+        });
+        $query->when($filters['category_id'], function ($orders, $categoryId) {
+            $orders->whereHas('items.item', fn ($items) => $items->where('item_category_id', $categoryId));
+        });
 
-        if (! $order) {
+        $orders = $query->latest('order_date')->latest('id')->get();
+
+        if ($orders->isEmpty()) {
             return [
-                'columns' => $this->purchasingRequestColumns(), 'rows' => [],
-                'context' => [], 'signatures' => ['Requested By' => '—', 'Checked By' => 'Purchasing', 'Approved By' => 'Management'],
+                'columns' => $this->purchasingRequestColumns(),
+                'rows' => [],
+                'context' => [],
+                'signatures' => ['Requested By' => '—', 'Checked By' => 'Purchasing', 'Approved By' => 'Management'],
             ];
         }
 
-        $rows = $order->items->values()->map(function (PurchaseOrderItem $line, int $index): array {
-            $allocations = $line->allocations;
-            $stock = $this->allocationSnapshots($allocations, 'current_stock_snapshot', $line->item_type);
-            $standard = $this->allocationSnapshots($allocations, 'standard_stock_snapshot', $line->item_type);
+        $lines = $orders->flatMap->items;
+
+        if ($filters['category_id']) {
+            $lines = $lines->filter(fn (PurchaseOrderItem $line) => $line->item?->item_category_id == $filters['category_id']);
+        }
+
+        // Group lines by item identity across all orders in the period
+        $grouped = $lines->groupBy(function (PurchaseOrderItem $line) {
+            return $line->item_id ? 'item_'.$line->item_id : 'special_'.($line->name ?? $line->id);
+        });
+
+        if ($filters['store_id']) {
+            $grouped = $grouped->filter(function (Collection $groupLines) use ($filters) {
+                return $groupLines->flatMap->allocations->contains(
+                    fn ($a) => $a->purchaseRequestItem?->purchaseRequest?->store_id == $filters['store_id']
+                );
+            });
+        }
+
+        $centralStore = Store::centralStore() ?? Store::query()->where('code', 'HO-JKT')->first();
+        $centralStocks = $centralStore
+            ? StoreStock::query()->where('store_id', $centralStore->id)->pluck('quantity', 'item_id')
+            : collect();
+        $centralStandards = $centralStore
+            ? StoreStockStandard::query()->where('store_id', $centralStore->id)->pluck('standard_quantity', 'item_id')
+            : collect();
+
+        $rows = $grouped->values()->map(function (Collection $groupLines, int $index) use ($filters, $centralStocks, $centralStandards): array {
+            /** @var PurchaseOrderItem $firstLine */
+            $firstLine = $groupLines->first();
+
+            /** @var Collection<int, PurchaseOrderRequestItem> $allocations */
+            $allocations = $groupLines->flatMap->allocations;
+
+            if ($filters['store_id']) {
+                $allocations = $allocations->filter(
+                    fn ($allocation) => $allocation->purchaseRequestItem?->purchaseRequest?->store_id == $filters['store_id']
+                );
+            }
+
+            if ($firstLine->item_type === PurchaseRequestItemType::SPECIAL || ! $firstLine->item_id) {
+                $stock = '-';
+                $standard = '-';
+            } else {
+                $stock = (int) $centralStocks->get($firstLine->item_id, 0);
+                $standard = (int) $centralStandards->get(
+                    $firstLine->item_id,
+                    $firstLine->item?->target_stock ?? $firstLine->item?->min_stock ?? 0
+                );
+            }
+
+            $quantity = $filters['store_id'] && $allocations->isNotEmpty()
+                ? $allocations->sum('allocated_quantity')
+                : $groupLines->sum('quantity');
+
+            $remarks = $allocations->groupBy(fn ($allocation) => $allocation->purchaseRequestItem->purchaseRequest->store->code)
+                ->map(fn (Collection $entries, string $code) => $code.' '.$this->quantity($entries->sum('allocated_quantity')))
+                ->values()->implode(', ');
 
             return [
                 'no' => $index + 1,
-                'item' => data_get($line, 'item.name', $line->name ?? '—'),
+                'item' => data_get($firstLine, 'item.name', $firstLine->name ?? '—'),
                 'stock' => $stock,
                 'standard_stock' => $standard,
-                'quantity' => $line->quantity,
-                'remarks' => $allocations->groupBy(fn ($allocation) => $allocation->purchaseRequestItem->purchaseRequest->store->code)
-                    ->map(fn (Collection $entries, string $code) => $code.' '.$this->quantity($entries->sum('allocated_quantity')))
-                    ->values()->implode(', '),
+                'quantity' => (int) $quantity,
+                'remarks' => $remarks ?: '—',
             ];
         })->all();
 
-        $requests = $order->items->flatMap->allocations->map->purchaseRequestItem->map->purchaseRequest->unique('id');
-        $types = $order->items->pluck('item_type')->unique()->map(fn ($type) => $type === PurchaseRequestItemType::STOCK ? 'Stock' : 'Special')->implode(', ');
+        $allRequests = $orders->flatMap->items->flatMap->allocations->map->purchaseRequestItem->map->purchaseRequest->filter()->unique('id');
+        $allTypes = $lines->pluck('item_type')->unique()->map(fn ($type) => $type === PurchaseRequestItemType::STOCK ? 'Stock' : 'Special')->implode(', ');
+        $requesterNames = $allRequests->pluck('requester.name')->filter()->unique();
+        $requestersText = $requesterNames->count() > 3
+            ? $requesterNames->take(3)->implode(', ').' (+'.($requesterNames->count() - 3).' lainnya)'
+            : ($requesterNames->implode(', ') ?: 'Semua Pemohon');
+
+        $orderNo = $orders->count() === 1
+            ? $orders->first()->number
+            : 'Konsolidasi ('.$orders->count().' PO)';
+
+        $context = [
+            'Date' => $this->date($filters['date_from']).' - '.$this->date($filters['date_to']),
+            'PR No / Report No' => $orders->count().' PO ('.$allRequests->count().' PR)',
+            'Requisitioner' => $requestersText,
+            'Material / Type' => $allTypes ?: 'Stock',
+            'Order No' => $orderNo,
+        ];
+
+        $signatures = [
+            'Requested By' => $requesterNames->count() === 1 ? $requesterNames->first() : 'Store Teams',
+            'Checked By' => $orders->pluck('creator.name')->filter()->unique()->implode(', ') ?: 'Purchasing',
+            'Approved By' => 'Management',
+        ];
 
         return [
             'columns' => $this->purchasingRequestColumns(),
             'rows' => $rows,
-            'context' => [
-                'Date' => $order->order_date->format('d/m/Y'),
-                'PR No / Report No' => $requests->pluck('number')->implode(', ') ?: $order->number,
-                'Ship To' => $requests->pluck('store.name')->unique()->implode(', ') ?: '—',
-                'Requisitioner' => $requests->pluck('requester.name')->unique()->implode(', ') ?: '—',
-                'Material / Type' => $types ?: '—',
-                'Order No' => $order->number,
+            'summary' => [
+                ['label' => 'Total Item Terdistribusi', 'value' => (string) count($rows), 'format' => 'integer'],
+                ['label' => 'Total Qty Terdistribusi', 'value' => $this->quantity(collect($rows)->sum('quantity')), 'format' => 'quantity'],
             ],
-            'signatures' => [
-                'Requested By' => $requests->pluck('requester.name')->unique()->implode(', ') ?: '—',
-                'Checked By' => $order->creator->name,
-                'Approved By' => 'Management',
-            ],
+            'context' => $context,
+            'signatures' => $signatures,
         ];
     }
 
@@ -138,26 +216,30 @@ class BuildManagementReport
     private function purchasingRequestColumns(): array
     {
         return [
-            $this->column('no', 'No', 'integer', 'center'), $this->column('item', 'Items'),
-            $this->column('stock', 'Stock', 'text', 'right'), $this->column('standard_stock', 'Standard Stock', 'text', 'right'),
-            $this->column('quantity', 'Qty', 'quantity', 'right'), $this->column('remarks', 'Remarks'),
+            $this->column('no', 'No', 'integer', 'center'),
+            $this->column('item', 'Items'),
+            $this->column('stock', 'Stock', 'quantity', 'right'),
+            $this->column('standard_stock', 'Standard Stock', 'quantity', 'right'),
+            $this->column('quantity', 'Qty', 'quantity', 'right'),
+            $this->column('remarks', 'Remarks'),
         ];
     }
 
     /** @param Collection<int, PurchaseOrderRequestItem> $allocations */
     private function allocationSnapshots(Collection $allocations, string $field, PurchaseRequestItemType $type): string
     {
-        if ($type === PurchaseRequestItemType::SPECIAL) {
+        if ($type === PurchaseRequestItemType::SPECIAL || $allocations->isEmpty()) {
             return '-';
         }
 
-        return $allocations->map(function ($allocation) use ($field): string {
-            $requestItem = $allocation->purchaseRequestItem;
-            $value = $requestItem->{$field};
-            $prefix = $requestItem->purchaseRequest->store->code;
+        $result = $allocations->groupBy(fn ($allocation) => $allocation->purchaseRequestItem->purchaseRequest->store->code)
+            ->map(function (Collection $entries, string $code) use ($field): string {
+                $value = $entries->pluck('purchaseRequestItem.'.$field)->filter(fn ($v) => $v !== null)->last();
 
-            return $prefix.' '.($value === null ? '—' : $this->quantity($value));
-        })->unique()->implode(', ');
+                return $code.' '.($value === null ? '—' : $this->quantity($value));
+            })->values()->implode(', ');
+
+        return $result ?: '-';
     }
 
     /**

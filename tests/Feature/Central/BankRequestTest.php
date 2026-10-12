@@ -224,6 +224,79 @@ class BankRequestTest extends TestCase
                 ->where('stats.total_items', 0));
     }
 
+    public function test_bank_requests_csv_can_be_downloaded_with_professional_template(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        [$request, , $specialLine] = $this->submittedRequest('EX', 'Custom Jewelry Box');
+
+        $specialLine->update([
+            'status' => PurchaseRequestItemStatus::BANK_PERMINTAAN,
+            'bank_quantity' => 5,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('central.bank-requests.csv'));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+        $this->assertStringContainsString('bank-permintaan-tulola-', (string) $response->headers->get('Content-Disposition'));
+
+        $content = $response->streamedContent();
+
+        // Must start with UTF-8 BOM
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
+        // Professional report header metadata
+        $this->assertStringContainsString('LAPORAN DATA BANK PERMINTAAN BARANG (SPECIAL ORDER)', $content);
+        $this->assertStringContainsString('Tulola Jewelry — Central Purchasing System', $content);
+        $this->assertStringContainsString('No. Permintaan (PR)', $content);
+        $this->assertStringContainsString('Custom Jewelry Box', $content);
+        $this->assertStringContainsString('Total Kuantitas:', $content);
+    }
+
+    public function test_bank_requests_excel_can_be_downloaded_with_borders_and_formatting(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        [$request, , $specialLine] = $this->submittedRequest('XL', 'Bespoke Diamond Box');
+
+        $specialLine->update([
+            'status' => PurchaseRequestItemStatus::BANK_PERMINTAAN,
+            'bank_quantity' => 12,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('central.bank-requests.excel'));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $this->assertStringContainsString('bank-permintaan-tulola-', (string) $response->headers->get('Content-Disposition'));
+        $this->assertStringEndsWith('.xlsx', (string) $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_bank_requests_filters_support_dmy_date_format(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        [$request, , $specialLine] = $this->submittedRequest('DT', 'Special Display Showcase');
+
+        $specialLine->update([
+            'status' => PurchaseRequestItemStatus::BANK_PERMINTAAN,
+            'bank_quantity' => 3,
+        ]);
+
+        // Date in DD/MM/YYYY format
+        $todayDmy = now()->format('d/m/Y');
+        $tomorrowDmy = now()->addDay()->format('d/m/Y');
+
+        $response = $this->actingAs($admin)->get(route('central.bank-requests.index', [
+            'date_from' => $todayDmy,
+            'date_to' => $tomorrowDmy,
+        ]));
+
+        $response->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('central/bank-requests/index')
+                ->has('items.data', 1)
+                ->where('items.data.0.name', 'Special Display Showcase')
+            );
+    }
+
     /** @return array{PurchaseRequest, PurchaseRequestItem, PurchaseRequestItem} */
     private function submittedRequest(string $storeCode = 'PP', string $specialName = 'Standing Flower'): array
     {

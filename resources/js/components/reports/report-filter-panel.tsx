@@ -156,33 +156,6 @@ export function ReportFilterPanel({
                         </div>
                     </div>
 
-                    {/* Order Selection for Purchasing Request */}
-                    {filters.report === 'purchasing-request' && (
-                        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-                            <div className="space-y-1.5">
-                                <Label className="text-xs font-semibold text-foreground">
-                                    Pilih Dokumen Pesanan (PO Target)
-                                </Label>
-                                <select
-                                    name="order_id"
-                                    defaultValue={filters.order_id ?? ''}
-                                    className="form-select-custom mt-1 h-9.5 w-full bg-card"
-                                >
-                                    <option value="">
-                                        Pesanan Terakhir dalam Periode
-                                        (Otomatis)
-                                    </option>
-                                    {orders.map((order) => (
-                                        <option key={order.id} value={order.id}>
-                                            {order.number} —{' '}
-                                            {order.order_date.slice(0, 10)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-                    )}
-
                     {/* Filter Actions Footer */}
                     <div className="flex items-center justify-between border-t border-border/50 pt-3">
                         <span className="text-xs text-muted-foreground">

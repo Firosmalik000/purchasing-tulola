@@ -35,7 +35,7 @@ const REPORT_GROUPS: ReportNavGroup[] = [
             {
                 value: 'purchasing-request',
                 icon: FileText,
-                shortDesc: 'Distribusi alokasi toko per order',
+                shortDesc: 'Distribusi stok toko per periode',
             },
             {
                 value: 'request-by-store',
