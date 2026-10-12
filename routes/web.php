@@ -14,6 +14,7 @@ use App\Http\Controllers\Central\SupplierController;
 use App\Http\Controllers\Central\UnitController;
 use App\Http\Controllers\Central\UserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Store\BankRequestController as StoreBankRequestController;
 use App\Http\Controllers\Store\IncomingOrderController;
 use App\Http\Controllers\Store\InventoryController as StoreInventoryController;
 use App\Http\Controllers\Store\PurchaseRequestController as StorePurchaseRequestController;
@@ -76,6 +77,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::get('incoming', [IncomingOrderController::class, 'index'])->name('incoming.index');
         Route::get('incoming/{purchase_order}', [IncomingOrderController::class, 'show'])->name('incoming.show');
         Route::post('incoming/{purchase_order}/receipts', [IncomingOrderController::class, 'store'])->name('incoming.receipts.store');
+        Route::get('bank-requests', [StoreBankRequestController::class, 'index'])->name('bank-requests.index');
         Route::resource('requests', StorePurchaseRequestController::class)
             ->parameters(['requests' => 'purchase_request'])
             ->only(['index', 'create', 'store', 'show', 'edit', 'update']);

@@ -180,6 +180,11 @@ export function AppSidebar() {
             href: '/store/requests',
             icon: ClipboardList,
         },
+        {
+            title: 'Bank Permintaan',
+            href: '/store/bank-requests',
+            icon: Clock,
+        },
         { title: 'Order Toko', href: '/store/incoming', icon: Truck },
     ];
 
