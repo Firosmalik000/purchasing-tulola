@@ -60,6 +60,12 @@ type Order = {
     status: string;
     notes: string | null;
     lines: Line[];
+    deferred_special_items?: {
+        id: number;
+        name: string;
+        quantity: number;
+        unit: string;
+    }[];
     can_receive: boolean;
     receipts: Receipt[];
 };
@@ -222,6 +228,34 @@ export default function IncomingShow({
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Disclaimer Permintaan Khusus Tertunda (Bank Permintaan) */}
+                {purchaseOrder.deferred_special_items &&
+                    purchaseOrder.deferred_special_items.length > 0 && (
+                        <Card className="border-amber-300/80 bg-amber-50/50 shadow-xs dark:border-amber-900/50 dark:bg-amber-950/20">
+                            <CardContent className="flex items-start gap-3 p-4">
+                                <Clock className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                                <div className="space-y-1.5 text-xs">
+                                    <p className="font-semibold text-amber-900 dark:text-amber-200">
+                                        Catatan: Permintaan Khusus Ditunda (Bank Permintaan)
+                                    </p>
+                                    <p className="leading-relaxed text-amber-800 dark:text-amber-300">
+                                        PR ini memiliki item kebutuhan khusus yang dialihkan ke Bank Permintaan untuk dianggarkan pada periode berikutnya (penerimaan order ini tetap dapat diselesaikan):
+                                    </p>
+                                    <div className="flex flex-wrap gap-2 pt-0.5">
+                                        {purchaseOrder.deferred_special_items.map((item) => (
+                                            <span
+                                                key={item.id}
+                                                className="rounded-md border border-amber-300 bg-amber-100/60 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+                                            >
+                                                {item.name} ({formatQuantity(item.quantity)} {item.unit})
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                 {/* Store Allocations Card */}
                 <Card className="border-border/70 shadow-xs">

@@ -41,8 +41,10 @@ type RequestItem = {
     suggested_quantity: number | null;
     requested_quantity: number;
     approved_quantity: number | null;
+    bank_quantity?: number | null;
     required_date: string | null;
     reason: string | null;
+    status: string | null;
 };
 type History = {
     id: number;
@@ -386,13 +388,79 @@ export default function RequestShow({
                                                         )}{' '}
                                                         {line.unit.symbol}
                                                     </span>
-                                                    <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                                                        Disetujui:{' '}
-                                                        {line.approved_quantity !==
-                                                        null
-                                                            ? `${formatQuantity(line.approved_quantity)} ${line.unit.symbol}`
-                                                            : 'Menunggu'}
-                                                    </span>
+                                                    {line.status === 'BANK_PERMINTAAN' ? (
+                                                        <span className="flex items-center gap-1 rounded-lg border border-amber-300/60 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                                            <Clock className="size-3" />
+                                                            Bank Permintaan (Menunggu Stok):{' '}
+                                                            {formatQuantity(
+                                                                line.bank_quantity ??
+                                                                    line.approved_quantity ??
+                                                                    line.requested_quantity,
+                                                            )}{' '}
+                                                            {line.unit.symbol}
+                                                        </span>
+                                                    ) : line.status === 'PARTIALLY_APPROVED' ? (
+                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                            <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                                                                Kirim:{' '}
+                                                                {formatQuantity(
+                                                                    line.approved_quantity ??
+                                                                        0,
+                                                                )}{' '}
+                                                                {line.unit.symbol}
+                                                            </span>
+                                                            <span className="flex items-center gap-1 rounded-lg border border-amber-300/60 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                                                <Clock className="size-3" />
+                                                                Bank Permintaan:{' '}
+                                                                {formatQuantity(
+                                                                    line.bank_quantity ??
+                                                                        0,
+                                                                )}{' '}
+                                                                {line.unit.symbol}
+                                                            </span>
+                                                            {Number(
+                                                                line.requested_quantity,
+                                                            ) >
+                                                                Number(
+                                                                    line.approved_quantity ??
+                                                                        0,
+                                                                ) +
+                                                                    Number(
+                                                                        line.bank_quantity ??
+                                                                            0,
+                                                                    ) && (
+                                                                <span className="rounded-lg bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive">
+                                                                    Ditolak:{' '}
+                                                                    {formatQuantity(
+                                                                        Number(
+                                                                            line.requested_quantity,
+                                                                        ) -
+                                                                            Number(
+                                                                                line.approved_quantity ??
+                                                                                    0,
+                                                                            ) -
+                                                                            Number(
+                                                                                line.bank_quantity ??
+                                                                                    0,
+                                                                            ),
+                                                                    )}{' '}
+                                                                    {line.unit.symbol}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ) : line.status === 'REJECTED' ? (
+                                                        <span className="rounded-lg bg-destructive/10 px-2.5 py-1 text-xs font-semibold text-destructive">
+                                                            Ditolak
+                                                        </span>
+                                                    ) : (
+                                                        <span className="rounded-lg bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                                                            Disetujui:{' '}
+                                                            {line.approved_quantity !==
+                                                            null
+                                                                ? `${formatQuantity(line.approved_quantity)} ${line.unit.symbol}`
+                                                                : 'Menunggu'}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
 

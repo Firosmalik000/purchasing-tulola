@@ -24,6 +24,7 @@ use Database\Seeders\ItemCategorySeeder;
 use Database\Seeders\ItemSeeder;
 use Database\Seeders\UnitSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
 class MasterDataManagementTest extends TestCase
@@ -412,5 +413,76 @@ class MasterDataManagementTest extends TestCase
             ->assertRedirect(route('login'));
 
         $this->assertDatabaseHas('items', ['id' => $item->id]);
+    }
+
+    public function test_central_user_can_filter_items_by_category_unit_and_status(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $catSilver = ItemCategory::create(['name' => 'Silver', 'code' => 'SLV', 'is_active' => true]);
+        $catGold = ItemCategory::create(['name' => 'Gold', 'code' => 'GLD', 'is_active' => true]);
+        $unitGram = Unit::create(['name' => 'Gram', 'symbol' => 'gr', 'is_active' => true]);
+        $unitPcs = Unit::create(['name' => 'Pieces', 'symbol' => 'pcs', 'is_active' => true]);
+
+        Item::create([
+            'sku' => 'SLV-RNG-01',
+            'name' => 'Cincin Perak',
+            'item_category_id' => $catSilver->id,
+            'unit_id' => $unitGram->id,
+            'is_active' => true,
+        ]);
+        Item::create([
+            'sku' => 'GLD-RNG-01',
+            'name' => 'Cincin Emas',
+            'item_category_id' => $catGold->id,
+            'unit_id' => $unitGram->id,
+            'is_active' => true,
+        ]);
+        Item::create([
+            'sku' => 'SLV-BOX-01',
+            'name' => 'Box Perak Bekas',
+            'item_category_id' => $catSilver->id,
+            'unit_id' => $unitPcs->id,
+            'is_active' => false,
+        ]);
+
+        // Filter by category: Gold only
+        $this->actingAs($admin)
+            ->get(route('central.items.index', ['category_id' => $catGold->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('central/items/index')
+                ->has('items.data', 1)
+                ->where('items.data.0.sku', 'GLD-RNG-01')
+                ->where('filters.category_id', (string) $catGold->id)
+            );
+
+        // Filter by unit: Pcs only
+        $this->actingAs($admin)
+            ->get(route('central.items.index', ['unit_id' => $unitPcs->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('items.data', 1)
+                ->where('items.data.0.sku', 'SLV-BOX-01')
+                ->where('filters.unit_id', (string) $unitPcs->id)
+            );
+
+        // Filter by status: Inactive only
+        $this->actingAs($admin)
+            ->get(route('central.items.index', ['status' => 'inactive']))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('items.data', 1)
+                ->where('items.data.0.sku', 'SLV-BOX-01')
+                ->where('filters.status', 'inactive')
+            );
+
+        // Filter by search + category: Silver + 'Cincin'
+        $this->actingAs($admin)
+            ->get(route('central.items.index', ['search' => 'Cincin', 'category_id' => $catSilver->id]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('items.data', 1)
+                ->where('items.data.0.sku', 'SLV-RNG-01')
+            );
     }
 }

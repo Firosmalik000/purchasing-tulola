@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\InvitationController;
+use App\Http\Controllers\Central\BankRequestController;
 use App\Http\Controllers\Central\InventoryController;
 use App\Http\Controllers\Central\ItemCategoryController;
 use App\Http\Controllers\Central\ItemController;
@@ -54,6 +55,8 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::get('requests/{purchase_request}', [CentralPurchaseRequestController::class, 'show'])->name('requests.show');
         Route::post('requests/{purchase_request}/process', [CentralPurchaseRequestController::class, 'process'])->name('requests.process');
         Route::post('requests/{purchase_request}/reject', [CentralPurchaseRequestController::class, 'reject'])->name('requests.reject');
+        Route::get('bank-requests', [BankRequestController::class, 'index'])->name('bank-requests.index');
+        Route::post('bank-requests/orders', [BankRequestController::class, 'createOrder'])->name('bank-requests.create-order');
         Route::get('orders/{purchase_order}/print', [PurchaseOrderController::class, 'print'])->name('orders.print');
         Route::get('orders/{purchase_order}/pdf', [PurchaseOrderController::class, 'pdf'])->name('orders.pdf');
         Route::resource('orders', PurchaseOrderController::class)

@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Purchasing Totula'),
+    'name' => env('APP_NAME', 'Purchasing Tulola'),
 
     'development_admin' => [
         'email' => env('DEVELOPMENT_ADMIN_EMAIL', 'admin@totula.local'),

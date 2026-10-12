@@ -23,14 +23,31 @@ class ItemController extends Controller
     {
         Gate::authorize('viewAny', Item::class);
         $search = trim((string) $request->string('search'));
+        $categoryId = $request->filled('category_id') ? (int) $request->input('category_id') : null;
+        $unitId = $request->filled('unit_id') ? (int) $request->input('unit_id') : null;
+        $status = $request->filled('status') ? (string) $request->input('status') : null;
 
         return Inertia::render('central/items/index', [
             'items' => Item::query()->with(['category:id,name', 'unit:id,name,symbol'])
                 ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('sku', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
+                ->when($categoryId !== null, fn ($query) => $query->where('item_category_id', $categoryId))
+                ->when($unitId !== null, fn ($query) => $query->where('unit_id', $unitId))
+                ->when($status !== null && $status !== '', function ($query) use ($status) {
+                    if ($status === 'active' || $status === '1') {
+                        $query->where('is_active', true);
+                    } elseif ($status === 'inactive' || $status === '0') {
+                        $query->where('is_active', false);
+                    }
+                })
                 ->orderBy('name')->paginate(Paging::perPage($request))->withQueryString(),
             'categories' => ItemCategory::query()->orderBy('name')->get(),
             'units' => Unit::query()->orderBy('name')->get(),
-            'filters' => ['search' => $search],
+            'filters' => [
+                'search' => $search,
+                'category_id' => $categoryId ? (string) $categoryId : '',
+                'unit_id' => $unitId ? (string) $unitId : '',
+                'status' => $status ?? '',
+            ],
         ]);
     }
 

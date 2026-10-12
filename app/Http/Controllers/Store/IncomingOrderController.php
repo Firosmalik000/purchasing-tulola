@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Store;
 
 use App\Actions\Receipts\ConfirmReceipt;
 use App\Enums\PurchaseOrderStatus;
+use App\Enums\PurchaseRequestItemStatus;
 use App\Enums\PurchaseRequestItemType;
 use App\Enums\ReceiptStatus;
 use App\Http\Controllers\Controller;
@@ -11,6 +12,7 @@ use App\Http\Requests\Store\ConfirmReceiptRequest;
 use App\Http\Requests\Store\FilterIncomingOrdersRequest;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderRequestItem;
+use App\Models\PurchaseRequestItem;
 use App\Models\Receipt;
 use App\Models\ReceiptItem;
 use App\Models\Store;
@@ -195,10 +197,34 @@ class IncomingOrderController extends Controller
             ];
         }
 
+        $requestIds = $order->items->flatMap->allocations
+            ->map(fn ($a) => $a->purchaseRequestItem?->purchase_request_id)
+            ->filter()
+            ->unique();
+
+        $deferredSpecialItems = PurchaseRequestItem::query()
+            ->whereIn('purchase_request_id', $requestIds)
+            ->where('type', PurchaseRequestItemType::SPECIAL)
+            ->where(function ($q) {
+                $q->where(function ($sub) {
+                    $sub->where('bank_quantity', '>', 0)
+                        ->whereNull('bank_ordered_at');
+                })->orWhere('status', PurchaseRequestItemStatus::BANK_PERMINTAAN);
+            })
+            ->with('unit:id,symbol')
+            ->get(['id', 'purchase_request_id', 'name', 'bank_quantity', 'approved_quantity', 'requested_quantity', 'unit_id'])
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'quantity' => $item->bank_quantity > 0 ? $item->bank_quantity : ($item->approved_quantity ?? $item->requested_quantity),
+                'unit' => $item->unit?->symbol ?? '',
+            ])->values();
+
         return [
             'id' => $order->id, 'number' => $order->number, 'order_date' => $order->order_date,
             'expected_date' => $order->expected_date, 'status' => $order->status,
             'notes' => $order->notes, 'lines' => $lines,
+            'deferred_special_items' => $deferredSpecialItems,
             'can_receive' => in_array($order->status, [PurchaseOrderStatus::ORDERED, PurchaseOrderStatus::PARTIALLY_RECEIVED], true)
                 && $lines->contains(fn (array $line) => $line['outstanding_quantity'] > 0),
             'receipts' => $order->receipts->map(function ($receipt) use ($receiptMeta) {

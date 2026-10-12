@@ -214,15 +214,14 @@
         <div class="header-content">
             <a href="/" class="brand">
                 <div class="brand-logo">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M6 3h12l4 7-10 11L2 10l4-7z" fill="currentColor" fill-opacity="0.2" />
-                        <path d="M11 3 8 10l4 11 4-11-3-7" />
-                        <path d="M2 10h20" />
+                    <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M 16,40 A 42,42 0 0,1 84,40" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.9" />
+                        <text x="50" y="74" text-anchor="middle" fill="#fff" style="font-family: -apple-system, sans-serif; font-weight: 700; font-size: 32px; letter-spacing: 1px;">NTS</text>
                     </svg>
                 </div>
                 <div>
                     <div class="brand-title">TULOLA</div>
-                    <div class="brand-sub">Purchasing Portal</div>
+                    <div class="brand-sub">PT. Napak Tilas Seni</div>
                 </div>
             </a>
             <div>

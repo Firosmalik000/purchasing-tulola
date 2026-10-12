@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 350" width="100%" height="100%" class="">
+  <defs>
+    <!-- Smooth circular arc matching PT Napak Tilas Seni emblem -->
+    <path id="archPath" d="M 50,188 A 235,235 0 0,1 450,188" fill="none" />
+  </defs>
+
+  <!-- Arched company name -->
+  <text fill="#0F172A" font-family="'Century Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="26.5" font-weight="600" letter-spacing="4.2px">
+    <textPath href="#archPath" startOffset="50%" text-anchor="middle">
+      PT. NAPAK TILAS SENI
+    </textPath>
+  </text>
+
+  <!-- Monogram N.T.S -->
+  <g fill="#0F172A" font-family="'Century Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="600" font-size="160" text-anchor="middle">
+    <!-- N -->
+    <text x="112" y="308">N</text>
+    
+    <!-- Dot 1 -->
+    <circle cx="196" cy="298" r="10.5" />
+
+    <!-- T -->
+    <text x="250" y="308">T</text>
+
+    <!-- Dot 2 -->
+    <circle cx="304" cy="298" r="10.5" />
+
+    <!-- S -->
+    <text x="388" y="308">S</text>
+  </g>
+</svg>

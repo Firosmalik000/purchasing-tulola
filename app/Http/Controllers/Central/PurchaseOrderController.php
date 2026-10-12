@@ -58,6 +58,8 @@ class PurchaseOrderController extends Controller
         Gate::authorize('view', $purchaseOrder);
         $purchaseOrder->load([
             'purchaseRequest.store:id,code,name',
+            'purchaseRequest.items:id,purchase_request_id,type,name,unit_id,requested_quantity,approved_quantity,bank_quantity,bank_ordered_at,status',
+            'purchaseRequest.items.unit:id,name,symbol',
             'creator:id,name',
             'items.item:id,sku,name',
             'items.unit:id,name,symbol',

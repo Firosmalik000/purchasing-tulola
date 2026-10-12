@@ -22,6 +22,8 @@ class ProcessPurchaseRequestRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.id' => ['required', 'integer', 'distinct'],
             'items.*.approved_quantity' => ['required', 'integer', 'min:0'],
+            'items.*.bank_quantity' => ['nullable', 'integer', 'min:0'],
+            'items.*.decision' => ['nullable', 'string', 'in:APPROVED,REJECTED,BANK_PERMINTAAN,SPLIT'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }

@@ -177,7 +177,7 @@ class BuildManagementReport
             return ['store' => $requests->first()->store->code.' - '.$requests->first()->store->name, 'requests' => $requests->count(), 'lines' => $items->count(), 'requested' => $this->quantity($items->sum('requested_quantity')), 'approved' => $this->quantity($items->sum(fn ($item) => $item->approved_quantity ?? 0))];
         })->values()->all();
 
-        return ['columns' => [$this->column('store', 'Toko'), $this->column('requests', 'Permintaan', 'integer', 'right'), $this->column('lines', 'Baris', 'integer', 'right'), $this->column('requested', 'Qty Diminta', 'quantity', 'right'), $this->column('approved', 'Qty Disetujui', 'quantity', 'right')], 'rows' => $rows];
+        return ['columns' => [$this->column('store', 'Toko'), $this->column('requests', 'Permintaan', 'integer', 'right'), $this->column('lines', 'Permintaan Item', 'integer', 'right'), $this->column('requested', 'Qty Diminta', 'quantity', 'right'), $this->column('approved', 'Qty Disetujui', 'quantity', 'right')], 'rows' => $rows];
     }
 
     /**

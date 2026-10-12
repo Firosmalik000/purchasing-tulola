@@ -23,12 +23,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $standard_stock_snapshot
  * @property string|null $suggested_quantity
  * @property string $requested_quantity
- * @property string|null $approved_quantity
+ * @property int|null $bank_quantity
+ * @property Carbon|null $bank_ordered_at
  * @property Carbon|null $required_date
  * @property string|null $reason
  * @property PurchaseRequestItemStatus|null $status
  */
-#[Fillable(['purchase_request_id', 'type', 'item_id', 'name', 'description', 'sample_image_path', 'unit_id', 'current_stock_snapshot', 'standard_stock_snapshot', 'suggested_quantity', 'requested_quantity', 'approved_quantity', 'required_date', 'reason', 'status'])]
+#[Fillable(['purchase_request_id', 'type', 'item_id', 'name', 'description', 'sample_image_path', 'unit_id', 'current_stock_snapshot', 'standard_stock_snapshot', 'suggested_quantity', 'requested_quantity', 'approved_quantity', 'bank_quantity', 'bank_ordered_at', 'required_date', 'reason', 'status'])]
 class PurchaseRequestItem extends Model
 {
     protected $appends = ['sample_image_url'];
@@ -37,7 +38,18 @@ class PurchaseRequestItem extends Model
 
     protected function casts(): array
     {
-        return ['type' => PurchaseRequestItemType::class, 'current_stock_snapshot' => 'integer', 'standard_stock_snapshot' => 'integer', 'suggested_quantity' => 'integer', 'requested_quantity' => 'integer', 'approved_quantity' => 'integer', 'required_date' => 'date', 'status' => PurchaseRequestItemStatus::class];
+        return [
+            'type' => PurchaseRequestItemType::class,
+            'current_stock_snapshot' => 'integer',
+            'standard_stock_snapshot' => 'integer',
+            'suggested_quantity' => 'integer',
+            'requested_quantity' => 'integer',
+            'approved_quantity' => 'integer',
+            'bank_quantity' => 'integer',
+            'bank_ordered_at' => 'datetime',
+            'required_date' => 'date',
+            'status' => PurchaseRequestItemStatus::class,
+        ];
     }
 
     public function getSampleImageUrlAttribute(): ?string

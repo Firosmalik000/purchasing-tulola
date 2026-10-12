@@ -41,6 +41,7 @@ type RequestItem = {
     suggested_quantity: number | null;
     requested_quantity: number;
     approved_quantity: number | null;
+    bank_quantity?: number | null;
     required_date: string | null;
     reason: string | null;
     status: string | null;
@@ -396,64 +397,145 @@ function RequestSection({
 
                         <div className="rounded-lg border border-border/60 bg-muted/20 p-3">
                             {canProcess ? (
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between text-xs font-semibold">
-                                        <Label
-                                            htmlFor={`approved-${line.id}`}
-                                            className="text-xs"
-                                        >
-                                            Qty Disetujui
-                                        </Label>
-                                        <span className="text-[11px] text-muted-foreground">
-                                            Diminta:{' '}
-                                            {formatQuantity(
-                                                line.requested_quantity,
-                                            )}
-                                        </span>
-                                    </div>
-                                    <Input
-                                        id={`approved-${line.id}`}
-                                        name={`items[${line.id}][approved_quantity]`}
-                                        type="number"
-                                        min="0"
-                                        max={line.requested_quantity}
-                                        step="1"
-                                        defaultValue={String(
-                                            Number(
-                                                line.approved_quantity ??
+                                line.type === 'SPECIAL' ? (
+                                    <SpecialItemReviewControl
+                                        line={line}
+                                        errors={errors}
+                                    />
+                                ) : (
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between text-xs font-semibold">
+                                            <Label
+                                                htmlFor={`approved-${line.id}`}
+                                                className="text-xs"
+                                            >
+                                                Qty Disetujui
+                                            </Label>
+                                            <span className="text-[11px] text-muted-foreground">
+                                                Diminta:{' '}
+                                                {formatQuantity(
                                                     line.requested_quantity,
-                                            ),
-                                        )}
-                                        required
-                                        className="h-9 bg-card font-mono text-sm font-semibold"
-                                    />
-                                    <InputError
-                                        message={
-                                            errors[
-                                                `items.${line.id}.approved_quantity`
-                                            ]
-                                        }
-                                    />
-                                </div>
-                            ) : (
-                                <div className="space-y-1">
-                                    <Info
-                                        label="Kuantitas Disetujui / Diminta"
-                                        value={`${line.approved_quantity === null ? '—' : formatQuantity(line.approved_quantity)} / ${formatQuantity(line.requested_quantity)} ${line.unit.symbol}`}
-                                    />
-                                    {line.status && (
-                                        <Badge
-                                            variant={
-                                                line.status === 'REJECTED'
-                                                    ? 'destructive'
-                                                    : 'secondary'
+                                                )}
+                                            </span>
+                                        </div>
+                                        <Input
+                                            id={`approved-${line.id}`}
+                                            name={`items[${line.id}][approved_quantity]`}
+                                            type="number"
+                                            min="0"
+                                            max={line.requested_quantity}
+                                            step="1"
+                                            defaultValue={String(
+                                                Number(
+                                                    line.approved_quantity ??
+                                                        line.requested_quantity,
+                                                ),
+                                            )}
+                                            required
+                                            className="h-9 bg-card font-mono text-sm font-semibold"
+                                        />
+                                        <InputError
+                                            message={
+                                                errors[
+                                                    `items.${line.id}.approved_quantity`
+                                                ]
                                             }
-                                            className="mt-2 text-[10px]"
-                                        >
-                                            {line.status === 'APPROVED'
-                                                ? 'Disetujui'
-                                                : 'Ditolak'}
-                                        </Badge>
+                                        />
+                                    </div>
+                                )
+                            ) : (
+                                <div className="space-y-1.5 text-xs">
+                                    <Info
+                                        label="Kuantitas Diminta"
+                                        value={`${formatQuantity(line.requested_quantity)} ${line.unit.symbol}`}
+                                    />
+                                    {line.type === 'SPECIAL' &&
+                                    line.status === 'PARTIALLY_APPROVED' ? (
+                                        <div className="space-y-1 rounded-md border border-indigo-200 bg-indigo-50/50 p-2 text-[11px] dark:border-indigo-900/50 dark:bg-indigo-950/20">
+                                            <div className="flex items-center justify-between text-muted-foreground">
+                                                <span>Kirim Sekarang:</span>
+                                                <strong className="text-foreground">
+                                                    {formatQuantity(
+                                                        line.approved_quantity ?? 0,
+                                                    )}{' '}
+                                                    {line.unit.symbol}
+                                                </strong>
+                                            </div>
+                                            <div className="flex items-center justify-between text-amber-700 dark:text-amber-400">
+                                                <span>Bank Permintaan:</span>
+                                                <strong>
+                                                    {formatQuantity(
+                                                        line.bank_quantity ?? 0,
+                                                    )}{' '}
+                                                    {line.unit.symbol}
+                                                </strong>
+                                            </div>
+                                            {Number(line.requested_quantity) >
+                                                Number(line.approved_quantity ?? 0) +
+                                                    Number(line.bank_quantity ?? 0) && (
+                                                <div className="flex items-center justify-between text-destructive">
+                                                    <span>Ditolak:</span>
+                                                    <strong>
+                                                        {formatQuantity(
+                                                            Number(line.requested_quantity) -
+                                                                (Number(line.approved_quantity ?? 0) +
+                                                                    Number(line.bank_quantity ?? 0)),
+                                                        )}{' '}
+                                                        {line.unit.symbol}
+                                                    </strong>
+                                                </div>
+                                            )}
+                                            <Badge
+                                                variant="outline"
+                                                className="mt-1 border-indigo-400 bg-indigo-500/10 text-[10px] text-indigo-700 dark:text-indigo-300"
+                                            >
+                                                Disetujui Sebagian & Bank
+                                            </Badge>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <Info
+                                                label={
+                                                    line.status === 'BANK_PERMINTAAN'
+                                                        ? 'Qty Bank Permintaan'
+                                                        : 'Kuantitas Disetujui'
+                                                }
+                                                value={`${
+                                                    line.status === 'BANK_PERMINTAAN'
+                                                        ? formatQuantity(
+                                                              line.bank_quantity ??
+                                                                  line.requested_quantity,
+                                                          )
+                                                        : line.approved_quantity === null
+                                                          ? '—'
+                                                          : formatQuantity(
+                                                                line.approved_quantity,
+                                                            )
+                                                } ${line.unit.symbol}`}
+                                            />
+                                            {line.status && (
+                                                <Badge
+                                                    variant={
+                                                        line.status === 'REJECTED'
+                                                            ? 'destructive'
+                                                            : line.status === 'BANK_PERMINTAAN'
+                                                              ? 'outline'
+                                                              : 'secondary'
+                                                    }
+                                                    className={`mt-2 text-[10px] ${
+                                                        line.status === 'BANK_PERMINTAAN'
+                                                            ? 'border-amber-400 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                                            : ''
+                                                    }`}
+                                                >
+                                                    {line.status === 'APPROVED'
+                                                        ? 'Disetujui'
+                                                        : line.status === 'BANK_PERMINTAAN'
+                                                          ? 'Bank Permintaan'
+                                                          : 'Ditolak'}
+                                                </Badge>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             )}
@@ -462,6 +544,279 @@ function RequestSection({
                 ))}
             </CardContent>
         </Card>
+    );
+}
+
+function SpecialItemReviewControl({
+    line,
+    errors,
+}: {
+    line: RequestItem;
+    errors: Record<string, string>;
+}) {
+    const requested = Number(line.requested_quantity);
+    const initialApproved = Number(line.approved_quantity ?? line.requested_quantity);
+    const initialBank = Number(line.bank_quantity ?? 0);
+
+    const initialDecision =
+        initialApproved > 0 && initialBank > 0
+            ? 'SPLIT'
+            : line.status === 'BANK_PERMINTAAN' || initialBank > 0
+              ? 'BANK_PERMINTAAN'
+              : initialApproved === 0
+                ? 'REJECTED'
+                : 'APPROVED';
+
+    const [decision, setDecision] = useState<
+        'APPROVED' | 'BANK_PERMINTAAN' | 'SPLIT' | 'REJECTED'
+    >(initialDecision);
+    const [approvedQty, setApprovedQty] = useState(
+        String(initialApproved > 0 ? initialApproved : requested),
+    );
+    const [bankQty, setBankQty] = useState(
+        String(initialBank > 0 ? initialBank : 1),
+    );
+
+    const handleDecisionChange = (
+        newDecision: 'APPROVED' | 'BANK_PERMINTAAN' | 'SPLIT' | 'REJECTED',
+    ) => {
+        setDecision(newDecision);
+        if (newDecision === 'APPROVED') {
+            setApprovedQty(String(requested));
+            setBankQty('0');
+        } else if (newDecision === 'BANK_PERMINTAAN') {
+            setApprovedQty('0');
+            setBankQty(String(requested));
+        } else if (newDecision === 'SPLIT') {
+            const defaultApproved = Math.max(1, Math.floor(requested / 2));
+            const defaultBank = Math.max(1, requested - defaultApproved);
+            setApprovedQty(String(defaultApproved));
+            setBankQty(String(defaultBank));
+        } else if (newDecision === 'REJECTED') {
+            setApprovedQty('0');
+            setBankQty('0');
+        }
+    };
+
+    const currentApprovedNum = Number(approvedQty) || 0;
+    const currentBankNum = Number(bankQty) || 0;
+    const remainderRejected = Math.max(0, requested - currentApprovedNum - currentBankNum);
+    const isExceeded = currentApprovedNum + currentBankNum > requested;
+
+    return (
+        <div className="space-y-2">
+            <input
+                type="hidden"
+                name={`items[${line.id}][decision]`}
+                value={decision}
+            />
+            <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                        Keputusan Item
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                        Diminta: {formatQuantity(line.requested_quantity)} {line.unit.symbol}
+                    </span>
+                </div>
+                <div className="grid grid-cols-4 gap-1">
+                    <button
+                        type="button"
+                        onClick={() => handleDecisionChange('APPROVED')}
+                        className={`rounded px-1 py-1 text-[11px] font-medium border transition-colors ${
+                            decision === 'APPROVED'
+                                ? 'bg-primary text-primary-foreground border-primary shadow-xs'
+                                : 'bg-background hover:bg-muted text-muted-foreground border-border'
+                        }`}
+                    >
+                        Kirim
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleDecisionChange('BANK_PERMINTAAN')}
+                        className={`rounded px-1 py-1 text-[11px] font-medium border transition-colors ${
+                            decision === 'BANK_PERMINTAAN'
+                                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                                : 'bg-background hover:bg-muted text-muted-foreground border-border'
+                        }`}
+                        title="Tunda ke Bank Permintaan (menunggu ketersediaan stok)"
+                    >
+                        Bank Req
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleDecisionChange('SPLIT')}
+                        className={`rounded px-1 py-1 text-[11px] font-medium border transition-colors ${
+                            decision === 'SPLIT'
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-background hover:bg-muted text-muted-foreground border-border'
+                        }`}
+                        title="Bagi: Sebagian kirim sekarang, sebagian tunda, sebagian tolak"
+                    >
+                        Sebagian
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleDecisionChange('REJECTED')}
+                        className={`rounded px-1 py-1 text-[11px] font-medium border transition-colors ${
+                            decision === 'REJECTED'
+                                ? 'bg-destructive text-destructive-foreground border-destructive shadow-xs'
+                                : 'bg-background hover:bg-muted text-muted-foreground border-border'
+                        }`}
+                    >
+                        Tolak
+                    </button>
+                </div>
+            </div>
+
+            {decision === 'APPROVED' && (
+                <div className="space-y-1">
+                    <Label
+                        htmlFor={`approved-${line.id}`}
+                        className="text-[11px] font-medium"
+                    >
+                        Qty Disetujui (Kirim Sekarang)
+                    </Label>
+                    <Input
+                        id={`approved-${line.id}`}
+                        name={`items[${line.id}][approved_quantity]`}
+                        type="number"
+                        min="0"
+                        max={line.requested_quantity}
+                        step="1"
+                        value={approvedQty}
+                        onChange={(e) => setApprovedQty(e.target.value)}
+                        required
+                        className="h-8 bg-card font-mono text-xs font-semibold"
+                    />
+                    <input
+                        type="hidden"
+                        name={`items[${line.id}][bank_quantity]`}
+                        value="0"
+                    />
+                </div>
+            )}
+
+            {decision === 'BANK_PERMINTAAN' && (
+                <div className="space-y-1">
+                    <Label
+                        htmlFor={`bank-${line.id}`}
+                        className="text-[11px] font-medium text-amber-700 dark:text-amber-400"
+                    >
+                        Qty Bank Permintaan (Menunggu Stok)
+                    </Label>
+                    <input
+                        type="hidden"
+                        name={`items[${line.id}][approved_quantity]`}
+                        value="0"
+                    />
+                    <Input
+                        id={`bank-${line.id}`}
+                        name={`items[${line.id}][bank_quantity]`}
+                        type="number"
+                        min="1"
+                        max={line.requested_quantity}
+                        step="1"
+                        value={bankQty}
+                        onChange={(e) => setBankQty(e.target.value)}
+                        required
+                        className="h-8 bg-card font-mono text-xs font-semibold"
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                        Disimpan di antrean Bank Permintaan tanpa membuat PO sekarang.
+                    </p>
+                </div>
+            )}
+
+            {decision === 'SPLIT' && (
+                <div className="space-y-2 rounded-md border border-indigo-200/80 bg-indigo-50/30 p-2 dark:border-indigo-900/50 dark:bg-indigo-950/20">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                            <Label
+                                htmlFor={`approved-${line.id}`}
+                                className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400"
+                            >
+                                Kirim Sekarang
+                            </Label>
+                            <Input
+                                id={`approved-${line.id}`}
+                                name={`items[${line.id}][approved_quantity]`}
+                                type="number"
+                                min="0"
+                                max={line.requested_quantity}
+                                step="1"
+                                value={approvedQty}
+                                onChange={(e) => setApprovedQty(e.target.value)}
+                                required
+                                className="h-7 bg-card font-mono text-xs font-semibold"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label
+                                htmlFor={`bank-${line.id}`}
+                                className="text-[10px] font-medium text-amber-700 dark:text-amber-400"
+                            >
+                                Bank Permintaan
+                            </Label>
+                            <Input
+                                id={`bank-${line.id}`}
+                                name={`items[${line.id}][bank_quantity]`}
+                                type="number"
+                                min="0"
+                                max={line.requested_quantity}
+                                step="1"
+                                value={bankQty}
+                                onChange={(e) => setBankQty(e.target.value)}
+                                required
+                                className="h-7 bg-card font-mono text-xs font-semibold"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between rounded border border-border/50 bg-background/80 px-2 py-1 text-[11px]">
+                        <span className="text-muted-foreground">Sisa Ditolak:</span>
+                        <span
+                            className={`font-mono font-bold ${
+                                remainderRejected > 0
+                                    ? 'text-destructive'
+                                    : 'text-muted-foreground'
+                            }`}
+                        >
+                            {remainderRejected} {line.unit.symbol}
+                        </span>
+                    </div>
+
+                    {isExceeded && (
+                        <p className="text-[10px] font-medium text-destructive">
+                            Total kuantitas ({currentApprovedNum + currentBankNum}) melebihi permintaan ({requested}).
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {decision === 'REJECTED' && (
+                <div className="rounded-md border border-destructive/20 bg-destructive/10 p-2 text-center text-[11px] font-medium text-destructive">
+                    <input
+                        type="hidden"
+                        name={`items[${line.id}][approved_quantity]`}
+                        value="0"
+                    />
+                    <input
+                        type="hidden"
+                        name={`items[${line.id}][bank_quantity]`}
+                        value="0"
+                    />
+                    Item ditolak sepenuhnya
+                </div>
+            )}
+
+            <InputError
+                message={
+                    errors[`items.${line.id}.approved_quantity`] ||
+                    errors[`items.${line.id}.bank_quantity`]
+                }
+            />
+        </div>
     );
 }
 

@@ -85,6 +85,16 @@ type Order = {
         id: number;
         number: string;
         store: { code: string; name: string };
+        items?: {
+            id: number;
+            type: string;
+            name: string | null;
+            status: string | null;
+            approved_quantity: number | null;
+            bank_quantity?: number | null;
+            requested_quantity: number;
+            unit?: { symbol: string };
+        }[];
     } | null;
     items: OrderItem[];
     receipts?: Receipt[];
@@ -210,6 +220,16 @@ export default function OrderShow({
         purchaseOrder.items[0]?.allocations[0]?.purchase_request_item
             ?.purchase_request?.store ??
         null;
+
+    const deferredSpecialItems = (
+        purchaseOrder.purchase_request?.items ?? []
+    ).filter(
+        (item) =>
+            item.type === 'SPECIAL' &&
+            (item.status === 'BANK_PERMINTAAN' ||
+                (item.status === 'PARTIALLY_APPROVED' &&
+                    Number(item.bank_quantity ?? 0) > 0)),
+    );
 
     return (
         <>
@@ -431,6 +451,34 @@ export default function OrderShow({
                         )}
                     </CardContent>
                 </Card>
+
+                {/* Disclaimer Permintaan Khusus Tertunda (Bank Permintaan) */}
+                {deferredSpecialItems.length > 0 && (
+                    <Card className="border-amber-300/80 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20 shadow-xs print:hidden">
+                        <CardContent className="flex items-start gap-3 p-4">
+                            <Clock className="mt-0.5 size-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <div className="space-y-1.5 text-xs">
+                                <p className="font-semibold text-amber-900 dark:text-amber-200">
+                                    Catatan: Permintaan Khusus Ditunda (Bank Permintaan)
+                                </p>
+                                <p className="leading-relaxed text-amber-800 dark:text-amber-300">
+                                    PR sumber memiliki {deferredSpecialItems.length} item permintaan khusus yang dialihkan ke Bank Permintaan untuk dianggarkan pada periode berikutnya (tidak menghambat penyelesaian order ini):
+                                </p>
+                                <div className="flex flex-wrap gap-2 pt-0.5">
+                                    {deferredSpecialItems.map((item) => (
+                                        <Badge
+                                            key={item.id}
+                                            variant="outline"
+                                            className="border-amber-300 bg-amber-100/60 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+                                        >
+                                            {item.name} ({formatQuantity(item.bank_quantity ?? item.approved_quantity ?? item.requested_quantity)} {item.unit?.symbol ?? ''})
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Line Items Card */}
                 <Card className="border-border/70 shadow-xs">

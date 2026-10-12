@@ -3,11 +3,11 @@
 namespace App\Actions\Orders;
 
 use App\Enums\PurchaseOrderStatus;
+use App\Enums\PurchaseRequestItemStatus;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\User;
 use App\Services\ActivityLogger;
-use Illuminate\Validation\ValidationException;
 
 class CreateDraftOrderForRequest
 {
@@ -16,7 +16,7 @@ class CreateDraftOrderForRequest
         private ActivityLogger $logger,
     ) {}
 
-    public function handle(PurchaseRequest $request, User $actor): PurchaseOrder
+    public function handle(PurchaseRequest $request, User $actor): ?PurchaseOrder
     {
         $existing = PurchaseOrder::query()->where('purchase_request_id', $request->id)->first();
         if ($existing) {
@@ -25,9 +25,11 @@ class CreateDraftOrderForRequest
 
         $request->unsetRelation('items');
         $request->load(['items.item', 'items.unit']);
-        $approved = $request->items->filter(fn ($item) => $item->approved_quantity > 0);
+        $approved = $request->items->filter(
+            fn ($item) => in_array($item->status, [PurchaseRequestItemStatus::APPROVED, PurchaseRequestItemStatus::PARTIALLY_APPROVED], true) && $item->approved_quantity > 0
+        );
         if ($approved->isEmpty()) {
-            throw ValidationException::withMessages(['items' => 'Order membutuhkan minimal satu item yang disetujui.']);
+            return null;
         }
 
         $order = PurchaseOrder::create([

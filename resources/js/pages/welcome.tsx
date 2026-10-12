@@ -94,11 +94,11 @@ export default function Welcome() {
                                         SHOP TULOLA
                                     </span>
                                     <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-700 ring-1 ring-teal-600/15 dark:bg-teal-950/60 dark:text-teal-300">
-                                        Pusat & Cabang
+                                        PT. Napak Tilas Seni
                                     </span>
                                 </div>
                                 <span className="block text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                                    Sistem Pengadaan & Stok Barang Toko
+                                    Sistem Pengadaan & Logistik Toko
                                 </span>
                             </div>
                         </div>
@@ -359,7 +359,7 @@ export default function Welcome() {
                 {/* Footer Santai */}
                 <footer className="mt-14 border-t border-slate-200 py-6 text-center text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
                     <p>
-                        &copy; {new Date().getFullYear()} Shop Tulola. Pengadaan
+                        &copy; {new Date().getFullYear()} Shop Tulola &bull; PT. Napak Tilas Seni. Sistem Pengadaan
                         Toko Pusat & Cabang.
                     </p>
                     <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">

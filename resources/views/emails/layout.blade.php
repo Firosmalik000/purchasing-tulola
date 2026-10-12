@@ -169,13 +169,13 @@
         <div class="container">
             <div class="header">
                 <h1 class="brand-title">T U L O L A</h1>
-                <div class="brand-subtitle">Purchasing & Supply Chain Portal</div>
+                <div class="brand-subtitle">PT. NAPAK TILAS SENI • PURCHASING PORTAL</div>
             </div>
             <div class="content">
                 @yield('content')
             </div>
             <div class="footer">
-                <p style="margin: 0 0 6px 0;">Email ini dikirim otomatis oleh Sistem Purchasing <strong>Tulola Jewelry</strong>.</p>
+                <p style="margin: 0 0 6px 0;">Email ini dikirim otomatis oleh Sistem Purchasing <strong>Tulola Jewelry (PT. Napak Tilas Seni)</strong>.</p>
                 <p style="margin: 0;">Harap tidak membalas email ini secara langsung. Butuh bantuan? Hubungi tim purchasing pusat.</p>
             </div>
         </div>

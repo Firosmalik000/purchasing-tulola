@@ -316,12 +316,29 @@
         </div>
     @endif
 
+    @php
+        $logoFile = public_path('images/logo/nts-logo-light.png');
+        $logoDataUri = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
+    @endphp
+
     <div style="padding: {{ $print ? '0 16px 20px' : '0' }};">
         <!-- Header -->
         <div class="report-header">
             <div class="brand-col">
-                <h1 class="company-name">TULOLA JEWELRY</h1>
-                <h2 class="document-title">{{ $report['title'] }}</h2>
+                <table style="border-collapse: collapse; border: none; margin: 0; padding: 0;">
+                    <tr>
+                        @if ($logoDataUri)
+                            <td style="border: none; padding: 0 10px 0 0; vertical-align: middle;">
+                                <img src="{{ $logoDataUri }}" alt="PT. Napak Tilas Seni" style="height: 40px; width: auto; display: block;" />
+                            </td>
+                        @endif
+                        <td style="border: none; padding: 0; vertical-align: middle;">
+                            <h1 class="company-name" style="margin: 0; font-size: 15px;">TULOLA JEWELRY</h1>
+                            <div style="font-size: 8px; font-weight: 600; color: #4b5563; text-transform: uppercase;">PT. NAPAK TILAS SENI</div>
+                        </td>
+                    </tr>
+                </table>
+                <h2 class="document-title" style="margin-top: 6px;">{{ $report['title'] }}</h2>
                 <p class="document-subtitle">{{ $report['subtitle'] }} &bull; Lokasi: <strong>{{ $report['store']['name'] }} ({{ $report['store']['code'] }})</strong></p>
             </div>
             <div class="meta-col">

@@ -4,6 +4,7 @@ namespace App\Actions\Requests;
 
 use App\Actions\Orders\CreateDraftOrderForRequest;
 use App\Enums\PurchaseRequestItemStatus;
+use App\Enums\PurchaseRequestItemType;
 use App\Enums\PurchaseRequestStatus;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
@@ -33,13 +34,42 @@ class ProcessPurchaseRequest
 
             $lines = $purchaseRequest->items->keyBy('id');
             $approvalMap = $this->validateApprovals($lines, $approvals);
+            $approvalsKeyed = collect($approvals)->keyBy('id');
 
             foreach ($lines as $line) {
                 $quantity = $approvalMap[$line->id];
-                $line->update([
-                    'approved_quantity' => $quantity,
-                    'status' => $quantity > 0 ? PurchaseRequestItemStatus::APPROVED : PurchaseRequestItemStatus::REJECTED,
-                ]);
+                $itemApproval = $approvalsKeyed->get($line->id) ?? [];
+                $decision = $itemApproval['decision'] ?? null;
+                $bankQty = (int) ($itemApproval['bank_quantity'] ?? 0);
+
+                if ($line->type === PurchaseRequestItemType::SPECIAL) {
+                    if ($decision === PurchaseRequestItemStatus::BANK_PERMINTAAN->value && $bankQty === 0) {
+                        $bankQty = $quantity > 0 ? $quantity : $line->requested_quantity;
+                        $quantity = 0;
+                    }
+
+                    if ($quantity > 0 && $bankQty > 0) {
+                        $status = PurchaseRequestItemStatus::PARTIALLY_APPROVED;
+                    } elseif ($quantity > 0) {
+                        $status = PurchaseRequestItemStatus::APPROVED;
+                    } elseif ($bankQty > 0) {
+                        $status = PurchaseRequestItemStatus::BANK_PERMINTAAN;
+                    } else {
+                        $status = PurchaseRequestItemStatus::REJECTED;
+                    }
+
+                    $line->update([
+                        'approved_quantity' => $quantity,
+                        'bank_quantity' => $bankQty,
+                        'status' => $status,
+                    ]);
+                } else {
+                    $line->update([
+                        'approved_quantity' => $quantity,
+                        'bank_quantity' => 0,
+                        'status' => $quantity > 0 ? PurchaseRequestItemStatus::APPROVED : PurchaseRequestItemStatus::REJECTED,
+                    ]);
+                }
             }
 
             $this->transition->handle(
@@ -71,16 +101,32 @@ class ProcessPurchaseRequest
         }
 
         foreach ($lines as $line) {
-            if ($approvalMap[$line->id] < 0) {
+            $itemApproval = collect($approvals)->firstWhere('id', $line->id) ?? [];
+            $approvedQty = $approvalMap[$line->id];
+            $bankQty = (int) ($itemApproval['bank_quantity'] ?? 0);
+
+            if ($approvedQty < 0) {
                 throw ValidationException::withMessages(["items.{$line->id}.approved_quantity" => 'Jumlah disetujui tidak boleh negatif.']);
             }
 
-            if ($approvalMap[$line->id] > $line->requested_quantity) {
-                throw ValidationException::withMessages(["items.{$line->id}.approved_quantity" => 'Jumlah disetujui tidak boleh melebihi jumlah yang diminta.']);
+            if ($bankQty < 0) {
+                throw ValidationException::withMessages(["items.{$line->id}.bank_quantity" => 'Jumlah bank permintaan tidak boleh negatif.']);
+            }
+
+            if (($approvedQty + $bankQty) > $line->requested_quantity) {
+                throw ValidationException::withMessages(["items.{$line->id}.approved_quantity" => 'Total jumlah disetujui dan bank permintaan tidak boleh melebihi jumlah yang diminta.']);
             }
         }
 
-        if (! $approvalMap->contains(fn (int $quantity) => $quantity > 0)) {
+        $hasApprovedOrBank = collect($approvals)->contains(function (array $item) {
+            $approved = (int) ($item['approved_quantity'] ?? 0);
+            $bank = (int) ($item['bank_quantity'] ?? 0);
+            $decision = $item['decision'] ?? null;
+
+            return $approved > 0 || $bank > 0 || $decision === PurchaseRequestItemStatus::BANK_PERMINTAAN->value;
+        });
+
+        if (! $hasApprovedOrBank) {
             throw ValidationException::withMessages(['items' => 'Setujui minimal satu item, atau tolak seluruh permintaan.']);
         }
 

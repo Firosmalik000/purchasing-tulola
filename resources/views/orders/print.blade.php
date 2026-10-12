@@ -508,13 +508,29 @@
         </div>
     @endif
 
+    @php
+        $logoFile = public_path('images/logo/nts-logo-light.png');
+        $logoDataUri = file_exists($logoFile) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile)) : null;
+    @endphp
+
     <div class="sheet-container">
         <!-- Header -->
         <div class="doc-header">
             <div class="doc-brand">
-                <div class="brand-logo-text">TULOLA</div>
-                <div class="brand-sub">DIVISI PURCHASING & DISTRIBUSI LOGISTIK INTERNAL</div>
-                <div class="brand-desc">Head Office & Central Fulfillment • Shoptulola Jewelry</div>
+                <table style="border-collapse: collapse; border: none; margin: 0; padding: 0;">
+                    <tr>
+                        @if ($logoDataUri)
+                            <td style="border: none; padding: 0 12px 0 0; vertical-align: middle;">
+                                <img src="{{ $logoDataUri }}" alt="PT. Napak Tilas Seni" style="height: 48px; width: auto; display: block;" />
+                            </td>
+                        @endif
+                        <td style="border: none; padding: 0; vertical-align: middle;">
+                            <div class="brand-logo-text">TULOLA</div>
+                            <div class="brand-sub">PT. NAPAK TILAS SENI • DIVISI PURCHASING & LOGISTIK</div>
+                            <div class="brand-desc">Head Office & Central Fulfillment • Shoptulola Jewelry</div>
+                        </td>
+                    </tr>
+                </table>
             </div>
             <div class="doc-meta">
                 <div class="doc-type-title">SURAT ORDER INTERNAL</div>

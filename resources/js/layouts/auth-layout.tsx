@@ -53,7 +53,7 @@ export default function AuthLayout({
                                 TULOLA
                             </span>
                             <span className="text-[9px] font-semibold tracking-wider text-muted-foreground uppercase">
-                                Purchasing Portal
+                                PT. Napak Tilas Seni
                             </span>
                         </div>
                     </Link>
@@ -141,8 +141,7 @@ export default function AuthLayout({
                         &bull;
                     </span>
                     <span className="hidden sm:inline">
-                        &copy; {new Date().getFullYear()} PT Tulola Desain
-                        Perhiasan
+                        &copy; {new Date().getFullYear()} PT Napak Tilas Seni
                     </span>
                 </div>
             </footer>

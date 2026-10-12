@@ -1,4 +1,4 @@
-import { Form, Head, router } from '@inertiajs/react';
+import { Form, Head, Link, router } from '@inertiajs/react';
 import {
     Boxes,
     Layers,
@@ -64,10 +64,16 @@ type Props = {
         links: PaginationLink[];
         current_page?: number;
         per_page?: number;
+        total?: number;
     };
     categories: Option[];
     units: Option[];
-    filters: { search: string };
+    filters: {
+        search: string;
+        category_id?: string;
+        unit_id?: string;
+        status?: string;
+    };
 };
 
 export default function ItemIndex({
@@ -85,6 +91,16 @@ export default function ItemIndex({
     const [editingItem, setEditingItem] = useState<Item | null>(null);
     const [deletingItem, setDeletingItem] = useState<Item | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    const hasActiveFilters = Boolean(
+        filters.search ||
+        filters.category_id ||
+        filters.unit_id ||
+        filters.status,
+    );
+
+    const selectClass =
+        'h-8 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
     const currentPage = items.current_page || 1;
     const perPage = items.per_page || 15;
@@ -131,25 +147,87 @@ export default function ItemIndex({
                 {/* Main Full-Width Data Table Card */}
                 <Card className="border-border/70 shadow-2xs">
                     <CardHeader className="border-b border-border/40 px-4 py-3">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                             <div className="flex items-center gap-2">
                                 <Boxes className="size-4 text-primary" />
                                 <CardTitle className="text-sm font-semibold">
-                                    Daftar Item ({items.data.length})
+                                    Daftar Item ({items.total ?? items.data.length})
                                 </CardTitle>
                             </div>
 
-                            <Form action="/central/items" method="get">
-                                <div className="relative">
+                            <Form
+                                action="/central/items"
+                                method="get"
+                                className="flex flex-wrap items-center gap-2"
+                            >
+                                <div className="relative min-w-[180px] flex-1 sm:w-56 sm:flex-initial">
                                     <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                                     <Input
                                         name="search"
                                         defaultValue={filters.search}
                                         placeholder="Cari SKU atau nama item..."
                                         aria-label="Cari item"
-                                        className="h-8 w-full pl-8 text-xs sm:w-64"
+                                        className="h-8 w-full pl-8 text-xs"
                                     />
                                 </div>
+
+                                <select
+                                    name="category_id"
+                                    defaultValue={filters.category_id ?? ''}
+                                    className={selectClass}
+                                    aria-label="Filter kategori"
+                                >
+                                    <option value="">Semua Kategori</option>
+                                    {categories.map((c) => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    name="unit_id"
+                                    defaultValue={filters.unit_id ?? ''}
+                                    className={selectClass}
+                                    aria-label="Filter satuan"
+                                >
+                                    <option value="">Semua Satuan</option>
+                                    {units.map((u) => (
+                                        <option key={u.id} value={u.id}>
+                                            {u.name} ({u.symbol})
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <select
+                                    name="status"
+                                    defaultValue={filters.status ?? ''}
+                                    className={selectClass}
+                                    aria-label="Filter status"
+                                >
+                                    <option value="">Semua Status</option>
+                                    <option value="active">Aktif</option>
+                                    <option value="inactive">Nonaktif</option>
+                                </select>
+
+                                <Button
+                                    size="sm"
+                                    type="submit"
+                                    className="h-8 px-3 text-xs font-medium shadow-xs"
+                                >
+                                    Filter
+                                </Button>
+
+                                {hasActiveFilters && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 text-xs"
+                                        asChild
+                                    >
+                                        <Link href="/central/items">Reset</Link>
+                                    </Button>
+                                )}
                             </Form>
                         </div>
                     </CardHeader>
@@ -159,8 +237,30 @@ export default function ItemIndex({
                             <div className="p-8">
                                 <EmptyState
                                     icon={Boxes}
-                                    title="Belum ada item dalam katalog"
-                                    description="Gunakan tombol Tambah Item untuk mendaftarkan perhiasan atau material baru."
+                                    title={
+                                        hasActiveFilters
+                                            ? 'Tidak ada item yang sesuai filter'
+                                            : 'Belum ada item dalam katalog'
+                                    }
+                                    description={
+                                        hasActiveFilters
+                                            ? 'Coba sesuaikan kata kunci pencarian atau ubah opsi filter kategori, satuan, dan status.'
+                                            : 'Gunakan tombol Tambah Item untuk mendaftarkan perhiasan atau material baru.'
+                                    }
+                                    action={
+                                        hasActiveFilters ? (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                                className="mt-2 text-xs"
+                                            >
+                                                <Link href="/central/items">
+                                                    Reset Filter
+                                                </Link>
+                                            </Button>
+                                        ) : undefined
+                                    }
                                 />
                             </div>
                         ) : (

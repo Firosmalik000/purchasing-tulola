@@ -4,21 +4,34 @@ export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
     return (
         <svg
             {...props}
-            viewBox="0 0 24 24"
+            viewBox="0 0 100 100"
             fill="none"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
             xmlns="http://www.w3.org/2000/svg"
         >
+            {/* Signature Emblem Arch */}
             <path
-                d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"
-                fill="currentColor"
-                fillOpacity="0.15"
+                d="M 16,40 A 42,42 0 0,1 84,40"
+                stroke="currentColor"
+                strokeWidth="4"
+                strokeLinecap="round"
+                fill="none"
+                opacity="0.9"
             />
-            <path d="M3 6h18" />
-            <path d="M16 10a4 4 0 0 1-8 0" />
+            {/* Monogram NTS */}
+            <text
+                x="50"
+                y="74"
+                textAnchor="middle"
+                fill="currentColor"
+                style={{
+                    fontFamily: "'Century Gothic', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                    fontWeight: 700,
+                    fontSize: '32px',
+                    letterSpacing: '1px',
+                }}
+            >
+                NTS
+            </text>
         </svg>
     );
 }

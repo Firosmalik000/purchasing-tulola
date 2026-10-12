@@ -48,4 +48,16 @@ enum ManagementReportType: string
     {
         return in_array($this, [self::STOCK_BY_STORE, self::STOCK_VS_STANDARD], true);
     }
+
+    /** @return list<array{value: string, label: string, description: string, is_snapshot: bool}> */
+    public static function options(): array
+    {
+        return collect(self::cases())->map(fn (self $type) => [
+            'value' => $type->value,
+            'label' => $type->label(),
+            'description' => $type->description(),
+            'is_snapshot' => $type->isSnapshot(),
+        ])->values()->all();
+    }
 }
+

@@ -58,9 +58,15 @@ class PurchaseRequest extends Model
         return $this->hasMany(PurchaseRequestStatusHistory::class);
     }
 
+    /** @return HasMany<PurchaseOrder, $this> */
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(PurchaseOrder::class);
+    }
+
     /** @return HasOne<PurchaseOrder, $this> */
     public function purchaseOrder(): HasOne
     {
-        return $this->hasOne(PurchaseOrder::class);
+        return $this->hasOne(PurchaseOrder::class)->latestOfMany();
     }
 }

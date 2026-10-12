@@ -5,6 +5,7 @@ import {
     ChartNoAxesCombined,
     ChevronDown,
     ClipboardList,
+    Clock,
     LayoutDashboard,
     ShoppingCart,
     Store,
@@ -115,6 +116,11 @@ export function AppSidebar() {
             title: 'Permintaan (PR)',
             href: '/central/requests',
             icon: ClipboardList,
+        },
+        {
+            title: 'Bank Permintaan',
+            href: '/central/bank-requests',
+            icon: Clock,
         },
     ];
     centralOperasional.push({

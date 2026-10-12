@@ -26,7 +26,7 @@ class ManagementReportController extends Controller
 
         return Inertia::render('central/reports/index', [
             'report' => $action->handle($filters),
-            'reportTypes' => collect(ManagementReportType::cases())->map(fn ($type) => ['value' => $type->value, 'label' => $type->label(), 'description' => $type->description(), 'is_snapshot' => $type->isSnapshot()]),
+            'reportTypes' => ManagementReportType::options(),
             'stores' => Store::query()->orderBy('code')->get(['id', 'code', 'name']),
             'categories' => ItemCategory::query()->orderBy('name')->get(['id', 'code', 'name']),
             'orders' => PurchaseOrder::query()->where('status', '!=', PurchaseOrderStatus::CANCELLED)->latest('order_date')->limit(100)->get(['id', 'number', 'order_date']),
