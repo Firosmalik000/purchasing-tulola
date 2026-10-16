@@ -226,6 +226,12 @@ class BankRequestController extends Controller
         ], [
             'items.required' => 'Pilih minimal satu item dari Bank Permintaan.',
             'items.min' => 'Pilih minimal satu item dari Bank Permintaan.',
+            'items.*.id.required' => 'Identitas item bank permintaan wajib ada.',
+            'items.*.quantity.integer' => 'Jumlah item wajib berupa bilangan bulat.',
+            'items.*.quantity.min' => 'Jumlah item minimal 1.',
+            'expected_date.date' => 'Format estimasi tanggal kedatangan tidak valid.',
+            'notes.string' => 'Catatan harus berupa teks.',
+            'notes.max' => 'Catatan maksimal 2000 karakter.',
         ]);
 
         $orders = $action->handle(

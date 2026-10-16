@@ -49,6 +49,9 @@ class InvitationController extends Controller
 
         $validated = $request->validate([
             'password' => ['required', 'confirmed', Password::defaults()],
+        ], [
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
         ]);
 
         $user->forceFill([

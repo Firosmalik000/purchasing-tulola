@@ -21,4 +21,12 @@ class ProfileDeleteRequest extends FormRequest
             'password' => $this->currentPasswordRules(),
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'password.required' => 'Kata sandi saat ini wajib diisi.',
+            'password.current_password' => 'Kata sandi yang Anda masukkan salah.',
+        ];
+    }
 }

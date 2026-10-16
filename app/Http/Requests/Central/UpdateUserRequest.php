@@ -26,4 +26,21 @@ class UpdateUserRequest extends FormRequest
             'is_active' => ['required', 'boolean'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Nama pengguna wajib diisi.',
+            'name.string' => 'Nama pengguna harus berupa teks.',
+            'name.max' => 'Nama pengguna maksimal 255 karakter.',
+            'email.required' => 'Alamat email wajib diisi.',
+            'email.email' => 'Format alamat email tidak valid.',
+            'email.max' => 'Alamat email maksimal 255 karakter.',
+            'email.unique' => 'Alamat email sudah terdaftar.',
+            'role.required' => 'Peran pengguna wajib dipilih.',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
+            'is_active.required' => 'Status aktif wajib dipilih.',
+            'is_active.boolean' => 'Status aktif harus bernilai benar atau salah.',
+        ];
+    }
 }

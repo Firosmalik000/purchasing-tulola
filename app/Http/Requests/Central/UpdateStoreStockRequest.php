@@ -32,11 +32,23 @@ class UpdateStoreStockRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'store_id.required' => 'Toko wajib dipilih.',
+            'store_id.exists' => 'Toko yang dipilih tidak ditemukan atau tidak aktif.',
+            'item_id.required' => 'Barang wajib dipilih.',
+            'item_id.exists' => 'Barang yang dipilih tidak ditemukan atau tidak aktif.',
+            'quantity.required' => 'Jumlah stok wajib diisi.',
             'quantity.min' => 'Jumlah stok tidak boleh negatif.',
             'quantity.integer' => 'Jumlah stok wajib berupa bilangan bulat.',
+            'supplier_id.exists' => 'Supplier yang dipilih tidak ditemukan atau tidak aktif.',
             'unit_cost.min' => 'Harga satuan tidak boleh negatif.',
             'unit_cost.integer' => 'Harga satuan wajib berupa bilangan bulat.',
+            'movement_type.required' => 'Jenis pergerakan stok wajib dipilih.',
+            'movement_type.in' => 'Jenis pergerakan stok yang dipilih tidak valid.',
             'reason.required' => 'Alasan perubahan stok wajib diisi.',
+            'reason.string' => 'Alasan perubahan stok harus berupa teks.',
+            'reason.max' => 'Alasan perubahan stok maksimal 255 karakter.',
+            'notes.string' => 'Catatan harus berupa teks.',
+            'notes.max' => 'Catatan maksimal 2000 karakter.',
         ];
     }
 }

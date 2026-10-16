@@ -22,4 +22,19 @@ class ItemCategoryRequest extends FormRequest
             'is_active' => ['required', 'boolean'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Nama kategori wajib diisi.',
+            'name.string' => 'Nama kategori harus berupa teks.',
+            'name.max' => 'Nama kategori maksimal 255 karakter.',
+            'name.unique' => 'Nama kategori sudah digunakan.',
+            'code.string' => 'Kode kategori harus berupa teks.',
+            'code.max' => 'Kode kategori maksimal 24 karakter.',
+            'code.unique' => 'Kode kategori sudah digunakan.',
+            'is_active.required' => 'Status aktif wajib dipilih.',
+            'is_active.boolean' => 'Status aktif harus bernilai benar atau salah.',
+        ];
+    }
 }

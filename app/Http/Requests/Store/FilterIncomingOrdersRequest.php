@@ -30,4 +30,13 @@ class FilterIncomingOrdersRequest extends FormRequest
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'date_from.date' => 'Format tanggal awal tidak valid.',
+            'date_to.date' => 'Format tanggal akhir tidak valid.',
+            'date_to.after_or_equal' => 'Tanggal akhir harus sama dengan atau setelah tanggal awal.',
+        ];
+    }
 }

@@ -324,6 +324,111 @@ class InventoryManagementTest extends TestCase
         );
     }
 
+    public function test_inventory_index_filters_by_category(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $store = Store::query()->where('is_active', true)->where('code', 'HO-JKT')->first()
+            ?? Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+
+        $catA = ItemCategory::create(['name' => 'Kategori A', 'code' => 'KATA', 'is_active' => true]);
+        $catB = ItemCategory::create(['name' => 'Kategori B', 'code' => 'KATB', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+
+        $itemA = Item::create(['sku' => 'SKU-A', 'name' => 'Item A', 'item_category_id' => $catA->id, 'unit_id' => $unit->id, 'is_active' => true]);
+        $itemB = Item::create(['sku' => 'SKU-B', 'name' => 'Item B', 'item_category_id' => $catB->id, 'unit_id' => $unit->id, 'is_active' => true]);
+
+        $response = $this->actingAs($admin)->get(route('central.inventory.index', [
+            'category_id' => $catA->id,
+        ]))->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('central/inventory/index')
+            ->has('items.data', 1)
+            ->where('items.data.0.sku', 'SKU-A')
+            ->where('filters.category_id', (string) $catA->id)
+            ->has('categories', 2)
+        );
+    }
+
+    public function test_inventory_index_filters_by_stock_status(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $store = Store::query()->where('is_active', true)->where('code', 'HO-JKT')->first()
+            ?? Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+
+        $cat = ItemCategory::create(['name' => 'General', 'code' => 'GEN', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+
+        // Item 1: Stock 0 (Habis & Kritis)
+        $itemHabis = Item::create(['sku' => 'SKU-HABIS', 'name' => 'Item Habis', 'item_category_id' => $cat->id, 'unit_id' => $unit->id, 'min_stock' => 5, 'target_stock' => 10, 'is_active' => true]);
+        StoreStock::create(['store_id' => $store->id, 'item_id' => $itemHabis->id, 'quantity' => 0, 'average_unit_cost' => 1000, 'total_value' => 0]);
+
+        // Item 2: Stock 3, Min 5, Target 10 (Kritis)
+        $itemKritis = Item::create(['sku' => 'SKU-KRITIS', 'name' => 'Item Kritis', 'item_category_id' => $cat->id, 'unit_id' => $unit->id, 'min_stock' => 5, 'target_stock' => 10, 'is_active' => true]);
+        StoreStock::create(['store_id' => $store->id, 'item_id' => $itemKritis->id, 'quantity' => 3, 'average_unit_cost' => 1000, 'total_value' => 3000]);
+
+        // Item 3: Stock 8, Min 5, Target 10 (Restock)
+        $itemRestock = Item::create(['sku' => 'SKU-RESTOCK', 'name' => 'Item Restock', 'item_category_id' => $cat->id, 'unit_id' => $unit->id, 'min_stock' => 5, 'target_stock' => 10, 'is_active' => true]);
+        StoreStock::create(['store_id' => $store->id, 'item_id' => $itemRestock->id, 'quantity' => 8, 'average_unit_cost' => 1000, 'total_value' => 8000]);
+
+        // Item 4: Stock 15, Min 5, Target 10 (Aman)
+        $itemAman = Item::create(['sku' => 'SKU-AMAN', 'name' => 'Item Aman', 'item_category_id' => $cat->id, 'unit_id' => $unit->id, 'min_stock' => 5, 'target_stock' => 10, 'is_active' => true]);
+        StoreStock::create(['store_id' => $store->id, 'item_id' => $itemAman->id, 'quantity' => 15, 'average_unit_cost' => 1000, 'total_value' => 15000]);
+
+        // Filter status=habis
+        $this->actingAs($admin)->get(route('central.inventory.index', ['status' => 'habis']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('items.data', 1)
+                ->where('items.data.0.sku', 'SKU-HABIS')
+            );
+
+        // Filter status=kritis
+        $this->actingAs($admin)->get(route('central.inventory.index', ['status' => 'kritis']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('items.data', 2)
+            );
+
+        // Filter status=restock
+        $this->actingAs($admin)->get(route('central.inventory.index', ['status' => 'restock']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('items.data', 1)
+                ->where('items.data.0.sku', 'SKU-RESTOCK')
+            );
+
+        // Filter status=aman
+        $this->actingAs($admin)->get(route('central.inventory.index', ['status' => 'aman']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('items.data', 1)
+                ->where('items.data.0.sku', 'SKU-AMAN')
+            );
+    }
+
+    public function test_inventory_index_filters_by_item_status_inactive(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $store = Store::query()->where('is_active', true)->where('code', 'HO-JKT')->first()
+            ?? Store::factory()->create(['code' => 'HO-JKT', 'name' => 'Head Office Jakarta', 'is_active' => true]);
+
+        $cat = ItemCategory::create(['name' => 'General', 'code' => 'GEN', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+
+        $activeItem = Item::create(['sku' => 'SKU-ACTIVE', 'name' => 'Active Item', 'item_category_id' => $cat->id, 'unit_id' => $unit->id, 'is_active' => true]);
+        $inactiveItem = Item::create(['sku' => 'SKU-INACTIVE', 'name' => 'Inactive Item', 'item_category_id' => $cat->id, 'unit_id' => $unit->id, 'is_active' => false]);
+
+        $response = $this->actingAs($admin)->get(route('central.inventory.index', [
+            'status' => 'inactive',
+        ]))->assertOk();
+
+        $response->assertInertia(fn ($page) => $page
+            ->has('items.data', 1)
+            ->where('items.data.0.sku', 'SKU-INACTIVE')
+        );
+    }
+
     /** @return array{Store, Item} */
     private function inventoryContext(): array
     {

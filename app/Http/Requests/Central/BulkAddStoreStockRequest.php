@@ -39,15 +39,23 @@ class BulkAddStoreStockRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'store_id.required' => 'Toko wajib dipilih.',
+            'store_id.exists' => 'Toko yang dipilih tidak ditemukan atau tidak aktif.',
+            'movement_type.required' => 'Jenis pergerakan stok wajib dipilih.',
+            'movement_type.in' => 'Jenis pergerakan stok yang dipilih tidak valid.',
+            'supplier_id.exists' => 'Supplier yang dipilih tidak ditemukan atau tidak aktif.',
             'items.required' => 'Minimal pilih 1 barang untuk penambahan stok.',
             'items.min' => 'Minimal pilih 1 barang untuk penambahan stok.',
             'items.*.item_id.required' => 'Barang wajib dipilih.',
+            'items.*.item_id.exists' => 'Barang yang dipilih tidak ditemukan atau tidak aktif.',
             'items.*.quantity.required' => 'Jumlah stok wajib diisi.',
             'items.*.quantity.min' => 'Jumlah stok minimal 1.',
             'items.*.quantity.integer' => 'Jumlah stok wajib berupa bilangan bulat.',
             'items.*.unit_cost.min' => 'Harga satuan tidak boleh negatif.',
             'items.*.unit_cost.integer' => 'Harga satuan wajib berupa bilangan bulat.',
             'reason.required' => 'Alasan penambahan stok wajib diisi.',
+            'reason.max' => 'Alasan penambahan stok maksimal 255 karakter.',
+            'notes.max' => 'Catatan maksimal 2000 karakter.',
         ];
     }
 }

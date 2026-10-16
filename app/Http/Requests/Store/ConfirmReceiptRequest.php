@@ -31,11 +31,20 @@ class ConfirmReceiptRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'store_id.required' => 'Toko penerima wajib dipilih.',
+            'store_id.exists' => 'Toko yang dipilih tidak ditemukan.',
+            'received_at.required' => 'Waktu penerimaan wajib diisi.',
+            'received_at.date' => 'Format waktu penerimaan tidak valid.',
+            'received_at.before_or_equal' => 'Waktu penerimaan tidak boleh di masa depan.',
+            'notes.string' => 'Catatan harus berupa teks.',
+            'notes.max' => 'Catatan maksimal 2000 karakter.',
             'items.required' => 'Isi minimal satu jumlah penerimaan.',
             'items.min' => 'Isi minimal satu jumlah penerimaan.',
+            'items.*.allocation_id.required' => 'Alokasi pesanan wajib ada.',
+            'items.*.allocation_id.exists' => 'Alokasi pesanan tidak ditemukan.',
+            'items.*.received_quantity.required' => 'Jumlah diterima wajib diisi.',
             'items.*.received_quantity.gt' => 'Jumlah diterima wajib lebih dari 0.',
             'items.*.received_quantity.integer' => 'Jumlah diterima wajib berupa bilangan bulat.',
-            'received_at.before_or_equal' => 'Waktu penerimaan tidak boleh di masa depan.',
         ];
     }
 }

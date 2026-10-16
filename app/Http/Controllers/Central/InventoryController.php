@@ -11,6 +11,7 @@ use App\Http\Requests\Central\BulkAddStoreStockRequest;
 use App\Http\Requests\Central\UpdateStoreStockRequest;
 use App\Http\Requests\Central\UpdateStoreStockStandardRequest;
 use App\Models\Item;
+use App\Models\ItemCategory;
 use App\Models\PurchaseOrder;
 use App\Models\Receipt;
 use App\Models\StockBatch;
@@ -43,6 +44,8 @@ class InventoryController extends Controller
         $storeId = $centralStore?->id;
         $search = trim((string) $request->string('search'));
         $tab = $request->string('tab')->toString() ?: 'stocks';
+        $categoryId = $request->filled('category_id') ? (int) $request->input('category_id') : null;
+        $status = $request->filled('status') ? (string) $request->input('status') : '';
         $movementType = $request->string('movement_type')->toString();
 
         $dateFrom = $request->filled('date_from')
@@ -54,7 +57,8 @@ class InventoryController extends Controller
 
         $movementsQuery = StockMovement::query()
             ->with([
-                'item:id,sku,name,unit_id',
+                'item:id,sku,name,unit_id,item_category_id',
+                'item.category:id,name',
                 'item.unit:id,symbol',
                 'creator:id,name',
                 'supplier:id,code,name',
@@ -65,6 +69,7 @@ class InventoryController extends Controller
             ->when($dateFrom, fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo, fn ($query) => $query->whereDate('created_at', '<=', $dateTo))
             ->when($movementType !== '', fn ($query) => $query->where('movement_type', $movementType))
+            ->when($categoryId !== null, fn ($query) => $query->whereHas('item', fn ($nested) => $nested->where('item_category_id', $categoryId)))
             ->when($search !== '', fn ($query) => $query->whereHas('item', fn ($nested) => $nested->where('sku', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
             ->latest('id');
 
@@ -159,18 +164,36 @@ class InventoryController extends Controller
             ],
         );
 
+        $itemsQuery = Item::query()
+            ->with([
+                'category:id,name',
+                'unit:id,symbol',
+                'stocks' => fn ($query) => $query->where('store_id', $storeId),
+                'stockStandards' => fn ($query) => $query->where('store_id', $storeId),
+            ])
+            ->when($status === 'inactive', fn ($query) => $query->where('is_active', false), fn ($query) => $query->where('is_active', true))
+            ->when($categoryId !== null, fn ($query) => $query->where('item_category_id', $categoryId))
+            ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('sku', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")));
+
+        if ($status !== '' && in_array(strtolower($status), ['aman', 'restock', 'menipis', 'kritis', 'habis'], true)) {
+            $storeIdInt = (int) $storeId;
+            $qtySql = "(SELECT COALESCE(quantity, 0) FROM store_stocks WHERE store_stocks.item_id = items.id AND store_stocks.store_id = {$storeIdInt} LIMIT 1)";
+            $minSql = "COALESCE((SELECT min_quantity FROM store_stock_standards WHERE store_stock_standards.item_id = items.id AND store_stock_standards.store_id = {$storeIdInt} LIMIT 1), items.min_stock, 0)";
+            $targetSql = "COALESCE((SELECT standard_quantity FROM store_stock_standards WHERE store_stock_standards.item_id = items.id AND store_stock_standards.store_id = {$storeIdInt} LIMIT 1), items.target_stock, {$minSql})";
+
+            match (strtolower($status)) {
+                'habis' => $itemsQuery->whereRaw("COALESCE({$qtySql}, 0) <= 0"),
+                'kritis' => $itemsQuery->whereRaw("(COALESCE({$qtySql}, 0) <= 0 OR ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}))"),
+                'restock', 'menipis' => $itemsQuery->whereRaw("COALESCE({$qtySql}, 0) > 0 AND NOT ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}) AND {$targetSql} > 0 AND COALESCE({$qtySql}, 0) < {$targetSql}"),
+                'aman' => $itemsQuery->whereRaw("COALESCE({$qtySql}, 0) > 0 AND NOT ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}) AND ({$targetSql} <= 0 OR COALESCE({$qtySql}, 0) >= {$targetSql})"),
+            };
+        }
+
         return Inertia::render('central/inventory/index', [
             'centralStore' => $centralStore ? ['id' => $centralStore->id, 'code' => $centralStore->code, 'name' => $centralStore->name] : null,
             'selectedStoreId' => $storeId,
-            'items' => Item::query()->where('is_active', true)
-                ->with([
-                    'category:id,name',
-                    'unit:id,symbol',
-                    'stocks' => fn ($query) => $query->where('store_id', $storeId),
-                    'stockStandards' => fn ($query) => $query->where('store_id', $storeId),
-                ])
-                ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('sku', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")))
-                ->orderBy('name')->paginate(Paging::perPage($request))->withQueryString(),
+            'items' => $itemsQuery->orderBy('name')->paginate(Paging::perPage($request))->withQueryString(),
+            'categories' => ItemCategory::query()->orderBy('name')->get(['id', 'name']),
             'allItems' => Item::query()->where('is_active', true)
                 ->with('unit:id,symbol')
                 ->orderBy('name')
@@ -189,6 +212,8 @@ class InventoryController extends Controller
             'filters' => [
                 'search' => $search,
                 'tab' => $tab,
+                'category_id' => $categoryId ? (string) $categoryId : '',
+                'status' => $status,
                 'movement_type' => $movementType,
                 'date_from' => $dateFrom,
                 'date_to' => $dateTo,
@@ -262,7 +287,14 @@ class InventoryController extends Controller
     {
         Gate::authorize('viewAny', StoreStock::class);
         $search = $request->string('search')->toString();
-        $report = $service->buildReportData(search: $search, actor: $request->user());
+        $categoryId = $request->filled('category_id') ? (int) $request->input('category_id') : null;
+        $status = $request->filled('status') ? (string) $request->input('status') : null;
+        $report = $service->buildReportData(
+            search: $search,
+            actor: $request->user(),
+            categoryId: $categoryId,
+            statusFilter: $status,
+        );
 
         return response()->view('reports.inventory-stock', [
             'report' => $report,
@@ -274,7 +306,14 @@ class InventoryController extends Controller
     {
         Gate::authorize('viewAny', StoreStock::class);
         $search = $request->string('search')->toString();
-        $report = $service->buildReportData(search: $search, actor: $request->user());
+        $categoryId = $request->filled('category_id') ? (int) $request->input('category_id') : null;
+        $status = $request->filled('status') ? (string) $request->input('status') : null;
+        $report = $service->buildReportData(
+            search: $search,
+            actor: $request->user(),
+            categoryId: $categoryId,
+            statusFilter: $status,
+        );
 
         return $service->downloadPdf($report);
     }
@@ -283,7 +322,14 @@ class InventoryController extends Controller
     {
         Gate::authorize('viewAny', StoreStock::class);
         $search = $request->string('search')->toString();
-        $report = $service->buildReportData(search: $search, actor: $request->user());
+        $categoryId = $request->filled('category_id') ? (int) $request->input('category_id') : null;
+        $status = $request->filled('status') ? (string) $request->input('status') : null;
+        $report = $service->buildReportData(
+            search: $search,
+            actor: $request->user(),
+            categoryId: $categoryId,
+            statusFilter: $status,
+        );
 
         return $service->downloadExcel($report);
     }
@@ -292,7 +338,14 @@ class InventoryController extends Controller
     {
         Gate::authorize('viewAny', StoreStock::class);
         $search = $request->string('search')->toString();
-        $report = $service->buildReportData(search: $search, actor: $request->user());
+        $categoryId = $request->filled('category_id') ? (int) $request->input('category_id') : null;
+        $status = $request->filled('status') ? (string) $request->input('status') : null;
+        $report = $service->buildReportData(
+            search: $search,
+            actor: $request->user(),
+            categoryId: $categoryId,
+            statusFilter: $status,
+        );
 
         return $service->downloadCsv($report);
     }

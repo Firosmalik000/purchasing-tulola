@@ -125,16 +125,31 @@ class SavePurchaseRequestRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'required_date.date' => 'Format tanggal kebutuhan tidak valid.',
+            'required_date.after_or_equal' => 'Tanggal kebutuhan harus berupa tanggal hari ini atau setelahnya.',
+            'notes.string' => 'Catatan harus berupa teks.',
+            'notes.max' => 'Catatan maksimal 2000 karakter.',
             'stock_items.*.item_id.required' => 'Item wajib dipilih.',
+            'stock_items.*.item_id.distinct' => 'Item tidak boleh dipilih berulang.',
+            'stock_items.*.item_id.exists' => 'Item yang dipilih tidak ditemukan atau tidak aktif.',
+            'stock_items.*.requested_quantity.required' => 'Jumlah permintaan wajib diisi.',
             'stock_items.*.requested_quantity.gt' => 'Jumlah permintaan wajib lebih dari 0.',
             'stock_items.*.requested_quantity.integer' => 'Jumlah permintaan wajib berupa bilangan bulat.',
             'special_items.*.name.required' => 'Nama permintaan khusus wajib diisi.',
+            'special_items.*.name.max' => 'Nama permintaan khusus maksimal 255 karakter.',
+            'special_items.*.description.max' => 'Deskripsi permintaan khusus maksimal 2000 karakter.',
             'special_items.*.sample_image.image' => 'Foto sampel harus berupa file gambar.',
             'special_items.*.sample_image.mimes' => 'Foto sampel harus berformat JPG, PNG, atau WebP.',
             'special_items.*.sample_image.max' => 'Ukuran foto sampel maksimal 5 MB.',
-            'special_items.*.requested_quantity.gt' => 'Jumlah permintaan wajib lebih dari 0.',
-            'special_items.*.requested_quantity.integer' => 'Jumlah permintaan wajib berupa bilangan bulat.',
+            'special_items.*.unit_id.required' => 'Satuan permintaan khusus wajib dipilih.',
+            'special_items.*.unit_id.exists' => 'Satuan yang dipilih tidak ditemukan atau tidak aktif.',
+            'special_items.*.requested_quantity.required' => 'Jumlah permintaan khusus wajib diisi.',
+            'special_items.*.requested_quantity.gt' => 'Jumlah permintaan khusus wajib lebih dari 0.',
+            'special_items.*.requested_quantity.integer' => 'Jumlah permintaan khusus wajib berupa bilangan bulat.',
+            'special_items.*.required_date.date' => 'Format tanggal kebutuhan permintaan khusus tidak valid.',
+            'special_items.*.required_date.after_or_equal' => 'Tanggal kebutuhan permintaan khusus harus berupa tanggal hari ini atau setelahnya.',
             'special_items.*.reason.required' => 'Alasan permintaan khusus wajib diisi.',
+            'special_items.*.reason.max' => 'Alasan permintaan khusus maksimal 2000 karakter.',
         ];
     }
 }

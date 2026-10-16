@@ -22,4 +22,13 @@ class UpdatePurchaseOrderRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:2000'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'expected_date.date' => 'Format estimasi tanggal kedatangan tidak valid.',
+            'notes.string' => 'Catatan harus berupa teks.',
+            'notes.max' => 'Catatan maksimal 2000 karakter.',
+        ];
+    }
 }

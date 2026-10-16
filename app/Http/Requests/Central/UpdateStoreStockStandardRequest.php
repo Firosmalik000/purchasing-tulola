@@ -27,6 +27,11 @@ class UpdateStoreStockStandardRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'store_id.required' => 'Toko wajib dipilih.',
+            'store_id.exists' => 'Toko yang dipilih tidak ditemukan atau tidak aktif.',
+            'item_id.required' => 'Barang wajib dipilih.',
+            'item_id.exists' => 'Barang yang dipilih tidak ditemukan atau tidak aktif.',
+            'standard_quantity.required' => 'Target stok penambahan wajib diisi.',
             'standard_quantity.integer' => 'Target stok penambahan wajib berupa bilangan bulat.',
             'standard_quantity.min' => 'Target stok penambahan tidak boleh negatif.',
             'min_quantity.integer' => 'Standar stok minimum wajib berupa bilangan bulat.',

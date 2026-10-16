@@ -25,8 +25,13 @@ class InventoryStockReportService
      *
      * @return array<string, mixed>
      */
-    public function buildReportData(?int $storeId = null, ?string $search = null, ?User $actor = null): array
-    {
+    public function buildReportData(
+        ?int $storeId = null,
+        ?string $search = null,
+        ?User $actor = null,
+        ?int $categoryId = null,
+        ?string $statusFilter = null,
+    ): array {
         $centralStore = null;
 
         if ($storeId) {
@@ -42,7 +47,8 @@ class InventoryStockReportService
         $search = trim((string) $search);
 
         $query = Item::query()
-            ->where('is_active', true)
+            ->when($statusFilter === 'inactive', fn ($q) => $q->where('is_active', false), fn ($q) => $q->where('is_active', true))
+            ->when($categoryId !== null, fn ($q) => $q->where('item_category_id', $categoryId))
             ->with([
                 'category:id,name,code',
                 'unit:id,name,symbol',
@@ -118,11 +124,25 @@ class InventoryStockReportService
                 $countAman++;
             }
 
+            if ($statusFilter !== null && $statusFilter !== '') {
+                $matchesStatus = match (strtolower($statusFilter)) {
+                    'habis' => $status === 'HABIS',
+                    'kritis' => in_array($status, ['KRITIS', 'HABIS'], true),
+                    'restock', 'menipis' => $status === 'MENIPIS',
+                    'aman' => $status === 'AMAN',
+                    'active', 'inactive' => true,
+                    default => true,
+                };
+                if (! $matchesStatus) {
+                    continue;
+                }
+            }
+
             $totalPhysicalQty += $currentQty;
             $totalValuation += $itemTotalValue;
 
             $rows[] = [
-                'no' => $index + 1,
+                'no' => count($rows) + 1,
                 'id' => $item->id,
                 'sku' => $item->sku,
                 'name' => $item->name,

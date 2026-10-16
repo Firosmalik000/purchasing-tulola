@@ -26,4 +26,24 @@ class SupplierRequest extends FormRequest
             'is_active' => ['required', 'boolean'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'code.required' => 'Kode supplier wajib diisi.',
+            'code.string' => 'Kode supplier harus berupa teks.',
+            'code.max' => 'Kode supplier maksimal 32 karakter.',
+            'code.unique' => 'Kode supplier sudah digunakan.',
+            'name.required' => 'Nama supplier wajib diisi.',
+            'name.string' => 'Nama supplier harus berupa teks.',
+            'name.max' => 'Nama supplier maksimal 255 karakter.',
+            'contact_person.max' => 'Nama kontak person maksimal 255 karakter.',
+            'phone.max' => 'Nomor telepon maksimal 32 karakter.',
+            'email.email' => 'Format alamat email supplier tidak valid.',
+            'email.max' => 'Alamat email supplier maksimal 255 karakter.',
+            'address.max' => 'Alamat supplier maksimal 2000 karakter.',
+            'is_active.required' => 'Status aktif wajib dipilih.',
+            'is_active.boolean' => 'Status aktif harus bernilai benar atau salah.',
+        ];
+    }
 }

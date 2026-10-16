@@ -29,6 +29,11 @@ class AssignStoreUserRequest extends FormRequest
 
     public function messages(): array
     {
-        return ['user_id.exists' => 'Pengguna PIC toko aktif tidak ditemukan.'];
+        return [
+            'user_id.required' => 'Pengguna wajib dipilih.',
+            'user_id.exists' => 'Pengguna PIC toko aktif tidak ditemukan.',
+            'is_pic.required' => 'Status PIC wajib ditentukan.',
+            'is_pic.boolean' => 'Status PIC harus bernilai benar atau salah.',
+        ];
     }
 }

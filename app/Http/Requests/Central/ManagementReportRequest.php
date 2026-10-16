@@ -27,6 +27,18 @@ class ManagementReportRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'date_from.date' => 'Format tanggal awal tidak valid.',
+            'date_to.date' => 'Format tanggal akhir tidak valid.',
+            'date_to.after_or_equal' => 'Tanggal akhir harus sama dengan atau setelah tanggal awal.',
+            'store_id.exists' => 'Toko yang dipilih tidak ditemukan.',
+            'category_id.exists' => 'Kategori yang dipilih tidak ditemukan.',
+            'order_id.exists' => 'Pesanan yang dipilih tidak ditemukan.',
+        ];
+    }
+
     /** @return array{report: string, date_from: string, date_to: string, store_id: int|null, category_id: int|null, order_id: int|null} */
     public function filters(): array
     {

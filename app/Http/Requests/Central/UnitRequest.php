@@ -22,4 +22,20 @@ class UnitRequest extends FormRequest
             'is_active' => ['required', 'boolean'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Nama satuan wajib diisi.',
+            'name.string' => 'Nama satuan harus berupa teks.',
+            'name.max' => 'Nama satuan maksimal 255 karakter.',
+            'name.unique' => 'Nama satuan sudah digunakan.',
+            'symbol.required' => 'Simbol satuan wajib diisi.',
+            'symbol.string' => 'Simbol satuan harus berupa teks.',
+            'symbol.max' => 'Simbol satuan maksimal 24 karakter.',
+            'symbol.unique' => 'Simbol satuan sudah digunakan.',
+            'is_active.required' => 'Status aktif wajib dipilih.',
+            'is_active.boolean' => 'Status aktif harus bernilai benar atau salah.',
+        ];
+    }
 }

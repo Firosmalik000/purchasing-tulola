@@ -29,4 +29,23 @@ class CreateUserRequest extends FormRequest
             'is_pic' => ['nullable', 'boolean'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'name.required' => 'Nama pengguna wajib diisi.',
+            'name.string' => 'Nama pengguna harus berupa teks.',
+            'name.max' => 'Nama pengguna maksimal 255 karakter.',
+            'email.required' => 'Alamat email wajib diisi.',
+            'email.email' => 'Format alamat email tidak valid.',
+            'email.max' => 'Alamat email maksimal 255 karakter.',
+            'email.unique' => 'Alamat email sudah terdaftar.',
+            'role.required' => 'Peran pengguna wajib dipilih.',
+            'password.confirmed' => 'Konfirmasi kata sandi tidak cocok.',
+            'store_id.exists' => 'Toko yang dipilih tidak ditemukan.',
+            'is_pic.boolean' => 'Status PIC harus bernilai benar atau salah.',
+            'is_active.boolean' => 'Status aktif harus bernilai benar atau salah.',
+            'send_invitation.boolean' => 'Pilihan kirim undangan harus bernilai benar atau salah.',
+        ];
+    }
 }

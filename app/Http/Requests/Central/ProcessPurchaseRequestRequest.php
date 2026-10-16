@@ -32,9 +32,15 @@ class ProcessPurchaseRequestRequest extends FormRequest
     {
         return [
             'items.required' => 'Detail persetujuan item wajib diisi.',
+            'items.min' => 'Minimal pilih 1 item untuk diproses.',
+            'items.*.id.required' => 'Identitas item wajib ada.',
             'items.*.approved_quantity.required' => 'Jumlah disetujui wajib diisi.',
             'items.*.approved_quantity.min' => 'Jumlah disetujui tidak boleh negatif.',
             'items.*.approved_quantity.integer' => 'Jumlah disetujui wajib berupa bilangan bulat.',
+            'items.*.bank_quantity.min' => 'Jumlah simpan di bank permintaan tidak boleh negatif.',
+            'items.*.bank_quantity.integer' => 'Jumlah simpan di bank permintaan wajib berupa bilangan bulat.',
+            'items.*.decision.in' => 'Keputusan yang dipilih tidak valid.',
+            'notes.max' => 'Catatan maksimal 2000 karakter.',
         ];
     }
 }

@@ -55,6 +55,8 @@ type Item = {
     id: number;
     sku: string;
     name: string;
+    category?: { id: number; name: string } | null;
+    is_active?: boolean;
     cost_price?: string | null;
     min_stock?: string | null;
     target_stock?: string | null;
@@ -127,6 +129,7 @@ type Props = {
         current_page?: number;
         per_page?: number;
     };
+    categories?: { id: number; name: string }[];
     allItems: SimpleItem[];
     movements: {
         data: Movement[];
@@ -139,6 +142,8 @@ type Props = {
     filters: {
         search: string;
         tab?: string;
+        category_id?: string;
+        status?: string;
         movement_type?: string;
         date_from?: string;
         date_to?: string;
@@ -155,6 +160,7 @@ export default function InventoryIndex({
     centralStore,
     selectedStoreId,
     items,
+    categories = [],
     allItems,
     movements,
     suppliers,
@@ -361,9 +367,11 @@ export default function InventoryIndex({
         }
     };
 
-    const exportQuery = filters.search
-        ? `?search=${encodeURIComponent(filters.search)}`
-        : '';
+    const exportParams = new URLSearchParams();
+    if (filters.search) exportParams.set('search', filters.search);
+    if (filters.category_id) exportParams.set('category_id', filters.category_id);
+    if (filters.status) exportParams.set('status', filters.status);
+    const exportQuery = exportParams.toString() ? `?${exportParams.toString()}` : '';
 
     return (
         <>
@@ -477,7 +485,7 @@ export default function InventoryIndex({
                                 <Form
                                     action="/central/inventory"
                                     method="get"
-                                    className="flex flex-1 items-center gap-2 md:max-w-md"
+                                    className="flex flex-wrap items-center gap-2"
                                 >
                                     <input
                                         type="hidden"
@@ -505,22 +513,70 @@ export default function InventoryIndex({
                                             value={filters.date_to}
                                         />
                                     )}
-                                    <div className="relative flex-1">
-                                        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                    <div className="relative min-w-[160px] flex-1 sm:w-52 sm:flex-initial">
+                                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                                         <Input
                                             name="search"
                                             defaultValue={filters.search}
-                                            placeholder="Cari SKU atau nama barang..."
-                                            className="h-9 pl-9 text-xs"
+                                            placeholder="Cari SKU atau nama..."
+                                            className="h-8.5 w-full pl-8 text-xs"
                                         />
                                     </div>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-9 px-4 font-medium"
+
+                                    <select
+                                        name="category_id"
+                                        defaultValue={filters.category_id ?? ''}
+                                        className="h-8.5 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                        aria-label="Filter kategori"
                                     >
-                                        Cari
+                                        <option value="">Semua Kategori</option>
+                                        {categories.map((c) => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.name}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    <select
+                                        name="status"
+                                        defaultValue={filters.status ?? ''}
+                                        className="h-8.5 rounded-md border border-input bg-background px-2.5 py-1 text-xs shadow-2xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                        aria-label="Filter status"
+                                    >
+                                        <option value="">Semua Status</option>
+                                        <optgroup label="Status Stok">
+                                            <option value="aman">Stok Aman</option>
+                                            <option value="restock">Perlu Restock</option>
+                                            <option value="kritis">Stok Kritis (≤ Min)</option>
+                                            <option value="habis">Stok Habis (0)</option>
+                                        </optgroup>
+                                        <optgroup label="Status Master Item">
+                                            <option value="active">Item Aktif</option>
+                                            <option value="inactive">Item Nonaktif</option>
+                                        </optgroup>
+                                    </select>
+
+                                    <Button
+                                        size="sm"
+                                        type="submit"
+                                        className="h-8.5 px-3 text-xs font-medium shadow-xs"
+                                    >
+                                        Filter
                                     </Button>
+
+                                    {(filters.search || filters.category_id || filters.status) && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                            asChild
+                                        >
+                                            <a href={`/central/inventory?tab=${activeTab}`}>
+                                                <RotateCcw className="mr-1 size-3" />
+                                                Reset
+                                            </a>
+                                        </Button>
+                                    )}
                                 </Form>
                             </div>
 
@@ -535,6 +591,11 @@ export default function InventoryIndex({
                                                 tab: 'stocks',
                                                 search:
                                                     filters.search || undefined,
+                                                category_id:
+                                                    filters.category_id ||
+                                                    undefined,
+                                                status:
+                                                    filters.status || undefined,
                                             },
                                             {
                                                 preserveState: true,
@@ -560,6 +621,11 @@ export default function InventoryIndex({
                                                 tab: 'history',
                                                 search:
                                                     filters.search || undefined,
+                                                category_id:
+                                                    filters.category_id ||
+                                                    undefined,
+                                                status:
+                                                    filters.status || undefined,
                                                 movement_type:
                                                     filters.movement_type ||
                                                     undefined,
@@ -763,15 +829,19 @@ export default function InventoryIndex({
                                                     item.target_stock ??
                                                     minCritical;
 
+                                                const isOutOfStock = Number(current) <= 0;
                                                 const isCritical =
+                                                    !isOutOfStock &&
                                                     Number(minCritical) > 0 &&
                                                     Number(current) <=
                                                         Number(minCritical);
                                                 const isNeedRestock =
+                                                    !isOutOfStock &&
                                                     !isCritical &&
                                                     Number(targetStock) > 0 &&
                                                     Number(current) <
                                                         Number(targetStock);
+                                                const isAlert = isOutOfStock || isCritical;
 
                                                 const rowNumber =
                                                     (currentPage - 1) *
@@ -782,7 +852,7 @@ export default function InventoryIndex({
                                                 return (
                                                     <tr
                                                         key={item.id}
-                                                        className={`transition-colors ${isCritical ? 'bg-rose-500/5 hover:bg-rose-500/10' : 'hover:bg-muted/20'}`}
+                                                        className={`transition-colors ${isAlert ? 'bg-rose-500/5 hover:bg-rose-500/10' : 'hover:bg-muted/20'}`}
                                                     >
                                                         <td className="px-3 py-3 text-center font-mono text-muted-foreground">
                                                             {rowNumber}
@@ -791,15 +861,28 @@ export default function InventoryIndex({
                                                             <p className="font-semibold text-foreground">
                                                                 {item.name}
                                                             </p>
-                                                            <p className="font-mono text-[11px] text-muted-foreground">
-                                                                {item.sku}
-                                                            </p>
+                                                            <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px] text-muted-foreground">
+                                                                <span>{item.sku}</span>
+                                                                {item.category?.name && (
+                                                                    <>
+                                                                        <span>&bull;</span>
+                                                                        <span className="inline-flex items-center rounded-sm bg-muted/80 px-1.5 py-0.5 font-sans text-[10px] font-medium text-muted-foreground">
+                                                                            {item.category.name}
+                                                                        </span>
+                                                                    </>
+                                                                )}
+                                                                {item.is_active === false && (
+                                                                    <span className="inline-flex items-center rounded-sm bg-slate-500/15 px-1.5 py-0.5 font-sans text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                                                                        Nonaktif
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-3 py-3 text-center font-mono text-muted-foreground">
                                                             {item.unit.symbol}
                                                         </td>
                                                         <td
-                                                            className={`px-4 py-3 text-right font-mono font-bold tabular-nums ${isCritical ? 'font-extrabold text-rose-600 dark:text-rose-400' : 'text-foreground'}`}
+                                                            className={`px-4 py-3 text-right font-mono font-bold tabular-nums ${isAlert ? 'font-extrabold text-rose-600 dark:text-rose-400' : 'text-foreground'}`}
                                                         >
                                                             {formatQuantity(
                                                                 current,
@@ -816,17 +899,20 @@ export default function InventoryIndex({
                                                             )}
                                                         </td>
                                                         <td className="px-3 py-3 text-center">
-                                                            {isCritical ? (
+                                                            {isOutOfStock ? (
+                                                                <span className="inline-flex items-center gap-1 rounded-full border border-rose-600/30 bg-rose-600/15 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-300">
+                                                                    <AlertCircle className="size-3" />
+                                                                    Habis (0)
+                                                                </span>
+                                                            ) : isCritical ? (
                                                                 <span className="inline-flex items-center gap-1 rounded-full border border-rose-500/30 bg-rose-500/15 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
                                                                     <AlertCircle className="size-3" />
-                                                                    Kritis (≤
-                                                                    Min)
+                                                                    Kritis (≤ Min)
                                                                 </span>
                                                             ) : isNeedRestock ? (
                                                                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
                                                                     <Clock className="size-3" />
-                                                                    Perlu
-                                                                    Restock
+                                                                    Perlu Restock
                                                                 </span>
                                                             ) : (
                                                                 <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">

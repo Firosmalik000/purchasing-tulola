@@ -27,4 +27,15 @@ class FilterPurchaseRequestsRequest extends FormRequest
             'keyword' => ['nullable', 'string', 'max:100'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'store_id.exists' => 'Toko yang dipilih tidak ditemukan.',
+            'date_from.date' => 'Format tanggal awal tidak valid.',
+            'date_to.date' => 'Format tanggal akhir tidak valid.',
+            'date_to.after_or_equal' => 'Tanggal akhir harus sama dengan atau setelah tanggal awal.',
+            'keyword.max' => 'Kata kunci pencarian maksimal 100 karakter.',
+        ];
+    }
 }
