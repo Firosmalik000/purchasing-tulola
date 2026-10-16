@@ -27,9 +27,9 @@ class UpdateStoreStockStandard
 
             $centralStore = Store::centralStore();
             if ($centralStore && $store->id === $centralStore->id) {
-                $item->target_stock = (int) $quantity;
+                $item->target_stock = max(0, (int) $quantity);
                 if ($minQuantity !== null) {
-                    $item->min_stock = $minQuantity !== '' ? (int) $minQuantity : 0;
+                    $item->min_stock = $minQuantity !== '' ? max(0, (int) $minQuantity) : null;
                 }
                 $item->saveQuietly();
             }

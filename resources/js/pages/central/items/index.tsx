@@ -88,6 +88,11 @@ export default function ItemIndex({
     const [createItemOpen, setCreateItemOpen] = useState(false);
     const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
     const [createUnitOpen, setCreateUnitOpen] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<Option | null>(null);
+    const [deletingCategory, setDeletingCategory] = useState<Option | null>(
+        null,
+    );
+    const [isDeletingCategory, setIsDeletingCategory] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | null>(null);
     const [deletingItem, setDeletingItem] = useState<Item | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -674,11 +679,12 @@ export default function ItemIndex({
                                             min="0"
                                             step="1"
                                             defaultValue={
-                                                editingItem.cost_price
+                                                editingItem.cost_price !== null &&
+                                                editingItem.cost_price !== undefined
                                                     ? Number(
                                                           editingItem.cost_price,
                                                       )
-                                                    : 0
+                                                    : undefined
                                             }
                                             className="h-8.5 font-mono text-xs"
                                         />
@@ -827,86 +833,297 @@ export default function ItemIndex({
                 {/* Dialog: Category Manager */}
                 <Dialog
                     open={createCategoryOpen}
-                    onOpenChange={setCreateCategoryOpen}
+                    onOpenChange={(open) => {
+                        setCreateCategoryOpen(open);
+                        if (!open) {
+                            setEditingCategory(null);
+                            setDeletingCategory(null);
+                        }
+                    }}
                 >
                     <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle className="text-base font-semibold">
-                                Kelola Kategori Item
+                                {deletingCategory
+                                    ? `Hapus Kategori: ${deletingCategory.name}`
+                                    : editingCategory
+                                    ? `Edit Kategori: ${editingCategory.name}`
+                                    : 'Kelola Kategori Item'}
                             </DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-4 pt-2">
+                        {deletingCategory ? (
+                            <div className="space-y-4 pt-2">
+                                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                                    <p className="font-medium text-foreground">
+                                        Hapus kategori {deletingCategory.name}?
+                                    </p>
+                                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                                        Kategori hanya dapat dihapus jika belum
+                                        digunakan oleh item. Tindakan ini tidak
+                                        dapat dibatalkan.
+                                    </p>
+                                </div>
+                                <DialogFooter className="gap-2 sm:gap-0">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-8 text-xs"
+                                        disabled={isDeletingCategory}
+                                        onClick={() =>
+                                            setDeletingCategory(null)
+                                        }
+                                    >
+                                        Batal
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="sm"
+                                        className="h-8 text-xs"
+                                        disabled={isDeletingCategory}
+                                        onClick={() => {
+                                            setIsDeletingCategory(true);
+                                            router.delete(
+                                                `/central/item-categories/${deletingCategory.id}`,
+                                                {
+                                                    preserveScroll: true,
+                                                    onSuccess: () =>
+                                                        setDeletingCategory(
+                                                            null,
+                                                        ),
+                                                    onFinish: () =>
+                                                        setIsDeletingCategory(
+                                                            false,
+                                                        ),
+                                                },
+                                            );
+                                        }}
+                                    >
+                                        {isDeletingCategory
+                                            ? 'Menghapus...'
+                                            : 'Ya, Hapus Kategori'}
+                                    </Button>
+                                </DialogFooter>
+                            </div>
+                        ) : editingCategory ? (
                             <Form
-                                action="/central/item-categories"
-                                method="post"
-                                className="space-y-2.5 rounded-lg border border-border/50 bg-muted/20 p-3"
-                                resetOnSuccess
+                                action={`/central/item-categories/${editingCategory.id}`}
+                                method="put"
+                                className="space-y-3 pt-2"
+                                onSuccess={() => setEditingCategory(null)}
                             >
                                 {({ errors, processing }) => (
                                     <>
-                                        <p className="text-xs font-semibold">
-                                            Tambah Kategori Baru
-                                        </p>
-                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                                            <div>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs font-medium">
+                                                    Nama Kategori *
+                                                </Label>
                                                 <Input
                                                     name="name"
-                                                    placeholder="Nama Kategori *"
+                                                    defaultValue={
+                                                        editingCategory.name
+                                                    }
                                                     required
-                                                    className="h-8 text-xs"
+                                                    className="h-8.5 text-xs"
                                                 />
                                                 <InputError
                                                     message={errors.name}
                                                 />
                                             </div>
-                                            <div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs font-medium">
+                                                    Kode
+                                                </Label>
                                                 <Input
                                                     name="code"
-                                                    placeholder="Kode (opsional)"
-                                                    className="h-8 text-xs"
+                                                    defaultValue={
+                                                        editingCategory.code ??
+                                                        ''
+                                                    }
+                                                    placeholder="Opsional"
+                                                    className="h-8.5 font-mono text-xs uppercase"
                                                 />
                                                 <InputError
                                                     message={errors.code}
                                                 />
                                             </div>
                                         </div>
-                                        <Button
-                                            size="sm"
-                                            className="h-7.5 w-full text-xs"
-                                            disabled={processing}
-                                        >
-                                            Simpan Kategori
-                                        </Button>
+
+                                        <label className="flex items-center gap-2 rounded-md border border-border/50 bg-muted/20 px-3 py-2.5 text-xs">
+                                            <input
+                                                type="hidden"
+                                                name="is_active"
+                                                value="0"
+                                            />
+                                            <Checkbox
+                                                name="is_active"
+                                                value="1"
+                                                defaultChecked={
+                                                    editingCategory.is_active
+                                                }
+                                            />
+                                            <span>Kategori aktif</span>
+                                        </label>
+                                        <InputError
+                                            message={errors.is_active}
+                                        />
+
+                                        <div className="flex justify-end gap-2 pt-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 text-xs"
+                                                onClick={() =>
+                                                    setEditingCategory(null)
+                                                }
+                                            >
+                                                Batal
+                                            </Button>
+                                            <Button
+                                                type="submit"
+                                                size="sm"
+                                                className="h-8 text-xs font-medium"
+                                                disabled={processing}
+                                            >
+                                                {processing
+                                                    ? 'Menyimpan...'
+                                                    : 'Simpan Perubahan'}
+                                            </Button>
+                                        </div>
                                     </>
                                 )}
                             </Form>
+                        ) : (
+                            <div className="space-y-4 pt-2">
+                                <Form
+                                    action="/central/item-categories"
+                                    method="post"
+                                    className="space-y-2.5 rounded-lg border border-border/50 bg-muted/20 p-3"
+                                    resetOnSuccess
+                                >
+                                    {({ errors, processing }) => (
+                                        <>
+                                            <p className="text-xs font-semibold">
+                                                Tambah Kategori Baru
+                                            </p>
+                                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                                <div>
+                                                    <Input
+                                                        name="name"
+                                                        placeholder="Nama Kategori *"
+                                                        required
+                                                        className="h-8 text-xs"
+                                                    />
+                                                    <InputError
+                                                        message={errors.name}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Input
+                                                        name="code"
+                                                        placeholder="Kode (opsional)"
+                                                        className="h-8 font-mono text-xs uppercase"
+                                                    />
+                                                    <InputError
+                                                        message={errors.code}
+                                                    />
+                                                </div>
+                                            </div>
 
-                            <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
-                                <Label className="text-xs font-semibold text-muted-foreground uppercase">
-                                    Daftar Kategori Saat Ini:
-                                </Label>
-                                {categories.map((c) => (
-                                    <div
-                                        key={c.id}
-                                        className="flex items-center justify-between rounded-md border border-border/40 p-2 text-xs"
-                                    >
-                                        <span className="font-medium text-foreground">
-                                            {c.name} {c.code && `(${c.code})`}
-                                        </span>
-                                        <Badge
-                                            variant={
-                                                c.is_active
-                                                    ? 'default'
-                                                    : 'secondary'
-                                            }
-                                            className="text-[10px]"
+                                            <label className="flex items-center gap-2 text-xs">
+                                                <input
+                                                    type="hidden"
+                                                    name="is_active"
+                                                    value="0"
+                                                />
+                                                <Checkbox
+                                                    name="is_active"
+                                                    value="1"
+                                                    defaultChecked
+                                                />
+                                                <span>
+                                                    Kategori langsung aktif
+                                                </span>
+                                            </label>
+                                            <InputError
+                                                message={errors.is_active}
+                                            />
+
+                                            <Button
+                                                size="sm"
+                                                className="h-7.5 w-full text-xs"
+                                                disabled={processing}
+                                            >
+                                                {processing
+                                                    ? 'Menyimpan...'
+                                                    : 'Simpan Kategori'}
+                                            </Button>
+                                        </>
+                                    )}
+                                </Form>
+
+                                <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
+                                    <Label className="text-xs font-semibold text-muted-foreground uppercase">
+                                        Daftar Kategori Saat Ini:
+                                    </Label>
+                                    {categories.map((category) => (
+                                        <div
+                                            key={category.id}
+                                            className="flex items-center gap-2 rounded-md border border-border/40 p-2 text-xs"
                                         >
-                                            {c.is_active ? 'Aktif' : 'Nonaktif'}
-                                        </Badge>
-                                    </div>
-                                ))}
+                                            <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+                                                {category.name}{' '}
+                                                {category.code &&
+                                                    `(${category.code})`}
+                                            </span>
+                                            <Badge
+                                                variant={
+                                                    category.is_active
+                                                        ? 'default'
+                                                        : 'secondary'
+                                                }
+                                                className="shrink-0 text-[10px]"
+                                            >
+                                                {category.is_active
+                                                    ? 'Aktif'
+                                                    : 'Nonaktif'}
+                                            </Badge>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-7 shrink-0"
+                                                aria-label={`Edit kategori ${category.name}`}
+                                                title={`Edit ${category.name}`}
+                                                onClick={() =>
+                                                    setEditingCategory(category)
+                                                }
+                                            >
+                                                <Pencil className="size-3.5" />
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                className="size-7 shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                aria-label={`Hapus kategori ${category.name}`}
+                                                title={`Hapus ${category.name}`}
+                                                onClick={() =>
+                                                    setDeletingCategory(
+                                                        category,
+                                                    )
+                                                }
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </DialogContent>
                 </Dialog>
 
@@ -954,6 +1171,24 @@ export default function ItemIndex({
                                                 />
                                             </div>
                                         </div>
+
+                                        <label className="flex items-center gap-2 text-xs">
+                                            <input
+                                                type="hidden"
+                                                name="is_active"
+                                                value="0"
+                                            />
+                                            <Checkbox
+                                                name="is_active"
+                                                value="1"
+                                                defaultChecked
+                                            />
+                                            <span>Satuan langsung aktif</span>
+                                        </label>
+                                        <InputError
+                                            message={errors.is_active}
+                                        />
+
                                         <Button
                                             size="sm"
                                             className="h-7.5 w-full text-xs"

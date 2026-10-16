@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Central;
 
-use App\Enums\PurchaseOrderStatus;
 use App\Enums\PurchaseRequestItemType;
 use App\Enums\StockMovementType;
 use App\Enums\UserRole;
@@ -45,6 +44,31 @@ class MasterDataManagementTest extends TestCase
 
         $this->assertDatabaseHas('items', ['sku' => 'CLN-TISSUE-BASAH', 'cost_price' => 25000, 'min_stock' => 5, 'target_stock' => 20]);
         $this->assertDatabaseHas('activity_logs', ['action' => 'item.created']);
+    }
+
+    public function test_central_admin_can_create_item_without_cost_price(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $category = ItemCategory::create(['name' => 'Cleaning', 'code' => 'CLN', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pack', 'symbol' => 'pack', 'is_active' => true]);
+
+        $this->actingAs($user)->post(route('central.items.store'), [
+            'sku' => 'CLN-WITHOUT-COST',
+            'name' => 'Item Tanpa Harga',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'cost_price' => '',
+            'min_stock' => '',
+            'target_stock' => '',
+            'is_active' => true,
+        ])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('items', [
+            'sku' => 'CLN-WITHOUT-COST',
+            'cost_price' => null,
+            'min_stock' => null,
+            'target_stock' => null,
+        ]);
     }
 
     public function test_critical_stock_service_detects_items_at_or_below_min_stock(): void
@@ -207,6 +231,44 @@ class MasterDataManagementTest extends TestCase
             'action' => 'item.deleted',
             'entity_id' => $item->id,
         ]);
+    }
+
+    public function test_central_admin_can_delete_unused_item_category(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $category = ItemCategory::create(['name' => 'Temporary', 'code' => 'TMP', 'is_active' => true]);
+
+        $this->actingAs($user)
+            ->delete(route('central.item-categories.destroy', $category))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Kategori berhasil dihapus.');
+
+        $this->assertDatabaseMissing('item_categories', ['id' => $category->id]);
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'item_category.deleted',
+            'entity_id' => $category->id,
+        ]);
+    }
+
+    public function test_central_admin_cannot_delete_item_category_that_is_still_used(): void
+    {
+        $user = User::factory()->centralAdmin()->create();
+        $category = ItemCategory::create(['name' => 'Used', 'code' => 'USD', 'is_active' => true]);
+        $unit = Unit::create(['name' => 'Pcs', 'symbol' => 'pcs', 'is_active' => true]);
+        Item::create([
+            'sku' => 'USD-001',
+            'name' => 'Used Item',
+            'item_category_id' => $category->id,
+            'unit_id' => $unit->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('central.item-categories.destroy', $category))
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->assertDatabaseHas('item_categories', ['id' => $category->id]);
     }
 
     public function test_central_admin_can_delete_item_with_zero_stock_and_standards(): void

@@ -41,7 +41,7 @@ Route::middleware(['auth', 'verified', 'active'])->group(function () {
         Route::post('stores/{store}/users', [StoreUserController::class, 'store'])->name('stores.users.store');
         Route::delete('stores/{store}/users/{user}', [StoreUserController::class, 'destroy'])->name('stores.users.destroy');
         Route::resource('items', ItemController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('item-categories', ItemCategoryController::class)->only(['store', 'update']);
+        Route::resource('item-categories', ItemCategoryController::class)->only(['store', 'update', 'destroy']);
         Route::resource('units', UnitController::class)->only(['store', 'update']);
         Route::resource('suppliers', SupplierController::class)->only(['index', 'store', 'update']);
         Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');

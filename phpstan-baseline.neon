@@ -13,12 +13,6 @@ parameters:
 			path: app/Actions/Inventory/BulkAddStoreStock.php
 
 		-
-			message: '#^Strict comparison using \!\=\= between int\<0, max\> and null will always evaluate to true\.$#'
-			identifier: notIdentical.alwaysTrue
-			count: 1
-			path: app/Actions/Inventory/UpdateStoreStock.php
-
-		-
 			message: '#^Binary operation "\-" between string and int results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
