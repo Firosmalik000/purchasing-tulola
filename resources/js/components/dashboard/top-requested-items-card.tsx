@@ -17,7 +17,6 @@ export type TopRequestedItem = {
 type Props = {
     items: TopRequestedItem[];
     title?: string;
-    subtitle?: string;
     detailHref?: string;
 };
 
@@ -45,11 +44,10 @@ const SLICE_COLORS = [
 export function TopRequestedItemsCard({
     items,
     title = 'Top 3 Item Sering Diminta',
-    subtitle = 'Akumulasi seluruh cabang',
     detailHref,
 }: Props) {
-    const totalQuantity = items.reduce(
-        (sum, item) => sum + item.total_quantity,
+    const totalRequests = items.reduce(
+        (sum, item) => sum + item.request_count,
         0,
     );
 
@@ -60,7 +58,7 @@ export function TopRequestedItemsCard({
     let accumulatedLength = 0;
     const slices = items.map((item, idx) => {
         const percent =
-            totalQuantity > 0 ? (item.total_quantity / totalQuantity) * 100 : 0;
+            totalRequests > 0 ? (item.request_count / totalRequests) * 100 : 0;
         const dashLength = (percent / 100) * circumference;
         const offset = accumulatedLength;
         accumulatedLength += dashLength;
@@ -85,9 +83,6 @@ export function TopRequestedItemsCard({
                         <CardTitle className="text-sm font-semibold">
                             {title}
                         </CardTitle>
-                        <p className="text-[11px] text-muted-foreground">
-                            {subtitle}
-                        </p>
                     </div>
                 </div>
                 {detailHref ? (
@@ -160,13 +155,13 @@ export function TopRequestedItemsCard({
                                 {/* Donut Center Metric */}
                                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
                                     <span className="text-[10px] font-medium tracking-wider text-muted-foreground uppercase">
-                                        Total
+                                        Frekuensi
                                     </span>
                                     <span className="text-sm font-bold text-foreground tabular-nums">
-                                        {totalQuantity.toLocaleString()}
+                                        {totalRequests.toLocaleString()}
                                     </span>
                                     <span className="text-[9px] text-muted-foreground">
-                                        unit diminta
+                                        permintaan
                                     </span>
                                 </div>
                             </div>

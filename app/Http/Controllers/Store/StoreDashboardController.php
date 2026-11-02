@@ -10,7 +10,6 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
 use App\Models\Receipt;
-use App\Models\StoreStock;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -40,19 +39,16 @@ class StoreDashboardController extends Controller
         $myDrafts = PurchaseRequest::query()
             ->whereIn('store_id', $storeIds)
             ->where('status', PurchaseRequestStatus::DRAFT)
-            ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
         $submittedRequests = PurchaseRequest::query()
             ->whereIn('store_id', $storeIds)
             ->where('status', PurchaseRequestStatus::SUBMITTED)
-            ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
         $processedRequests = PurchaseRequest::query()
             ->whereIn('store_id', $storeIds)
             ->where('status', PurchaseRequestStatus::PROCESSED)
-            ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
         // Incoming POs waiting for receipt in this period
@@ -62,7 +58,6 @@ class StoreDashboardController extends Controller
                 $query->whereHas('purchaseRequest', fn ($q) => $q->whereIn('store_id', $storeIds))
                     ->orWhereHas('items.allocations.purchaseRequestItem.purchaseRequest', fn ($q) => $q->whereIn('store_id', $storeIds));
             })
-            ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
         // Completed receipts in this period
@@ -70,19 +65,6 @@ class StoreDashboardController extends Controller
             ->whereIn('store_id', $storeIds)
             ->where('status', ReceiptStatus::CONFIRMED)
             ->whereBetween('received_at', [$monthStart, $monthEnd])
-            ->count();
-
-        // Stock below standard in assigned stores
-        $lowStockCount = StoreStock::query()
-            ->whereIn('store_stocks.store_id', $storeIds)
-            ->join('items', 'items.id', '=', 'store_stocks.item_id')
-            ->where('items.is_active', true)
-            ->leftJoin('store_stock_standards', function ($join) {
-                $join->on('store_stocks.store_id', '=', 'store_stock_standards.store_id')
-                    ->on('store_stocks.item_id', '=', 'store_stock_standards.item_id');
-            })
-            ->whereRaw('store_stocks.quantity < COALESCE(store_stock_standards.standard_quantity, items.min_stock, 0)')
-            ->whereRaw('COALESCE(store_stock_standards.standard_quantity, items.min_stock, 0) > 0')
             ->count();
 
         // Trend requests and completed orders last 6 months up to selected period
@@ -129,12 +111,13 @@ class StoreDashboardController extends Controller
                 COALESCE(items.sku, '-') as sku,
                 COALESCE(item_categories.name, 'Lainnya') as category_name,
                 COALESCE(units.symbol, 'pcs') as unit,
-                COUNT(purchase_request_items.id) as request_count,
+                COUNT(DISTINCT purchase_requests.id) as request_count,
                 SUM(purchase_request_items.requested_quantity) as total_quantity
             ")
             ->groupByRaw("COALESCE(items.id, 0), COALESCE(items.name, purchase_request_items.name), COALESCE(items.sku, '-'), COALESCE(item_categories.name, 'Lainnya'), COALESCE(units.symbol, 'pcs')")
-            ->orderByDesc('total_quantity')
             ->orderByDesc('request_count')
+            ->orderByDesc('total_quantity')
+            ->orderBy('item_name')
             ->take(3)
             ->get()
             ->map(fn ($row) => [
@@ -172,7 +155,6 @@ class StoreDashboardController extends Controller
                 'processedRequests' => $processedRequests,
                 'incomingOrders' => $incomingOrders,
                 'confirmedReceipts' => $confirmedReceipts,
-                'lowStockCount' => $lowStockCount,
             ],
             'selectedPeriod' => [
                 'month' => $selectedMonth,

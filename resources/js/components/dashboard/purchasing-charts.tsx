@@ -34,9 +34,6 @@ export function PurchasingBarChart({ data, height = 200 }: Props) {
                         </span>
                     </div>
                 </div>
-                <span className="text-[11px] text-muted-foreground/70">
-                    6 Bulan Terakhir
-                </span>
             </div>
 
             <div
@@ -53,11 +50,11 @@ export function PurchasingBarChart({ data, height = 200 }: Props) {
                 {data.map((item) => {
                     const reqHeight = Math.max(
                         (item.requests / maxValue) * (height - 35),
-                        4,
+                        0,
                     );
                     const orderHeight = Math.max(
                         (item.orders / maxValue) * (height - 35),
-                        4,
+                        0,
                     );
 
                     return (

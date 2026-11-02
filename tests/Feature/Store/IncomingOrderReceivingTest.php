@@ -62,6 +62,8 @@ class IncomingOrderReceivingTest extends TestCase
 
     public function test_store_sees_draft_orders_sorted_first_above_completed_orders(): void
     {
+        $this->travelTo(now()->startOfMonth()->addDays(14));
+
         [$order, $pic, $store, $item] = $this->singleStoreOrder();
         $order->update([
             'status' => PurchaseOrderStatus::COMPLETED,

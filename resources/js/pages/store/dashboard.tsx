@@ -26,7 +26,6 @@ type Props = {
         processedRequests: number;
         incomingOrders: number;
         confirmedReceipts: number;
-        lowStockCount: number;
     };
     selectedPeriod: {
         month: number;
@@ -50,7 +49,7 @@ type Props = {
         id: number;
         number: string;
         status: string;
-        purchaseOrder?: { id: number; number: string };
+        purchase_order?: { id: number; number: string };
         received_at: string;
     }[];
 };
@@ -136,9 +135,6 @@ export default function StoreDashboard({
                                 <CardTitle className="text-sm font-semibold">
                                     Tren Pengadaan & Pesanan
                                 </CardTitle>
-                                <span className="text-xs text-muted-foreground">
-                                    Volume Toko Cabang
-                                </span>
                             </div>
                         </CardHeader>
                         <CardContent className="pt-4">
@@ -184,11 +180,6 @@ export default function StoreDashboard({
                                     <ArrowRight className="size-3 text-muted-foreground" />
                                 </Link>
                             </Button>
-
-                            <div className="pt-2 text-center text-[11px] text-muted-foreground">
-                                Total {metrics.confirmedReceipts} penerimaan
-                                fisik telah terkonfirmasi.
-                            </div>
                         </CardContent>
                     </Card>
                 </section>
@@ -199,7 +190,6 @@ export default function StoreDashboard({
                     <TopRequestedItemsCard
                         items={topRequestedItems}
                         title="Top 3 Item Sering Diminta"
-                        subtitle="Kebutuhan toko cabang ini"
                         detailHref="/store/requests"
                     />
 
@@ -304,7 +294,7 @@ export default function StoreDashboard({
                                                     </span>
                                                     <div className="mt-0.5 text-[11px] text-muted-foreground">
                                                         PO:{' '}
-                                                        {rec.purchaseOrder
+                                                        {rec.purchase_order
                                                             ?.number ?? '-'}
                                                     </div>
                                                 </div>

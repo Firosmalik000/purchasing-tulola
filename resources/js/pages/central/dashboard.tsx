@@ -58,12 +58,7 @@ type Props = {
         id: number;
         number: string;
         status: string;
-        purchase_request?: {
-            number: string;
-            store: { code: string; name: string };
-        };
-        order_date: string;
-        expected_date?: string;
+        sources: { number: string; store_code: string | null }[];
     }[];
 };
 
@@ -122,7 +117,7 @@ export default function CentralDashboard({
                         tone="warning"
                     />
                     <StatCard
-                        label="Permintaan Siap Dipesan"
+                        label="Permintaan Disetujui"
                         value={metrics.processedRequests}
                         icon={ListChecks}
                         tone="info"
@@ -134,7 +129,7 @@ export default function CentralDashboard({
                         tone="neutral"
                     />
                     <StatCard
-                        label="Stok di Bawah Standar"
+                        label="Stok Kritis Pusat"
                         value={metrics.stockAlerts}
                         icon={AlertTriangle}
                         tone={metrics.stockAlerts > 0 ? 'warning' : 'success'}
@@ -154,9 +149,6 @@ export default function CentralDashboard({
                                         Tren Pengadaan & Pesanan
                                     </CardTitle>
                                 </div>
-                                <span className="text-xs text-muted-foreground">
-                                    Volume Bulanan
-                                </span>
                             </div>
                         </CardHeader>
                         <CardContent className="pt-4">
@@ -174,7 +166,7 @@ export default function CentralDashboard({
                                     <Boxes className="size-4" />
                                 </div>
                                 <CardTitle className="text-sm font-semibold">
-                                    Distribusi Status Pengadaan
+                                    Status Permintaan
                                 </CardTitle>
                             </div>
                         </CardHeader>
@@ -201,7 +193,6 @@ export default function CentralDashboard({
                     <TopRequestedItemsCard
                         items={topRequestedItems}
                         title="Top 3 Item Sering Diminta"
-                        subtitle="Akumulasi seluruh toko cabang"
                         detailHref="/central/requests"
                     />
 
@@ -321,9 +312,13 @@ export default function CentralDashboard({
                                                         {order.number}
                                                     </Link>
                                                     <div className="mt-0.5 text-[11px] text-muted-foreground">
-                                                        {order.purchase_request
-                                                            ? `${order.purchase_request.number} · ${order.purchase_request.store.code}`
-                                                            : 'Data lama'}
+                                                        {order.sources
+                                                            .map((source) =>
+                                                                [source.number, source.store_code]
+                                                                    .filter(Boolean)
+                                                                    .join(' · '),
+                                                            )
+                                                            .join(', ') || '—'}
                                                     </div>
                                                 </div>
                                             </div>

@@ -33,7 +33,10 @@ export function DashboardPeriodFilter({
         currentYear - 1,
         currentYear,
         currentYear + 1,
-    ];
+        selectedYear,
+    ]
+        .filter((year, index, years) => years.indexOf(year) === index)
+        .sort((a, b) => a - b);
 
     const handleChange = (month: number, year: number) => {
         router.get(

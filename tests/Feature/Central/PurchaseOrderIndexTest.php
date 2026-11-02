@@ -77,6 +77,8 @@ class PurchaseOrderIndexTest extends TestCase
 
     public function test_multiple_draft_orders_are_sorted_above_completed_orders_even_with_older_dates(): void
     {
+        $this->travelTo(now()->startOfMonth()->addDays(14));
+
         $admin = User::factory()->centralAdmin()->create();
         $store = Store::factory()->create();
 

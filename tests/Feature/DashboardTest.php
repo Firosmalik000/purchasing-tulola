@@ -4,11 +4,14 @@ namespace Tests\Feature;
 
 use App\Enums\PurchaseOrderStatus;
 use App\Enums\PurchaseRequestItemType;
+use App\Enums\PurchaseRequestStatus;
+use App\Enums\ReceiptStatus;
 use App\Enums\UserRole;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
+use App\Models\Receipt;
 use App\Models\Store;
 use App\Models\Unit;
 use App\Models\User;
@@ -131,7 +134,7 @@ class DashboardTest extends TestCase
         $pastResponse->assertOk();
         $this->assertSame(1, $pastResponse->viewData('page')['props']['selectedPeriod']['month']);
         $this->assertSame(2025, $pastResponse->viewData('page')['props']['selectedPeriod']['year']);
-        $this->assertSame(0, $pastResponse->viewData('page')['props']['metrics']['pendingRequests']);
+        $this->assertSame(2, $pastResponse->viewData('page')['props']['metrics']['pendingRequests']);
         $this->assertCount(0, $pastResponse->viewData('page')['props']['topRequestedItems']);
     }
 
@@ -196,5 +199,77 @@ class DashboardTest extends TestCase
         $selectedPeriod = $response->viewData('page')['props']['selectedPeriod'];
         $this->assertSame(now()->month, $selectedPeriod['month']);
         $this->assertSame(now()->year, $selectedPeriod['year']);
+    }
+
+    public function test_backlog_includes_previous_month_and_status_distribution_counts_only_requests(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $old = PurchaseRequest::factory()->submitted()->create(['created_at' => now()->subMonth()->startOfMonth()]);
+        $current = PurchaseRequest::factory()->create(['status' => PurchaseRequestStatus::PROCESSED]);
+        PurchaseOrder::factory()->create(['purchase_request_id' => $old->id, 'status' => PurchaseOrderStatus::ORDERED, 'created_at' => $old->created_at]);
+        PurchaseOrder::factory()->create(['purchase_request_id' => $current->id, 'status' => PurchaseOrderStatus::COMPLETED]);
+
+        $props = $this->actingAs($admin)->get(route('central.dashboard'))->viewData('page')['props'];
+        $this->assertSame(1, $props['metrics']['pendingRequests']);
+        $this->assertSame(1, $props['metrics']['activeOrders']);
+        $this->assertSame(1, collect($props['requestStatusDist'])->sum('count'));
+        $this->assertSame(1, collect($props['requestStatusDist'])->firstWhere('name', 'Disetujui')['count']);
+
+        $pic = User::factory()->create();
+        $pic->stores()->attach($old->store_id, ['is_active' => true, 'is_pic' => true]);
+        $props = $this->actingAs($pic)->get(route('store.dashboard'))->viewData('page')['props'];
+        $this->assertSame(1, $props['metrics']['submittedRequests']);
+        $this->assertSame(1, $props['metrics']['incomingOrders']);
+    }
+
+    public function test_stock_alerts_include_missing_stock_and_use_central_minimum(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $central = Store::factory()->create(['code' => 'HO-JKT']);
+        $unit = Unit::create(['name' => 'Piece', 'symbol' => 'pcs', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Ops', 'code' => 'OPS', 'is_active' => true]);
+        $item = Item::create(['sku' => 'MISSING', 'name' => 'Missing stock', 'unit_id' => $unit->id, 'item_category_id' => $category->id, 'is_active' => true, 'min_stock' => 5, 'target_stock' => 20]);
+        $props = $this->actingAs($admin)->get(route('central.dashboard'))->viewData('page')['props'];
+        $this->assertSame(1, $props['metrics']['stockAlerts']);
+        $central->stocks()->create(['item_id' => $item->id, 'quantity' => 5]);
+        $central->stockStandards()->create(['item_id' => $item->id, 'min_quantity' => 3, 'standard_quantity' => 20]);
+        $props = $this->get(route('central.dashboard'))->viewData('page')['props'];
+        $this->assertSame(0, $props['metrics']['stockAlerts']);
+    }
+
+    public function test_ranking_uses_distinct_requests_and_combined_orders_keep_their_sources(): void
+    {
+        $admin = User::factory()->centralAdmin()->create();
+        $store = Store::factory()->create();
+        $unit = Unit::create(['name' => 'Piece', 'symbol' => 'pcs', 'is_active' => true]);
+        $category = ItemCategory::create(['name' => 'Ops', 'code' => 'OPS', 'is_active' => true]);
+        $frequent = Item::create(['sku' => 'FREQ', 'name' => 'Frequent', 'unit_id' => $unit->id, 'item_category_id' => $category->id, 'is_active' => true]);
+        $bulk = Item::create(['sku' => 'BULK', 'name' => 'Bulk', 'unit_id' => $unit->id, 'item_category_id' => $category->id, 'is_active' => true]);
+        $first = PurchaseRequest::factory()->submitted()->create(['store_id' => $store->id]);
+        $second = PurchaseRequest::factory()->submitted()->create(['store_id' => $store->id]);
+        $lines = [];
+        foreach ([$first, $second] as $pr) {
+            $lines[] = $pr->items()->create(['type' => PurchaseRequestItemType::STOCK, 'item_id' => $frequent->id, 'unit_id' => $unit->id, 'requested_quantity' => 1]);
+        }
+        foreach ([1, 2] as $i) {
+            $first->items()->create(['type' => PurchaseRequestItemType::STOCK, 'item_id' => $bulk->id, 'unit_id' => $unit->id, 'requested_quantity' => 500]);
+        }
+        $order = PurchaseOrder::factory()->create();
+        $orderItem = $order->items()->create(['item_type' => PurchaseRequestItemType::STOCK, 'item_id' => $frequent->id, 'unit_id' => $unit->id, 'quantity' => 2]);
+        foreach ($lines as $line) {
+            $orderItem->allocations()->create(['purchase_request_item_id' => $line->id, 'allocated_quantity' => 1]);
+        }
+        $props = $this->actingAs($admin)->get(route('central.dashboard'))->viewData('page')['props'];
+        $this->assertSame('Frequent', $props['topRequestedItems'][0]['name']);
+        $this->assertSame(2, $props['topRequestedItems'][0]['request_count']);
+        $this->assertSame(1, $props['topRequestedItems'][1]['request_count']);
+        $this->assertCount(2, $props['recentOrders'][0]['sources']);
+        $this->assertSame($store->code, $props['recentOrders'][0]['sources'][0]['store_code']);
+
+        $receipt = Receipt::create(['number' => 'REC-TEST', 'purchase_order_id' => $order->id, 'store_id' => $store->id, 'received_by' => $admin->id, 'received_at' => now(), 'status' => ReceiptStatus::CONFIRMED]);
+        $pic = User::factory()->create();
+        $pic->stores()->attach($store->id, ['is_active' => true, 'is_pic' => true]);
+        $props = $this->actingAs($pic)->get(route('store.dashboard'))->viewData('page')['props'];
+        $this->assertSame($order->number, $props['recentReceipts'][0]['purchase_order']['number']);
     }
 }

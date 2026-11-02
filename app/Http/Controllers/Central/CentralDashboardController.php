@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
-use App\Models\StoreStock;
+use App\Services\CriticalStockService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -32,15 +32,13 @@ class CentralDashboardController extends Controller
         $monthStart = $targetDate->copy()->startOfMonth();
         $monthEnd = $targetDate->copy()->endOfMonth();
 
-        // Metric counts for the selected period
+        // Current operational counts are independent of the analytics period.
         $pendingRequests = PurchaseRequest::query()
             ->where('status', PurchaseRequestStatus::SUBMITTED)
-            ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
         $processedRequests = PurchaseRequest::query()
             ->where('status', PurchaseRequestStatus::PROCESSED)
-            ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
         $activeOrders = PurchaseOrder::query()
@@ -48,7 +46,6 @@ class CentralDashboardController extends Controller
                 PurchaseOrderStatus::ORDERED,
                 PurchaseOrderStatus::PARTIALLY_RECEIVED,
             ])
-            ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
         $completedOrders = PurchaseOrder::query()
@@ -56,19 +53,7 @@ class CentralDashboardController extends Controller
             ->whereBetween('created_at', [$monthStart, $monthEnd])
             ->count();
 
-        // Stock alert count: stock < standard for active items & stores
-        $stockAlerts = StoreStock::query()
-            ->join('items', 'items.id', '=', 'store_stocks.item_id')
-            ->join('stores', 'stores.id', '=', 'store_stocks.store_id')
-            ->leftJoin('store_stock_standards', function ($join) {
-                $join->on('store_stocks.store_id', '=', 'store_stock_standards.store_id')
-                    ->on('store_stocks.item_id', '=', 'store_stock_standards.item_id');
-            })
-            ->where('items.is_active', true)
-            ->where('stores.is_active', true)
-            ->whereRaw('store_stocks.quantity < COALESCE(store_stock_standards.standard_quantity, items.min_stock, 0)')
-            ->whereRaw('COALESCE(store_stock_standards.standard_quantity, items.min_stock, 0) > 0')
-            ->count();
+        $stockAlerts = app(CriticalStockService::class)->getSummaryForUser($request->user(), 0)['count'];
 
         // 6 Months Trend for Requests vs Completed PO up to selected period
         $monthlyTrend = [];
@@ -107,12 +92,13 @@ class CentralDashboardController extends Controller
                 COALESCE(items.sku, '-') as sku,
                 COALESCE(item_categories.name, 'Lainnya') as category_name,
                 COALESCE(units.symbol, 'pcs') as unit,
-                COUNT(purchase_request_items.id) as request_count,
+                COUNT(DISTINCT purchase_requests.id) as request_count,
                 SUM(purchase_request_items.requested_quantity) as total_quantity
             ")
             ->groupByRaw("COALESCE(items.id, 0), COALESCE(items.name, purchase_request_items.name), COALESCE(items.sku, '-'), COALESCE(item_categories.name, 'Lainnya'), COALESCE(units.symbol, 'pcs')")
-            ->orderByDesc('total_quantity')
             ->orderByDesc('request_count')
+            ->orderByDesc('total_quantity')
+            ->orderBy('item_name')
             ->take(3)
             ->get()
             ->map(fn ($row) => [
@@ -125,13 +111,24 @@ class CentralDashboardController extends Controller
                 'total_quantity' => (int) $row->total_quantity,
             ]);
 
-        // Status Distribution
-        $requestStatusDist = [
-            ['name' => 'Menunggu Review', 'count' => $pendingRequests, 'color' => '#f59e0b'],
-            ['name' => 'Disetujui/Proses', 'count' => $processedRequests, 'color' => '#6366f1'],
-            ['name' => 'Pesanan Aktif', 'count' => $activeOrders, 'color' => '#8b5cf6'],
-            ['name' => 'Selesai/Diterima', 'count' => $completedOrders, 'color' => '#10b981'],
-        ];
+        $statusCounts = PurchaseRequest::query()
+            ->whereBetween('created_at', [$monthStart, $monthEnd])
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $requestStatusDist = collect(PurchaseRequestStatus::cases())
+            ->map(fn ($status) => [
+                'name' => $status->label(),
+                'count' => (int) ($statusCounts[$status->value] ?? 0),
+                'color' => match ($status) {
+                    PurchaseRequestStatus::DRAFT => '#64748b',
+                    PurchaseRequestStatus::SUBMITTED => '#f59e0b',
+                    PurchaseRequestStatus::PROCESSED => '#6366f1',
+                    PurchaseRequestStatus::REJECTED => '#ef4444',
+                    PurchaseRequestStatus::CANCELLED => '#94a3b8',
+                },
+            ]);
 
         // Recent Requests (last 5, excluding drafts) in the period
         $recentRequests = PurchaseRequest::query()
@@ -145,10 +142,26 @@ class CentralDashboardController extends Controller
         // Recent POs (last 5) in the period
         $recentOrders = PurchaseOrder::query()
             ->whereBetween('created_at', [$monthStart, $monthEnd])
-            ->with(['purchaseRequest.store:id,code,name'])
+            ->with(['purchaseRequest.store:id,code,name', 'items.allocations.purchaseRequestItem.purchaseRequest.store:id,code,name'])
             ->latest()
             ->take(5)
-            ->get(['id', 'number', 'purchase_request_id', 'status', 'order_date', 'expected_date']);
+            ->get(['id', 'number', 'purchase_request_id', 'status', 'order_date', 'expected_date'])
+            ->map(function (PurchaseOrder $order) {
+                $sources = $order->items->flatMap(fn ($item) => $item->allocations)
+                    ->map(fn ($allocation) => $allocation->purchaseRequestItem?->purchaseRequest)
+                    ->push($order->purchaseRequest)
+                    ->filter()->unique('id')->sortBy('number')->values();
+
+                return [
+                    'id' => $order->id,
+                    'number' => $order->number,
+                    'status' => $order->status,
+                    'sources' => $sources->map(fn ($source) => [
+                        'number' => $source->number,
+                        'store_code' => $source->store?->code,
+                    ]),
+                ];
+            });
 
         return Inertia::render('central/dashboard', [
             'metrics' => [
