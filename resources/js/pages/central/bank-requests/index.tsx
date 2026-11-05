@@ -68,6 +68,7 @@ type BankRequestItem = {
 };
 
 type Props = {
+    canCreateOrder: boolean;
     items: {
         data: BankRequestItem[];
         links: PaginationLink[];
@@ -90,6 +91,7 @@ type Props = {
 };
 
 export default function BankRequestIndex({
+    canCreateOrder,
     items,
     stores,
     stats,
@@ -152,7 +154,7 @@ export default function BankRequestIndex({
 
     const handleCreateOrder = (e: React.FormEvent) => {
         e.preventDefault();
-        if (selectedIds.length === 0) return;
+        if (!canCreateOrder || selectedIds.length === 0) return;
 
         // Convert DD/MM/YYYY to YYYY-MM-DD if needed
         let normalizedExpectedDate = expectedDate || null;
@@ -240,7 +242,7 @@ export default function BankRequestIndex({
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                            {selectedIds.length > 0 && (
+                            {canCreateOrder && selectedIds.length > 0 && (
                                 <Button
                                     size="sm"
                                     onClick={() => setCreateOrderOpen(true)}
@@ -408,6 +410,7 @@ export default function BankRequestIndex({
                                             <th className="w-10 px-3 py-2.5 text-center">
                                                 <Checkbox
                                                     checked={isAllSelected}
+                                                    disabled={!canCreateOrder}
                                                     onCheckedChange={toggleSelectAll}
                                                     aria-label="Pilih semua item"
                                                 />
@@ -449,6 +452,7 @@ export default function BankRequestIndex({
                                                     <td className="px-3 py-3 text-center">
                                                         <Checkbox
                                                             checked={isSelected}
+                                                            disabled={!canCreateOrder}
                                                             onCheckedChange={() =>
                                                                 toggleSelectRow(
                                                                     item.id,

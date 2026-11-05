@@ -8,7 +8,9 @@ use App\Enums\PurchaseRequestItemType;
 use App\Enums\PurchaseRequestStatus;
 use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
+use App\Models\Store;
 use App\Models\User;
+use App\Services\CentralStockAvailability;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -18,6 +20,7 @@ class ProcessPurchaseRequest
     public function __construct(
         private TransitionPurchaseRequestStatus $transition,
         private CreateDraftOrderForRequest $createDraftOrder,
+        private CentralStockAvailability $availability,
     ) {}
 
     /** @param array<int, array<string, mixed>> $approvals */
@@ -35,6 +38,18 @@ class ProcessPurchaseRequest
             $lines = $purchaseRequest->items->keyBy('id');
             $approvalMap = $this->validateApprovals($lines, $approvals);
             $approvalsKeyed = collect($approvals)->keyBy('id');
+
+            $central = Store::centralStore();
+            if ($central) {
+                $stockLines = $lines->where('type', PurchaseRequestItemType::STOCK);
+                $available = $this->availability->available($central, $stockLines->pluck('item_id')->all(), lock: true, excludeRequestId: $purchaseRequest->id);
+                foreach ($stockLines->groupBy('item_id') as $itemId => $itemLines) {
+                    $quantity = $itemLines->sum(fn (PurchaseRequestItem $line) => $approvalMap[$line->id]);
+                    if ($quantity > ($available[$itemId] ?? 0)) {
+                        throw ValidationException::withMessages(['stock' => 'Stok tersedia di Kantor Pusat tidak mencukupi untuk persetujuan. Periksa stok dan permintaan aktif lainnya.']);
+                    }
+                }
+            }
 
             foreach ($lines as $line) {
                 $quantity = $approvalMap[$line->id];

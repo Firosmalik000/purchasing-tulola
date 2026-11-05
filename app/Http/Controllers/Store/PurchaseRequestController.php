@@ -12,6 +12,7 @@ use App\Models\PurchaseRequest;
 use App\Models\PurchaseRequestItem;
 use App\Models\Store;
 use App\Models\Unit;
+use App\Services\CentralStockAvailability;
 use App\Services\PurchasingNotificationService;
 use App\Support\Paging;
 use Illuminate\Http\RedirectResponse;
@@ -155,8 +156,8 @@ class PurchaseRequestController extends Controller
     {
         $centralStore = Store::centralStore();
         $centralStocks = $centralStore
-            ? \App\Models\StoreStock::query()->where('store_id', $centralStore->id)->pluck('quantity', 'item_id')
-            : collect();
+            ? app(CentralStockAvailability::class)->available($centralStore, Item::query()->where('is_active', true)->pluck('id')->all())
+            : [];
 
         return [
             'stores' => $stores,

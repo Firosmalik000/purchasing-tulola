@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $purchase_order_item_id
  * @property int $purchase_request_item_id
- * @property string $allocated_quantity
+ * @property int $allocated_quantity
  */
 #[Fillable(['purchase_order_item_id', 'purchase_request_item_id', 'allocated_quantity'])]
 class PurchaseOrderRequestItem extends Model

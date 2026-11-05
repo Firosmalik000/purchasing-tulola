@@ -175,18 +175,20 @@ class InventoryController extends Controller
             ->when($categoryId !== null, fn ($query) => $query->where('item_category_id', $categoryId))
             ->when($search !== '', fn ($query) => $query->where(fn ($nested) => $nested->where('sku', 'like', "%{$search}%")->orWhere('name', 'like', "%{$search}%")));
 
-        if ($status !== '' && in_array(strtolower($status), ['aman', 'restock', 'menipis', 'kritis', 'habis'], true)) {
-            $storeIdInt = (int) $storeId;
-            $qtySql = "(SELECT COALESCE(quantity, 0) FROM store_stocks WHERE store_stocks.item_id = items.id AND store_stocks.store_id = {$storeIdInt} LIMIT 1)";
-            $minSql = "COALESCE((SELECT min_quantity FROM store_stock_standards WHERE store_stock_standards.item_id = items.id AND store_stock_standards.store_id = {$storeIdInt} LIMIT 1), items.min_stock, 0)";
-            $targetSql = "COALESCE((SELECT standard_quantity FROM store_stock_standards WHERE store_stock_standards.item_id = items.id AND store_stock_standards.store_id = {$storeIdInt} LIMIT 1), items.target_stock, {$minSql})";
+        $stockStatus = strtolower($status);
+        if (in_array($stockStatus, ['aman', 'restock', 'menipis', 'kritis', 'habis'], true)) {
+            $qtySql = '(SELECT COALESCE(quantity, 0) FROM store_stocks WHERE store_stocks.item_id = items.id AND store_stocks.store_id = ? LIMIT 1)';
+            $minSql = 'COALESCE((SELECT min_quantity FROM store_stock_standards WHERE store_stock_standards.item_id = items.id AND store_stock_standards.store_id = ? LIMIT 1), items.min_stock, 0)';
+            $targetSql = "COALESCE((SELECT standard_quantity FROM store_stock_standards WHERE store_stock_standards.item_id = items.id AND store_stock_standards.store_id = ? LIMIT 1), items.target_stock, {$minSql})";
 
-            match (strtolower($status)) {
-                'habis' => $itemsQuery->whereRaw("COALESCE({$qtySql}, 0) <= 0"),
-                'kritis' => $itemsQuery->whereRaw("(COALESCE({$qtySql}, 0) <= 0 OR ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}))"),
-                'restock', 'menipis' => $itemsQuery->whereRaw("COALESCE({$qtySql}, 0) > 0 AND NOT ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}) AND {$targetSql} > 0 AND COALESCE({$qtySql}, 0) < {$targetSql}"),
-                'aman' => $itemsQuery->whereRaw("COALESCE({$qtySql}, 0) > 0 AND NOT ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}) AND ({$targetSql} <= 0 OR COALESCE({$qtySql}, 0) >= {$targetSql})"),
+            $condition = match ($stockStatus) {
+                'habis' => "COALESCE({$qtySql}, 0) <= 0",
+                'kritis' => "(COALESCE({$qtySql}, 0) <= 0 OR ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}))",
+                'restock', 'menipis' => "COALESCE({$qtySql}, 0) > 0 AND NOT ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}) AND {$targetSql} > 0 AND COALESCE({$qtySql}, 0) < {$targetSql}",
+                'aman' => "COALESCE({$qtySql}, 0) > 0 AND NOT ({$minSql} > 0 AND COALESCE({$qtySql}, 0) <= {$minSql}) AND ({$targetSql} <= 0 OR COALESCE({$qtySql}, 0) >= {$targetSql})",
             };
+
+            $itemsQuery->whereRaw($condition, array_fill(0, substr_count($condition, '?'), (int) $storeId));
         }
 
         return Inertia::render('central/inventory/index', [

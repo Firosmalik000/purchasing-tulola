@@ -13,6 +13,10 @@ interface DatePickerProps {
     title?: string;
     className?: string;
     disabled?: boolean;
+    valueFormat?: 'display' | 'iso';
+    id?: string;
+    required?: boolean;
+    'aria-label'?: string;
 }
 
 const MONTH_NAMES = [
@@ -69,8 +73,7 @@ function parseDateValue(val?: string | null): Date | null {
         }
     }
 
-    const parsed = new Date(trimmed);
-    return isNaN(parsed.getTime()) ? null : parsed;
+    return null;
 }
 
 function formatDateToDmy(date: Date): string {
@@ -89,6 +92,10 @@ export function DatePicker({
     title,
     className,
     disabled = false,
+    valueFormat = 'display',
+    id,
+    required,
+    'aria-label': ariaLabel,
 }: DatePickerProps) {
     const [open, setOpen] = React.useState(false);
 
@@ -100,6 +107,11 @@ export function DatePicker({
     }, [controlledValue, defaultValue]);
 
     const [inputValue, setInputValue] = React.useState(initialText);
+
+    const submittedValue = (text: string) => valueFormat === 'iso'
+        ? text.replace(/^(\d{2})\/(\d{2})\/(\d{4})$/, '$3-$2-$1')
+        : text;
+    const emitChange = (text: string) => onChange?.(submittedValue(text));
 
     // Synchronize if controlled value changes
     React.useEffect(() => {
@@ -142,7 +154,7 @@ export function DatePicker({
         const newDate = new Date(viewYear, viewMonth, day);
         const formatted = formatDateToDmy(newDate);
         setInputValue(formatted);
-        onChange?.(formatted);
+        emitChange(formatted);
         setOpen(false);
     };
 
@@ -152,14 +164,14 @@ export function DatePicker({
         const formatted = formatDateToDmy(today);
         setInputValue(formatted);
         setViewDate(today);
-        onChange?.(formatted);
+        emitChange(formatted);
         setOpen(false);
     };
 
     const handleClear = (e: React.MouseEvent) => {
         e.preventDefault();
         setInputValue('');
-        onChange?.('');
+        emitChange('');
         setOpen(false);
     };
 
@@ -176,7 +188,7 @@ export function DatePicker({
         }
 
         setInputValue(val);
-        onChange?.(val);
+        emitChange(val);
     };
 
     const today = new Date();
@@ -197,7 +209,11 @@ export function DatePicker({
                 <div className="relative flex items-center">
                     <input
                         type="text"
-                        name={name}
+                        id={id}
+                        name={valueFormat === 'iso' ? undefined : name}
+                        aria-label={ariaLabel ?? title}
+                        required={required}
+                        pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}"
                         value={inputValue}
                         onChange={handleTextChange}
                         placeholder={placeholder}
@@ -212,9 +228,13 @@ export function DatePicker({
                             className,
                         )}
                     />
+                    {valueFormat === 'iso' && name && (
+                        <input type="hidden" name={name} value={submittedValue(inputValue)} disabled={disabled} />
+                    )}
                     <PopoverTrigger asChild>
                         <button
                             type="button"
+                            disabled={disabled}
                             aria-label="Pilih tanggal"
                             className="absolute right-1.5 flex size-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
                         >

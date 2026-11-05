@@ -148,3 +148,130 @@
 .form-select-custom {
     @apply h-8.5 w-full rounded-md border border-input bg-card px-2.5 py-1 text-xs text-foreground shadow-2xs transition-colors focus:border-ring focus:ring-1 focus:ring-ring/40 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50;
 }
+
+/* The welcome page scales with viewport height to remain a single screen. */
+.welcome-screen {
+    position: relative;
+    isolation: isolate;
+}
+
+.welcome-ambient {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.welcome-ambient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 4rem 4rem;
+    opacity: 0.3;
+    mask-image: radial-gradient(ellipse at 50% 55%, black, transparent 65%);
+}
+
+.welcome-ambient::after {
+    content: '';
+    position: absolute;
+    inset: 5% -20% -35%;
+    background:
+        radial-gradient(ellipse at 42% 62%, color-mix(in oklch, var(--primary) 17%, transparent), transparent 42%),
+        radial-gradient(ellipse at 65% 75%, color-mix(in oklch, var(--chart-2) 12%, transparent), transparent 38%);
+    animation: welcome-drift 18s ease-in-out infinite alternate;
+}
+
+.welcome-title {
+    font-size: clamp(1.875rem, min(5.4vw, 8.2dvh), 4rem);
+    line-height: 1.15;
+
+}
+
+.welcome-title-accent {
+    color: var(--primary);
+    background: linear-gradient(110deg, var(--muted-foreground), var(--primary) 80%);
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.welcome-content > * {
+    animation: welcome-enter 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.welcome-content > :nth-child(2) { animation-delay: 80ms; }
+.welcome-content > :nth-child(3) { animation-delay: 160ms; }
+.welcome-content > :nth-child(4) { animation-delay: 240ms; }
+
+.welcome-action {
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 30%, transparent),
+        0 0.5rem 2rem color-mix(in oklch, var(--primary) 20%, transparent);
+    transition: background-color 200ms, box-shadow 200ms, translate 200ms;
+}
+
+.welcome-action:hover {
+    translate: 0 -2px;
+    box-shadow: 0 0 0 1px color-mix(in oklch, var(--primary) 45%, transparent),
+        0 0.75rem 2.5rem color-mix(in oklch, var(--primary) 30%, transparent);
+}
+
+@keyframes welcome-enter {
+    from { opacity: 0; transform: translateY(0.75rem); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes welcome-drift {
+    from { transform: translate3d(-2%, 0, 0) scale(1); }
+    to { transform: translate3d(2%, -3%, 0) scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .welcome-ambient::after,
+    .welcome-content > * {
+        animation: none;
+    }
+
+    .welcome-action,
+    .welcome-action svg {
+        transition: none;
+    }
+
+    .welcome-action:hover {
+        translate: none;
+    }
+}
+
+@media (forced-colors: active) {
+    .welcome-title-accent {
+        background: none;
+        -webkit-text-fill-color: currentColor;
+    }
+}
+
+@media (max-height: 540px) {
+    .welcome-screen header,
+    .welcome-screen footer {
+        padding-block: 0.75rem;
+    }
+
+    .welcome-title,
+    .welcome-description,
+    .welcome-action {
+        margin-top: 1rem;
+    }
+}
+
+@media (max-height: 380px) {
+    .welcome-eyebrow,
+    .welcome-description,
+    .welcome-screen footer {
+        display: none;
+    }
+
+    .welcome-title {
+        margin-top: 0;
+    }
+}

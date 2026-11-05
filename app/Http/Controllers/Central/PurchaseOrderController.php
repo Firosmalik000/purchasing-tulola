@@ -92,7 +92,7 @@ class PurchaseOrderController extends Controller
         $order = $action->handle($purchaseOrder);
         $notifications->sendPurchaseOrderPlaced($order);
 
-        $destinationName = $purchaseOrder->purchaseRequest?->store?->name ?? 'toko';
+        $destinationName = $purchaseOrder->purchaseRequest?->store->name ?? 'toko';
 
         return back()->with('success', "Order internal {$purchaseOrder->number} berhasil dikirim ke {$destinationName} dan sekarang menunggu penerimaan toko.");
     }
@@ -123,7 +123,7 @@ class PurchaseOrderController extends Controller
         Gate::authorize('view', $purchaseOrder);
         $orderData = $this->prepareOrderPrintData($purchaseOrder);
 
-        $options = new Options();
+        $options = new Options;
         $options->set('defaultFont', 'DejaVu Sans');
         $options->set('isRemoteEnabled', false);
 
@@ -174,15 +174,13 @@ class PurchaseOrderController extends Controller
 
         $items = $purchaseOrder->items->map(function ($item, int $index) use ($purchaseOrder) {
             $isStock = $item->item_type === PurchaseRequestItemType::STOCK;
-            $name = $isStock ? ($item->item?->name ?? '—') : ($item->name ?? 'Permintaan Khusus');
-            $sku = $isStock ? ($item->item?->sku ?? '—') : 'KHUSUS';
-            $categoryName = $isStock ? ($item->item?->category?->name ?? 'Stok Reguler') : 'Permintaan Khusus';
+            $name = $isStock ? ($item->item->name ?? '—') : ($item->name ?? 'Permintaan Khusus');
+            $sku = $isStock ? ($item->item->sku ?? '—') : 'KHUSUS';
+            $categoryName = $isStock ? ($item->item?->category->name ?? 'Stok Reguler') : 'Permintaan Khusus';
 
-            $receivedQty = (int) ($purchaseOrder->receipts ?? collect())->reduce(function ($sum, $receipt) use ($item) {
-                return $sum + (int) collect($receipt->items ?? [])
-                    ->where('purchase_order_item_id', $item->id)
-                    ->sum('received_quantity');
-            }, 0);
+            $receivedQty = (int) $purchaseOrder->receipts->flatMap->items
+                ->where('purchase_order_item_id', $item->id)
+                ->sum('received_quantity');
 
             $orderedQty = (int) $item->quantity;
             $isComplete = $receivedQty >= $orderedQty;
@@ -200,10 +198,10 @@ class PurchaseOrderController extends Controller
                 'sku' => $sku,
                 'name' => $name,
                 'category' => $categoryName,
-                'type' => $item->item_type->value ?? (string) $item->item_type,
+                'type' => $item->item_type->value,
                 'type_label' => $isStock ? 'Stok Reguler' : 'Item Khusus',
                 'quantity' => $orderedQty,
-                'unit' => $item->unit?->symbol ?? 'pcs',
+                'unit' => $item->unit->symbol,
                 'received_quantity' => $receivedQty,
                 'status_label' => $statusLabel,
             ];
@@ -216,26 +214,26 @@ class PurchaseOrderController extends Controller
         return [
             'id' => $purchaseOrder->id,
             'number' => $purchaseOrder->number,
-            'order_date' => $purchaseOrder->order_date?->translatedFormat('d F Y') ?? ($purchaseOrder->order_date?->format('d/m/Y') ?? '—'),
-            'order_date_raw' => $purchaseOrder->order_date?->format('d/m/Y') ?? '—',
-            'expected_date' => $purchaseOrder->expected_date?->translatedFormat('d F Y') ?? ($purchaseOrder->expected_date?->format('d/m/Y') ?? '—'),
+            'order_date' => $purchaseOrder->order_date->translatedFormat('d F Y'),
+            'order_date_raw' => $purchaseOrder->order_date->format('d/m/Y'),
+            'expected_date' => $purchaseOrder->expected_date?->translatedFormat('d F Y') ?? '—',
             'status' => $purchaseOrder->status->value,
             'status_label' => $purchaseOrder->status->label(),
             'notes' => $purchaseOrder->notes,
-            'request_number' => $purchaseOrder->purchaseRequest?->number ?? '—',
+            'request_number' => $purchaseOrder->purchaseRequest->number ?? '—',
             'target_store' => $targetStore ? [
                 'code' => $targetStore->code,
                 'name' => $targetStore->name,
                 'address' => $targetStore->address ?? null,
             ] : null,
             'target_store_name' => $targetStore ? "{$targetStore->code} — {$targetStore->name}" : 'Internal / Pusat',
-            'creator_name' => $purchaseOrder->creator?->name ?? 'Staff Central',
+            'creator_name' => $purchaseOrder->creator->name,
             'items' => $items,
             'total_items' => $totalItems,
             'total_ordered' => $totalOrdered,
             'total_received' => $totalReceived,
             'printed_at' => now()->translatedFormat('d F Y, H:i').' WIB',
-            'printed_by' => auth()->user()?->name ?? 'Sistem',
+            'printed_by' => auth()->user()->name,
         ];
     }
 }

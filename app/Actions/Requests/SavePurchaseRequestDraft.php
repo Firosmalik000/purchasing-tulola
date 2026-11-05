@@ -41,6 +41,12 @@ class SavePurchaseRequestDraft
         try {
             $saved = DB::transaction(function () use ($store, $actor, $data, $request, &$stalePaths): PurchaseRequest {
                 $creating = $request === null;
+                if ($request !== null) {
+                    $request = PurchaseRequest::query()->lockForUpdate()->findOrFail($request->id);
+                    if ($request->status !== PurchaseRequestStatus::DRAFT) {
+                        throw ValidationException::withMessages(['status' => 'Hanya draft yang dapat diperbarui.']);
+                    }
+                }
                 $request ??= new PurchaseRequest([
                     'number' => $this->numbers->handle($store), 'store_id' => $store->id,
                     'requested_by' => $actor->id, 'status' => PurchaseRequestStatus::DRAFT,

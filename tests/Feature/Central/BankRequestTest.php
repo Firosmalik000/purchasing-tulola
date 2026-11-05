@@ -6,6 +6,8 @@ use App\Enums\PurchaseOrderStatus;
 use App\Enums\PurchaseRequestItemStatus;
 use App\Enums\PurchaseRequestItemType;
 use App\Enums\PurchaseRequestStatus;
+use App\Enums\UserRole;
+use App\Models\Item;
 use App\Models\ItemCategory;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
@@ -20,6 +22,50 @@ use Tests\TestCase;
 class BankRequestTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_management_can_read_bank_requests_but_cannot_create_orders(): void
+    {
+        $manager = User::factory()->create(['role' => UserRole::MANAGEMENT]);
+        [, , $line] = $this->submittedRequest();
+        $line->update([
+            'status' => PurchaseRequestItemStatus::BANK_PERMINTAAN,
+            'bank_quantity' => 2,
+            'approved_quantity' => 0,
+        ]);
+
+        $this->actingAs($manager)->get(route('central.bank-requests.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('canCreateOrder', false));
+        $this->post(route('central.bank-requests.create-order'), [
+            'items' => [['id' => $line->id, 'quantity' => 2]],
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('purchase_orders', 0);
+        $this->assertNull($line->fresh()->bank_ordered_at);
+        $this->assertSame(0, $line->orderAllocations()->count());
+    }
+
+    public function test_purchasing_can_create_orders_from_bank_requests(): void
+    {
+        $purchaser = User::factory()->create(['role' => UserRole::PURCHASING]);
+        [, , $line] = $this->submittedRequest();
+        $line->update([
+            'status' => PurchaseRequestItemStatus::BANK_PERMINTAAN,
+            'bank_quantity' => 2,
+            'approved_quantity' => 0,
+        ]);
+
+        $this->actingAs($purchaser)->get(route('central.bank-requests.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->where('canCreateOrder', true));
+        $this->post(route('central.bank-requests.create-order'), [
+            'items' => [['id' => $line->id, 'quantity' => 2]],
+        ])->assertRedirect();
+
+        $this->assertDatabaseCount('purchase_orders', 1);
+        $this->assertNotNull($line->fresh()->bank_ordered_at);
+        $this->assertSame(1, $line->orderAllocations()->count());
+    }
 
     public function test_special_item_can_be_deferred_to_bank_permintaan_and_excluded_from_immediate_po(): void
     {
@@ -303,7 +349,7 @@ class BankRequestTest extends TestCase
         $store = Store::factory()->create(['code' => $storeCode]);
         $unit = Unit::create(['name' => 'Piece '.$storeCode, 'symbol' => strtolower($storeCode), 'is_active' => true]);
         $category = ItemCategory::create(['name' => 'Category '.$storeCode, 'code' => $storeCode, 'is_active' => true]);
-        $item = \App\Models\Item::create(['sku' => $storeCode.'-001', 'name' => 'Tissue '.$storeCode, 'item_category_id' => $category->id, 'unit_id' => $unit->id, 'is_active' => true]);
+        $item = Item::create(['sku' => $storeCode.'-001', 'name' => 'Tissue '.$storeCode, 'item_category_id' => $category->id, 'unit_id' => $unit->id, 'is_active' => true]);
         $request = PurchaseRequest::factory()->submitted()->create([
             'number' => 'REQ/'.$storeCode.'/'.now()->format('Y/m').'/0001',
             'store_id' => $store->id,

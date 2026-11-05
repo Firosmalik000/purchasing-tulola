@@ -257,7 +257,7 @@ export function CatalogItemSelect({
                                                 : 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
                                         )}
                                     >
-                                        Pusat: {selectedItem.central_stock}
+                                        Tersedia: {selectedItem.central_stock}
                                     </span>
                                 )}
                                 <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
@@ -443,7 +443,7 @@ export function CatalogItemSelect({
                                                                         : 'bg-rose-500/10 text-rose-600 dark:text-rose-400',
                                                                 )}
                                                             >
-                                                                Pusat: {item.central_stock}
+                                                                Tersedia: {item.central_stock}
                                                             </span>
                                                         )}
                                                         <span className="font-mono text-[10px] text-muted-foreground">

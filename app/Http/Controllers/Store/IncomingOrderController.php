@@ -221,7 +221,7 @@ class IncomingOrderController extends Controller
                 'id' => $item->id,
                 'name' => $item->name,
                 'quantity' => $item->bank_quantity > 0 ? $item->bank_quantity : ($item->approved_quantity ?? $item->requested_quantity),
-                'unit' => $item->unit?->symbol ?? '',
+                'unit' => $item->unit->symbol,
             ])->values();
 
         return [
@@ -240,7 +240,7 @@ class IncomingOrderController extends Controller
                     $orderItem = $ri->purchaseOrderItem;
                     $itemName = $orderItem ? ($orderItem->item_type === PurchaseRequestItemType::STOCK ? ($orderItem->item->name ?? '') : ($orderItem->name ?? '')) : 'Item';
                     $sku = $orderItem?->item?->sku;
-                    $unit = $orderItem?->unit?->symbol ?? 'pcs';
+                    $unit = $orderItem?->unit->symbol ?? 'pcs';
 
                     return [
                         'id' => $ri->id,

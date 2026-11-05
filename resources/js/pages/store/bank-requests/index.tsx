@@ -20,6 +20,7 @@ import {
 import { SampleImagePreview } from '@/components/common/sample-image-preview';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { formatQuantity } from '@/lib/utils';
@@ -223,8 +224,7 @@ export default function StoreBankRequestIndex({
                             </div>
 
                             <div>
-                                <Input
-                                    type="date"
+                                <DateInput
                                     name="date_from"
                                     defaultValue={filters.date_from}
                                     className="h-8.5 text-xs font-mono"
@@ -233,8 +233,7 @@ export default function StoreBankRequestIndex({
                             </div>
 
                             <div>
-                                <Input
-                                    type="date"
+                                <DateInput
                                     name="date_to"
                                     defaultValue={filters.date_to}
                                     className="h-8.5 text-xs font-mono"

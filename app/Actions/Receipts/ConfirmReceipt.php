@@ -13,6 +13,7 @@ use App\Models\PurchaseOrderRequestItem;
 use App\Models\Receipt;
 use App\Models\ReceiptItem;
 use App\Models\Store;
+use App\Models\StoreStock;
 use App\Models\User;
 use App\Services\ActivityLogger;
 use Illuminate\Support\Collection;
@@ -50,6 +51,20 @@ class ConfirmReceipt
             }
 
             $receivedQuantities = $this->validateQuantities($selected, $input, $store);
+            $centralStore = Store::centralStore();
+            $isCentralDistribution = $centralStore && $store->id !== $centralStore->id;
+            if ($isCentralDistribution) {
+                $stockAllocations = $selected->filter(fn (PurchaseOrderRequestItem $allocation) => $allocation->purchaseOrderItem->item_type === PurchaseRequestItemType::STOCK)
+                    ->groupBy(fn (PurchaseOrderRequestItem $allocation): int => $allocation->purchaseOrderItem->item_id);
+                $centralStocks = StoreStock::query()->where('store_id', $centralStore->id)
+                    ->whereIn('item_id', $stockAllocations->keys())->orderBy('item_id')->lockForUpdate()->get()->keyBy('item_id');
+                foreach ($stockAllocations as $itemId => $allocations) {
+                    $quantity = $allocations->sum(fn (PurchaseOrderRequestItem $allocation) => $receivedQuantities[$allocation->id]);
+                    if ($quantity > (int) ($centralStocks->get($itemId)->quantity ?? 0)) {
+                        throw ValidationException::withMessages(['stock' => 'Stok fisik di Kantor Pusat tidak mencukupi untuk penerimaan ini. Perbarui stok terlebih dahulu.']);
+                    }
+                }
+            }
             $receipt = Receipt::create([
                 'number' => $this->numbers->handle($store),
                 'purchase_order_id' => $purchaseOrder->id,
@@ -70,9 +85,6 @@ class ConfirmReceipt
             }
 
             $receipt->update(['stock_applied_at' => now(), 'stock_applied_by' => $actor->id]);
-
-            $centralStore = Store::centralStore();
-            $isCentralDistribution = $centralStore && $store->id !== $centralStore->id;
 
             $selected->filter(fn (PurchaseOrderRequestItem $allocation) => $allocation->purchaseOrderItem->item_type === PurchaseRequestItemType::STOCK)
                 ->groupBy(fn (PurchaseOrderRequestItem $allocation): int => $allocation->purchaseOrderItem->item->id)

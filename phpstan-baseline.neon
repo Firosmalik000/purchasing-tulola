@@ -13,12 +13,6 @@ parameters:
 			path: app/Actions/Inventory/BulkAddStoreStock.php
 
 		-
-			message: '#^Binary operation "\-" between string and int results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: app/Actions/Receipts/ConfirmReceipt.php
-
-		-
 			message: '#^Access to an undefined property App\\Models\\PurchaseRequestItem\:\:\$category_name\.$#'
 			identifier: property.notFound
 			count: 1
@@ -121,70 +115,10 @@ parameters:
 			path: app/Http/Controllers/Central/InventoryController.php
 
 		-
-			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/Central/PurchaseOrderController.php
-
-		-
 			message: '#^Parameter \#2 \$user of method App\\Actions\\Stores\\AssignUserToStore\:\:handle\(\) expects App\\Models\\User, App\\Models\\User\|Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\User\> given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/Central/StoreController.php
-
-		-
-			message: '#^Binary operation "\-" between string and int results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
-
-		-
-			message: '#^Binary operation "\-" between string and string results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\PurchaseOrderRequestItem\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\PurchaseOrderItem\>\:\:flatMap\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
-
-		-
-			message: '#^Parameter \#1 \$key of method Illuminate\\Database\\Eloquent\\Collection\<int,array\<string, mixed\>\>\:\:contains\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
-
-		-
-			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\PurchaseOrderRequestItem\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: method.unresolvableReturnType
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
-
-		-
-			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,App\\Models\\PurchaseOrderItem\>\:\:flatMap\(\) contains unresolvable type\.$#'
-			identifier: method.unresolvableReturnType
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
-
-		-
-			message: '#^Return type of call to method Illuminate\\Support\\Collection\<int,array\<string, mixed\>\>\:\:values\(\) contains unresolvable type\.$#'
-			identifier: method.unresolvableReturnType
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>symbol" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Http/Controllers/Store/IncomingOrderController.php
 
 		-
 			message: '#^Parameter \#1 \$boolean of function abort_unless expects bool, string\|null given\.$#'

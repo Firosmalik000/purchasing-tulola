@@ -9,6 +9,7 @@ import { RequestStatusBadge } from '@/components/common/request-status-badge';
 import { EmptyState } from '@/components/common/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { DateInput } from '@/components/ui/date-input';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -139,23 +140,23 @@ export default function CentralRequestIndex({
                                 </select>
                             </div>
                             <div>
-                                <Input
-                                    type="date"
+                                <DateInput
+                                    key={`from-${filters.date_from}`}
                                     name="date_from"
                                     defaultValue={filters.date_from}
                                     className="h-8.5 text-xs"
-                                    aria-label="Tanggal mulai"
-                                    title="Tanggal mulai"
+                                    placeholder="DD/MM/YYYY"
+                                    title="Tanggal mulai (DD/MM/YYYY)"
                                 />
                             </div>
                             <div>
-                                <Input
-                                    type="date"
+                                <DateInput
+                                    key={`to-${filters.date_to}`}
                                     name="date_to"
                                     defaultValue={filters.date_to}
                                     className="h-8.5 text-xs"
-                                    aria-label="Tanggal akhir"
-                                    title="Tanggal akhir"
+                                    placeholder="DD/MM/YYYY"
+                                    title="Tanggal akhir (DD/MM/YYYY)"
                                 />
                             </div>
                             <div className="flex items-center gap-2 sm:col-span-2 xl:col-span-1">

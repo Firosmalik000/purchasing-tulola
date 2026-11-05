@@ -8,6 +8,7 @@ import {
 } from '@/components/common/pagination-links';
 import { EmptyState } from '@/components/common/empty-state';
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { Card, CardContent } from '@/components/ui/card';
 import {
     DropdownMenu,
@@ -102,8 +103,7 @@ export default function OrderIndex({ orders, statuses, filters }: Props) {
                                 </select>
                             </div>
                             <div>
-                                <Input
-                                    type="date"
+                                <DateInput
                                     name="date_from"
                                     defaultValue={filters.date_from}
                                     className="h-8.5 text-xs"
@@ -112,8 +112,7 @@ export default function OrderIndex({ orders, statuses, filters }: Props) {
                                 />
                             </div>
                             <div>
-                                <Input
-                                    type="date"
+                                <DateInput
                                     name="date_to"
                                     defaultValue={filters.date_to}
                                     className="h-8.5 text-xs"

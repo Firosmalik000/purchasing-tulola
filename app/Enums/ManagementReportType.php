@@ -52,12 +52,11 @@ enum ManagementReportType: string
     /** @return list<array{value: string, label: string, description: string, is_snapshot: bool}> */
     public static function options(): array
     {
-        return collect(self::cases())->map(fn (self $type) => [
+        return array_map(fn (self $type) => [
             'value' => $type->value,
             'label' => $type->label(),
             'description' => $type->description(),
             'is_snapshot' => $type->isSnapshot(),
-        ])->values()->all();
+        ], self::cases());
     }
 }
-

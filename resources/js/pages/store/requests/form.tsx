@@ -10,7 +10,7 @@ import {
     Sparkles,
     Trash2,
 } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/common/page-header';
 import InputError from '@/components/input-error';
@@ -19,9 +19,11 @@ import {
     type CatalogItem,
 } from '@/components/store/catalog-item-select';
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { stockRequestQuantity } from '@/lib/stock-request-quantity';
 
 type Store = { id: number; code: string; name: string };
 type Unit = { id: number; name: string; symbol: string };
@@ -89,7 +91,11 @@ export default function RequestForm({
                 .map((line) => ({
                     key: line.id,
                     item_id: String(line.item_id),
-                    requested_quantity: String(Number(line.requested_quantity)),
+                    requested_quantity: stockRequestQuantity(
+                        String(line.requested_quantity),
+                        items.find((item) => item.id === line.item_id)
+                            ?.central_stock ?? 0,
+                    ),
                 })) ?? [],
     );
     const [specialLines, setSpecialLines] = useState<SpecialLine[]>(
@@ -112,95 +118,46 @@ export default function RequestForm({
     const [submitAction, setSubmitAction] = useState<'draft' | 'submit'>(
         'draft',
     );
-    const submitActionRef = useRef<'draft' | 'submit'>('draft');
 
     const action = purchaseRequest
         ? `/store/requests/${purchaseRequest.id}`
         : '/store/requests';
 
-    const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        if (submitActionRef.current === 'submit') {
-            const invalidItems: {
-                name: string;
-                requestedQty: number;
-                centralStock: number;
-            }[] = [];
-
-            for (const line of stockLines) {
-                if (!line.item_id) continue;
-                const item = items.find(
-                    (i) => String(i.id) === String(line.item_id),
-                );
-                if (!item) continue;
-                const centralStock = item.central_stock ?? 0;
-                const requestedQty = parseInt(line.requested_quantity, 10) || 0;
-
-                if (requestedQty > centralStock) {
-                    invalidItems.push({
-                        name: item.name,
-                        requestedQty,
-                        centralStock,
-                    });
-                }
-            }
-
-            if (invalidItems.length > 0) {
-                e.preventDefault();
-                if (invalidItems.length === 1) {
-                    const item = invalidItems[0];
-                    if (item.centralStock <= 0) {
-                        toast.error(
-                            `Item "${item.name}" yang di-request sedang tidak ada stok di Kantor Pusat.`,
-                            { duration: 5000 },
-                        );
-                    } else {
-                        toast.error(
-                            `Stok item "${item.name}" di Kantor Pusat tidak mencukupi (Tersedia: ${item.centralStock}, Diminta: ${item.requestedQty}).`,
-                            { duration: 5000 },
-                        );
-                    }
-                } else {
-                    const details = invalidItems
-                        .map(
-                            (i) =>
-                                `• ${i.name} (Tersedia: ${i.centralStock}, Diminta: ${i.requestedQty})`,
-                        )
-                        .join('\n');
-                    toast.error(
-                        `Terdapat ${invalidItems.length} item yang stoknya tidak mencukupi di Kantor Pusat:\n${details}`,
-                        {
-                            duration: 6000,
-                            style: { whiteSpace: 'pre-line' },
-                        },
-                    );
-                }
-            }
-        }
-    };
-
-    const handleFormError = (errors: Record<string, string>) => {
-        const errorMsg =
-            (errors.stock as string) ||
-            (errors.stock_items as string) ||
-            (errors.items as string) ||
-            (Object.values(errors)[0] as string);
-        if (errorMsg) {
-            toast.error(errorMsg, {
-                style: { whiteSpace: 'pre-line' },
+    const handleBeforeSubmit = () => {
+        const unavailable = stockLines.find((line) =>
+            line.item_id && (items.find((item) =>
+                String(item.id) === line.item_id,
+            )?.central_stock ?? 0) <= 0,
+        );
+        if (unavailable) {
+            toast.error('Stok barang tidak tersedia. Pilih barang lain atau hapus barisnya.', {
+                id: 'validation-error-toast',
             });
+            return false;
         }
+
+        return true;
     };
 
     const updateStock = (
         key: number,
         field: keyof Omit<StockLine, 'key'>,
         value: string,
-    ) =>
-        setStockLines((lines) =>
-            lines.map((line) =>
-                line.key === key ? { ...line, [field]: value } : line,
-            ),
-        );
+    ) => setStockLines((lines) => lines.map((line) => {
+            if (line.key !== key) return line;
+            const itemId = field === 'item_id' ? value : line.item_id;
+            const available = items.find((item) =>
+                String(item.id) === itemId,
+            )?.central_stock ?? 0;
+            return {
+                ...line,
+                item_id: itemId,
+                requested_quantity: stockRequestQuantity(
+                    field === 'requested_quantity' ? value : line.requested_quantity,
+                    available,
+                ),
+            };
+        }));
 
     const updateSpecial = (
         key: number,
@@ -265,8 +222,7 @@ export default function RequestForm({
                     method="post"
                     encType="multipart/form-data"
                     className="space-y-5"
-                    onSubmit={handleFormSubmit}
-                    onError={handleFormError}
+                    onBefore={handleBeforeSubmit}
                 >
                     {({ processing, errors }) => (
                         <>
@@ -339,10 +295,9 @@ export default function RequestForm({
                                             <Calendar className="size-3.5 text-muted-foreground" />
                                             Target Tanggal Dibutuhkan
                                         </Label>
-                                        <Input
+                                        <DateInput
                                             id="required_date"
                                             name="required_date"
-                                            type="date"
                                             className="h-9 text-xs"
                                             defaultValue={
                                                 purchaseRequest?.required_date?.slice(
@@ -412,6 +367,9 @@ export default function RequestForm({
                                             Tambah Item
                                         </Button>
                                     </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Stok tersedia sudah dikurangi permintaan aktif.
+                                    </p>
                                 </CardHeader>
 
                                 <CardContent className="space-y-3 p-5">
@@ -423,80 +381,92 @@ export default function RequestForm({
                                         </div>
                                     ) : (
                                         <div className="space-y-2.5">
-                                            {stockLines.map((line, index) => (
-                                                <div
-                                                    key={line.key}
-                                                    className="group flex flex-col gap-2 rounded-lg border border-border/70 bg-muted/20 p-2.5 transition-colors hover:border-border sm:flex-row sm:items-center sm:gap-3"
-                                                >
-                                                    <span className="flex size-6 shrink-0 items-center justify-center rounded bg-muted text-[11px] font-semibold text-muted-foreground">
-                                                        {index + 1}
-                                                    </span>
-
-                                                    <div className="min-w-0 flex-1">
-                                                        <CatalogItemSelect
-                                                            name={`stock_items[${index}][item_id]`}
-                                                            value={line.item_id}
-                                                            onChange={(
-                                                                itemId,
-                                                            ) =>
-                                                                updateStock(
-                                                                    line.key,
-                                                                    'item_id',
-                                                                    itemId,
-                                                                )
-                                                            }
-                                                            items={items}
-                                                            required
-                                                            placeholder="Pilih barang dari katalog..."
-                                                        />
-                                                    </div>
-
-                                                    <div className="w-full shrink-0 sm:w-36">
-                                                        <Input
-                                                            name={`stock_items[${index}][requested_quantity]`}
-                                                            type="number"
-                                                            min="1"
-                                                            step="1"
-                                                            className="h-9 text-right text-xs font-medium tabular-nums"
-                                                            value={
-                                                                line.requested_quantity
-                                                            }
-                                                            onChange={(e) =>
-                                                                updateStock(
-                                                                    line.key,
-                                                                    'requested_quantity',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Jumlah"
-                                                            required
-                                                        />
-                                                    </div>
-
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="size-8 shrink-0 self-end text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 sm:self-center dark:hover:text-rose-400"
-                                                        onClick={() =>
-                                                            setStockLines(
-                                                                (lines) =>
-                                                                    lines.filter(
-                                                                        (
-                                                                            value,
-                                                                        ) =>
-                                                                            value.key !==
-                                                                            line.key,
-                                                                    ),
-                                                            )
-                                                        }
-                                                        aria-label="Hapus item"
+                                            {stockLines.map((line, index) => {
+                                                const available = items.find((item) => String(item.id) === line.item_id)?.central_stock ?? 0;
+                                                return (
+                                                    <div
+                                                        key={line.key}
+                                                        className="group flex flex-col gap-2 rounded-lg border border-border/70 bg-muted/20 p-2.5 transition-colors hover:border-border sm:flex-row sm:items-center sm:gap-3"
                                                     >
-                                                        <Trash2 className="size-4" />
-                                                    </Button>
-                                                </div>
-                                            ))}
+                                                        <span className="flex size-6 shrink-0 items-center justify-center rounded bg-muted text-[11px] font-semibold text-muted-foreground">
+                                                            {index + 1}
+                                                        </span>
+
+                                                        <div className="min-w-0 flex-1">
+                                                            <CatalogItemSelect
+                                                                name={`stock_items[${index}][item_id]`}
+                                                                value={line.item_id}
+                                                                onChange={(
+                                                                    itemId,
+                                                                ) =>
+                                                                    updateStock(
+                                                                        line.key,
+                                                                        'item_id',
+                                                                        itemId,
+                                                                    )
+                                                                }
+                                                                items={items}
+                                                                error={errors[`stock_items.${index}.item_id`]}
+                                                                required
+                                                                placeholder="Pilih barang dari katalog..."
+                                                            />
+                                                        </div>
+
+                                                        <div className="w-full shrink-0 sm:w-36">
+                                                            <Input
+                                                                name={`stock_items[${index}][requested_quantity]`}
+                                                                type="number"
+                                                                min="1"
+                                                                max={available}
+                                                                readOnly={!line.item_id || available <= 0}
+                                                                aria-label={`Jumlah diminta item ${index + 1}`}
+                                                                aria-invalid={Boolean(errors[`stock_items.${index}.requested_quantity`])}
+                                                                step="1"
+                                                                className="h-9 text-right text-xs font-medium tabular-nums"
+                                                                value={
+                                                                    stockRequestQuantity(
+                                                                        line.requested_quantity,
+                                                                        available,
+                                                                    )
+                                                                }
+                                                                onChange={(e) =>
+                                                                    updateStock(
+                                                                        line.key,
+                                                                        'requested_quantity',
+                                                                        e.target
+                                                                            .value,
+                                                                    )
+                                                                }
+                                                                placeholder={line.item_id && available <= 0 ? 'Stok kosong' : 'Jumlah'}
+                                                                required
+                                                            />
+                                                            <InputError message={errors[`stock_items.${index}.requested_quantity`]} />
+                                                        </div>
+
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="size-8 shrink-0 self-end text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 sm:self-center dark:hover:text-rose-400"
+                                                            onClick={() =>
+                                                                setStockLines(
+                                                                    (lines) =>
+                                                                        lines.filter(
+                                                                            (
+                                                                                value,
+                                                                            ) =>
+                                                                                value.key !==
+                                                                                line.key,
+                                                                        ),
+                                                                )
+                                                            }
+                                                            aria-label="Hapus item"
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                        </Button>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
 
@@ -730,18 +700,16 @@ export default function RequestForm({
                                                                 Tanggal
                                                                 Dibutuhkan
                                                             </Label>
-                                                            <Input
+                                                            <DateInput
                                                                 name={`special_items[${index}][required_date]`}
-                                                                type="date"
                                                                 value={
                                                                     line.required_date
                                                                 }
-                                                                onChange={(e) =>
+                                                                onChange={(value) =>
                                                                     updateSpecial(
                                                                         line.key,
                                                                         'required_date',
-                                                                        e.target
-                                                                            .value,
+                                                                        value,
                                                                     )
                                                                 }
                                                                 className="h-9 text-xs"
@@ -863,7 +831,6 @@ export default function RequestForm({
                                     variant="secondary"
                                     disabled={processing}
                                     onClick={() => {
-                                        submitActionRef.current = 'draft';
                                         setSubmitAction('draft');
                                     }}
                                 >
@@ -878,7 +845,6 @@ export default function RequestForm({
                                     disabled={processing}
                                     className="font-medium"
                                     onClick={() => {
-                                        submitActionRef.current = 'submit';
                                         setSubmitAction('submit');
                                     }}
                                 >

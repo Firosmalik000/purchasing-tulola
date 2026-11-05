@@ -9,8 +9,8 @@ import {
 } from '@/components/common/pagination-links';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -112,8 +112,7 @@ export default function IncomingOrderIndex({
                                 ))}
                             </select>
 
-                            <Input
-                                type="date"
+                            <DateInput
                                 name="date_from"
                                 defaultValue={filters.date_from}
                                 className="h-8.5 w-auto text-xs"
@@ -121,8 +120,7 @@ export default function IncomingOrderIndex({
                                 title="Tanggal mulai"
                             />
 
-                            <Input
-                                type="date"
+                            <DateInput
                                 name="date_to"
                                 defaultValue={filters.date_to}
                                 className="h-8.5 w-auto text-xs"

@@ -29,6 +29,7 @@ import {
 } from '@/components/common/pagination-links';
 import { CatalogItemSelect } from '@/components/store/catalog-item-select';
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
@@ -999,10 +1000,7 @@ export default function InventoryIndex({
                                             Riwayat Transaksi Stok (
                                             {activeStore?.name ?? 'Pusat'})
                                         </CardTitle>
-                                        <p className="text-[11px] text-muted-foreground">
-                                            Daftar transaksi penambahan dan
-                                            mutasi stok per request
-                                        </p>
+
                                     </div>
                                 </div>
 
@@ -1049,8 +1047,7 @@ export default function InventoryIndex({
                                     {/* Integrated Date Range Pill */}
                                     <div className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-background px-2.5 py-1 text-xs shadow-2xs">
                                         <Calendar className="size-3.5 shrink-0 text-muted-foreground" />
-                                        <input
-                                            type="date"
+                                        <DateInput
                                             name="date_from"
                                             defaultValue={filters.date_from}
                                             className="w-[115px] bg-transparent font-mono text-xs text-foreground focus:outline-none"
@@ -1060,8 +1057,7 @@ export default function InventoryIndex({
                                         <span className="text-[11px] font-medium text-muted-foreground select-none">
                                             s/d
                                         </span>
-                                        <input
-                                            type="date"
+                                        <DateInput
                                             name="date_to"
                                             defaultValue={filters.date_to}
                                             className="w-[115px] bg-transparent font-mono text-xs text-foreground focus:outline-none"

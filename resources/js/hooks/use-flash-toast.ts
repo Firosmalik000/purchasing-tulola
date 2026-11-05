@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
+import { validationMessages } from '@/lib/validation-messages';
 import type { FlashToast } from '@/types/ui';
 
 type FlashProps = {
@@ -15,41 +16,17 @@ type FlashProps = {
 function showValidationErrorToast(rawErrors: unknown): void {
     if (!rawErrors || typeof rawErrors !== 'object') return;
 
-    const messages: string[] = [];
-    for (const val of Object.values(rawErrors as Record<string, unknown>)) {
-        if (Array.isArray(val)) {
-            for (const item of val) {
-                if (typeof item === 'string' && item.trim()) {
-                    messages.push(item.trim());
-                }
-            }
-        } else if (typeof val === 'string' && val.trim()) {
-            messages.push(val.trim());
-        }
-    }
+    const messages = validationMessages(rawErrors as Record<string, unknown>);
 
     if (messages.length === 0) return;
 
-    if (messages.length === 1) {
-        toast.error('Validasi Gagal', {
-            id: 'validation-error-toast',
-            description: messages[0],
-            duration: 5000,
-        });
-    } else {
-        const description =
-            messages.slice(0, 4).map((msg) => `• ${msg}`).join('\n') +
-            (messages.length > 4
-                ? `\n• ...dan ${messages.length - 4} kesalahan lainnya`
-                : '');
-
-        toast.error(`Validasi Gagal (${messages.length} kesalahan)`, {
-            id: 'validation-error-toast',
-            description,
-            style: { whiteSpace: 'pre-line' },
-            duration: 6000,
-        });
-    }
+    toast.error(messages[0], {
+        id: 'validation-error-toast',
+        description: messages.length > 1
+            ? `Ada ${messages.length - 1} isian lain yang perlu diperiksa.`
+            : undefined,
+        duration: 5000,
+    });
 }
 
 export function useFlashToast(): void {

@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $number
  * @property int|null $purchase_request_id
+ * @property-read PurchaseRequest|null $purchaseRequest
  * @property Carbon $order_date
  * @property Carbon|null $expected_date
  * @property string|null $notes

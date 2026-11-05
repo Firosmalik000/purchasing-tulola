@@ -157,7 +157,7 @@ class BuildManagementReport
                 $stock = (int) $centralStocks->get($firstLine->item_id, 0);
 
                 $hoStandard = (int) ($centralStandards->get($firstLine->item_id) ?? 0);
-                $masterStandard = (int) ($firstLine->item?->target_stock ?? $firstLine->item?->min_stock ?? 0);
+                $masterStandard = (int) ($firstLine->item->target_stock ?? $firstLine->item->min_stock ?? 0);
 
                 $configuredStandard = $hoStandard > 0 ? $hoStandard : $masterStandard;
 
@@ -228,23 +228,6 @@ class BuildManagementReport
             $this->column('quantity', 'Qty', 'quantity', 'right'),
             $this->column('remarks', 'Remarks'),
         ];
-    }
-
-    /** @param Collection<int, PurchaseOrderRequestItem> $allocations */
-    private function allocationSnapshots(Collection $allocations, string $field, PurchaseRequestItemType $type): string
-    {
-        if ($type === PurchaseRequestItemType::SPECIAL || $allocations->isEmpty()) {
-            return '-';
-        }
-
-        $result = $allocations->groupBy(fn ($allocation) => $allocation->purchaseRequestItem->purchaseRequest->store->code)
-            ->map(function (Collection $entries, string $code) use ($field): string {
-                $value = $entries->pluck('purchaseRequestItem.'.$field)->filter(fn ($v) => $v !== null)->last();
-
-                return $code.' '.($value === null ? '—' : $this->quantity($value));
-            })->values()->implode(', ');
-
-        return $result ?: '-';
     }
 
     /**

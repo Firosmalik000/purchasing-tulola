@@ -2,8 +2,8 @@ import { Form, Link } from '@inertiajs/react';
 import { CalendarRange, Filter, Info, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type {
     CategoryOption,
@@ -95,8 +95,7 @@ export function ReportFilterPanel({
                                     <Label className="text-xs font-semibold text-foreground">
                                         Dari Tanggal
                                     </Label>
-                                    <Input
-                                        type="date"
+                                    <DateInput
                                         name="date_from"
                                         className="h-9.5"
                                         defaultValue={filters.date_from}
@@ -106,8 +105,7 @@ export function ReportFilterPanel({
                                     <Label className="text-xs font-semibold text-foreground">
                                         Sampai Tanggal
                                     </Label>
-                                    <Input
-                                        type="date"
+                                    <DateInput
                                         name="date_to"
                                         className="h-9.5"
                                         defaultValue={filters.date_to}

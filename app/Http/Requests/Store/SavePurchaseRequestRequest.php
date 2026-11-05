@@ -6,7 +6,7 @@ use App\Enums\UserRole;
 use App\Models\Item;
 use App\Models\PurchaseRequest;
 use App\Models\Store;
-use App\Models\StoreStock;
+use App\Services\CentralStockAvailability;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -72,10 +72,7 @@ class SavePurchaseRequestRequest extends FormRequest
                     $stockItems = (array) $this->input('stock_items', []);
                     $itemIds = collect($stockItems)->pluck('item_id')->filter()->all();
                     $itemsMap = Item::query()->whereIn('id', $itemIds)->get()->keyBy('id');
-                    $centralStocks = StoreStock::query()
-                        ->where('store_id', $centralStore->id)
-                        ->whereIn('item_id', $itemIds)
-                        ->pluck('quantity', 'item_id');
+                    $centralStocks = app(CentralStockAvailability::class)->available($centralStore, $itemIds);
 
                     $invalidItems = [];
                     foreach ($stockItems as $index => $line) {
@@ -86,7 +83,7 @@ class SavePurchaseRequestRequest extends FormRequest
                             continue;
                         }
 
-                        $availableStock = (int) ($centralStocks->get($itemId) ?? 0);
+                        $availableStock = (int) ($centralStocks[$itemId] ?? 0);
                         if ($availableStock < $requestedQty) {
                             if ($availableStock <= 0) {
                                 $itemMsg = "Item \"{$item->name}\" yang di-request sedang tidak ada stok di Kantor Pusat.";
@@ -113,7 +110,7 @@ class SavePurchaseRequestRequest extends FormRequest
                                 fn ($i) => "• {$i['name']} (Tersedia: {$i['available']}, Diminta: {$i['requested']})",
                                 $invalidItems
                             );
-                            $overallMsg = "Terdapat ".count($invalidItems)." item yang stoknya tidak mencukupi di Kantor Pusat:\n".implode("\n", $lines);
+                            $overallMsg = 'Terdapat '.count($invalidItems)." item yang stoknya tidak mencukupi di Kantor Pusat:\n".implode("\n", $lines);
                         }
                         $validator->errors()->add('stock', $overallMsg);
                     }

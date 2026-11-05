@@ -34,7 +34,7 @@ class BankRequestExportService
         // Resolve store label if filtered
         $storeLabel = 'Semua Toko Cabang';
         if (! empty($filters['store_id'])) {
-            $store = Store::query()->find($filters['store_id'], ['id', 'code', 'name']);
+            $store = Store::query()->whereKey($filters['store_id'])->first(['id', 'code', 'name']);
             if ($store) {
                 $storeLabel = "{$store->code} — {$store->name}";
             }
@@ -180,17 +180,17 @@ class BankRequestExportService
             $statusLabel = $item->status?->label() ?? 'Bank Permintaan';
 
             $sheet->setCellValueExplicit('A'.$currentRow, (string) ($index + 1), DataType::TYPE_NUMERIC);
-            $sheet->setCellValueExplicit('B'.$currentRow, (string) ($item->purchaseRequest?->number ?? '—'), DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('B'.$currentRow, (string) ($item->purchaseRequest->number ?? '—'), DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('C'.$currentRow, $prCreatedAt, DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('D'.$currentRow, $requiredDate, DataType::TYPE_STRING);
-            $sheet->setCellValueExplicit('E'.$currentRow, (string) ($item->purchaseRequest?->store?->code ?? '—'), DataType::TYPE_STRING);
-            $sheet->setCellValueExplicit('F'.$currentRow, (string) ($item->purchaseRequest?->store?->name ?? '—'), DataType::TYPE_STRING);
-            $sheet->setCellValueExplicit('G'.$currentRow, (string) ($item->purchaseRequest?->requester?->name ?? '—'), DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('E'.$currentRow, (string) ($item->purchaseRequest->store->code ?? '—'), DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('F'.$currentRow, (string) ($item->purchaseRequest->store->name ?? '—'), DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('G'.$currentRow, (string) ($item->purchaseRequest->requester->name ?? '—'), DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('H'.$currentRow, (string) ($item->name ?? '—'), DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('I'.$currentRow, (string) ($item->description ? str_replace(["\r\n", "\r", "\n"], ' ', $item->description) : '—'), DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('J'.$currentRow, (string) ($item->reason ? str_replace(["\r\n", "\r", "\n"], ' ', $item->reason) : '—'), DataType::TYPE_STRING);
             $sheet->setCellValue('K'.$currentRow, $qty);
-            $sheet->setCellValueExplicit('L'.$currentRow, (string) ($item->unit?->symbol ?? 'pcs'), DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('L'.$currentRow, (string) ($item->unit->symbol ?? 'pcs'), DataType::TYPE_STRING);
             $sheet->setCellValueExplicit('M'.$currentRow, $statusLabel, DataType::TYPE_STRING);
 
             // Alignments
@@ -303,7 +303,7 @@ class BankRequestExportService
         // Resolve store label if filtered
         $storeLabel = 'Semua Toko Cabang';
         if (! empty($filters['store_id'])) {
-            $store = Store::query()->find($filters['store_id'], ['id', 'code', 'name']);
+            $store = Store::query()->whereKey($filters['store_id'])->first(['id', 'code', 'name']);
             if ($store) {
                 $storeLabel = "{$store->code} — {$store->name}";
             }
@@ -396,17 +396,17 @@ class BankRequestExportService
 
                 fputcsv($out, [
                     $index++,
-                    $item->purchaseRequest?->number ?? '—',
+                    $item->purchaseRequest->number ?? '—',
                     $prCreatedAt,
                     $requiredDate,
-                    $item->purchaseRequest?->store?->code ?? '—',
-                    $item->purchaseRequest?->store?->name ?? '—',
-                    $item->purchaseRequest?->requester?->name ?? '—',
+                    $item->purchaseRequest->store->code ?? '—',
+                    $item->purchaseRequest->store->name ?? '—',
+                    $item->purchaseRequest->requester->name ?? '—',
                     $item->name ?? '—',
                     $item->description ? str_replace(["\r\n", "\r", "\n"], ' ', $item->description) : '—',
                     $item->reason ? str_replace(["\r\n", "\r", "\n"], ' ', $item->reason) : '—',
                     $qty,
-                    $item->unit?->symbol ?? 'pcs',
+                    $item->unit->symbol ?? 'pcs',
                     $statusLabel,
                 ]);
             }

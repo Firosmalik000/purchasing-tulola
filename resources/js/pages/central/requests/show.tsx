@@ -202,6 +202,7 @@ export default function CentralRequestShow({
                                 />
                             )}
                             <InputError message={errors.items} />
+                            <InputError message={errors.stock} />
                             {canProcess && (
                                 <Card className="border-amber-500/30 bg-gradient-to-b from-amber-500/5 to-transparent shadow-xs">
                                     <CardContent className="space-y-4 p-5">

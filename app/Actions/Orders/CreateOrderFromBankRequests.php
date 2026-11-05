@@ -9,6 +9,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequestItem;
 use App\Models\User;
 use App\Services\ActivityLogger;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -37,7 +38,7 @@ class CreateOrderFromBankRequests
                     $q->where(function ($sub) {
                         $sub->where('bank_quantity', '>', 0)
                             ->whereNull('bank_ordered_at');
-                    })->orWhere(function ($sub) {
+                    })->orWhere(function (Builder $sub) {
                         $sub->where('status', PurchaseRequestItemStatus::BANK_PERMINTAAN)
                             ->whereDoesntHave('orderAllocations');
                     });

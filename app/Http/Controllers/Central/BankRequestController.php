@@ -6,6 +6,7 @@ use App\Actions\Orders\CreateOrderFromBankRequests;
 use App\Enums\PurchaseRequestItemStatus;
 use App\Enums\PurchaseRequestItemType;
 use App\Http\Controllers\Controller;
+use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequestItem;
 use App\Models\Store;
 use App\Services\BankRequestExportService;
@@ -51,6 +52,7 @@ class BankRequestController extends Controller
         $query = $this->buildFilteredQuery($filters);
 
         return Inertia::render('central/bank-requests/index', [
+            'canCreateOrder' => $request->user()->can('create', PurchaseOrder::class),
             'items' => $query->paginate(Paging::perPage($request))->withQueryString(),
             'stores' => Store::query()->orderBy('name')->get(['id', 'code', 'name']),
             'stats' => [
@@ -120,7 +122,7 @@ class BankRequestController extends Controller
                 $q->where(function ($sub) {
                     $sub->where('purchase_request_items.bank_quantity', '>', 0)
                         ->whereNull('purchase_request_items.bank_ordered_at');
-                })->orWhere(function ($sub) {
+                })->orWhere(function (Builder $sub) {
                     $sub->where('purchase_request_items.status', PurchaseRequestItemStatus::BANK_PERMINTAAN)
                         ->whereNull('purchase_request_items.bank_ordered_at')
                         ->whereDoesntHave('orderAllocations');
@@ -135,7 +137,7 @@ class BankRequestController extends Controller
     private function buildFilteredQuery(array $filters): Builder
     {
         $storeId = $filters['store_id'] ?? null;
-        $keyword = $filters['keyword'] ?? '';
+        $keyword = $filters['keyword'];
         $dateFrom = $filters['date_from'] ?? null;
         $dateTo = $filters['date_to'] ?? null;
 
@@ -209,7 +211,7 @@ class BankRequestController extends Controller
 
     public function createOrder(Request $request, CreateOrderFromBankRequests $action): RedirectResponse
     {
-        Gate::authorize('access-central');
+        Gate::authorize('create', PurchaseOrder::class);
 
         if ($request->filled('expected_date')) {
             $request->merge([

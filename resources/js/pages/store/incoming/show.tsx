@@ -15,6 +15,7 @@ import type { FormEvent } from 'react';
 import { OrderStatusBadge } from '@/components/common/order-status-badge';
 import { PageHeader } from '@/components/common/page-header';
 import { Button } from '@/components/ui/button';
+import { DateTimeInput } from '@/components/ui/date-time-input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -385,15 +386,14 @@ export default function IncomingShow({
                                             >
                                                 Waktu Diterima *
                                             </Label>
-                                            <Input
+                                            <DateTimeInput
                                                 id="received_at"
-                                                type="datetime-local"
                                                 className="h-10"
                                                 value={form.data.received_at}
-                                                onChange={(event) =>
+                                                onChange={(value) =>
                                                     form.setData(
                                                         'received_at',
-                                                        event.target.value,
+                                                        value,
                                                     )
                                                 }
                                                 required

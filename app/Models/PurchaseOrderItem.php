@@ -15,8 +15,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $item_id
  * @property string|null $name
  * @property int $unit_id
- * @property string $quantity
- * @property string $total
+ * @property int $quantity
+ * @property-read Item|null $item
  */
 #[Fillable(['purchase_order_id', 'item_type', 'item_id', 'name', 'unit_id', 'quantity'])]
 class PurchaseOrderItem extends Model

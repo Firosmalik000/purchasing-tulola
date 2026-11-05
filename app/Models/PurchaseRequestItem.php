@@ -19,10 +19,12 @@ use Illuminate\Support\Carbon;
  * @property string|null $description
  * @property string|null $sample_image_path
  * @property int $unit_id
- * @property string|null $current_stock_snapshot
- * @property string|null $standard_stock_snapshot
- * @property string|null $suggested_quantity
- * @property string $requested_quantity
+ * @property int|null $current_stock_snapshot
+ * @property int|null $standard_stock_snapshot
+ * @property int|null $suggested_quantity
+ * @property int $requested_quantity
+ * @property int|null $approved_quantity
+ * @property-read Item|null $item
  * @property int|null $bank_quantity
  * @property Carbon|null $bank_ordered_at
  * @property Carbon|null $required_date

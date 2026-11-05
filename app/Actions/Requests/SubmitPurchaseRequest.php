@@ -10,38 +10,41 @@ use App\Models\Store;
 use App\Models\StoreStock;
 use App\Models\StoreStockStandard;
 use App\Models\User;
+use App\Services\CentralStockAvailability;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class SubmitPurchaseRequest
 {
-    public function __construct(private TransitionPurchaseRequestStatus $transition) {}
+    public function __construct(private TransitionPurchaseRequestStatus $transition, private CentralStockAvailability $availability) {}
 
     public function handle(PurchaseRequest $request, User $actor): PurchaseRequest
     {
         return DB::transaction(function () use ($request, $actor): PurchaseRequest {
             $request = PurchaseRequest::query()->with('items')->lockForUpdate()->findOrFail($request->id);
+            if ($request->status !== PurchaseRequestStatus::DRAFT) {
+                throw ValidationException::withMessages(['status' => 'Hanya draft yang dapat diajukan.']);
+            }
             if ($request->items->isEmpty()) {
                 throw ValidationException::withMessages(['request' => 'Draft harus memiliki item sebelum diajukan.']);
             }
 
             $centralStore = Store::centralStore();
             if ($centralStore) {
+                $available = $this->availability->available($centralStore, $request->items
+                    ->where('type', PurchaseRequestItemType::STOCK)->pluck('item_id')->all(), lock: true);
                 $invalidItems = [];
                 foreach ($request->items as $line) {
                     if ($line->type !== PurchaseRequestItemType::STOCK) {
                         continue;
                     }
-                    $currentCentral = (int) (StoreStock::query()
-                        ->where('store_id', $centralStore->id)
-                        ->where('item_id', $line->item_id)
-                        ->lockForUpdate()
-                        ->value('quantity') ?? 0);
+                    $currentCentral = $available[$line->item_id] ?? 0;
+                    $available[$line->item_id] = $currentCentral - $line->requested_quantity;
 
                     if ($currentCentral < $line->requested_quantity) {
                         $item = $line->item ?? Item::query()->find($line->item_id);
                         $invalidItems[] = [
-                            'name' => $item?->name ?? "Item #{$line->item_id}",
+                            'name' => $item->name ?? "Item #{$line->item_id}",
                             'available' => $currentCentral,
                             'requested' => $line->requested_quantity,
                         ];
@@ -59,7 +62,7 @@ class SubmitPurchaseRequest
                             fn ($i) => "• {$i['name']} (Tersedia: {$i['available']}, Diminta: {$i['requested']})",
                             $invalidItems
                         );
-                        $message = "Terdapat ".count($invalidItems)." item yang stoknya tidak mencukupi di Kantor Pusat:\n".implode("\n", $lines);
+                        $message = 'Terdapat '.count($invalidItems)." item yang stoknya tidak mencukupi di Kantor Pusat:\n".implode("\n", $lines);
                     }
 
                     throw ValidationException::withMessages(['stock' => $message]);

@@ -22,6 +22,7 @@ import {
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DateInput } from '@/components/ui/date-input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
@@ -30,7 +31,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatQuantity } from '@/lib/utils';
 
@@ -793,14 +793,13 @@ export default function OrderShow({
                                 >
                                     Target Diterima Toko
                                 </Label>
-                                <Input
+                                <DateInput
                                     id="expected_date"
-                                    type="date"
                                     value={editForm.data.expected_date}
-                                    onChange={(e) =>
+                                    onChange={(value) =>
                                         editForm.setData(
                                             'expected_date',
-                                            e.target.value,
+                                            value,
                                         )
                                     }
                                     className="h-9 text-xs"
